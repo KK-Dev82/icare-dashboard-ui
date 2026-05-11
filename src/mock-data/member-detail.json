@@ -1,0 +1,64 @@
+{
+  "id": 1,
+  "memberId": "MBR-000124",
+  "name": "สมชาย ย้อนแหว่ง",
+  "email": "somchai@email.com",
+  "phone": "098-887-9523",
+  "registerDate": "15 ม.ค. 2570",
+  "status": "ใช้งานอยู่",
+  "hasPolicy": true,
+  "policySummary": {
+    "total": 4,
+    "active": 2,
+    "nearExpire": 1,
+    "expired": 1
+  },
+  "policies": [
+    {
+      "no": "POL-2567-000887",
+      "status": "ACTIVE",
+      "type": "ประกันรถจักรยานยนต์",
+      "period": "1 ม.ค. 2570 - 31 ธ.ค. 2570",
+      "insured": "100,000 บาท",
+      "plate": "1 กข 2344 กรุงเทพมหานคร"
+    },
+    {
+      "no": "POL-2568-001289",
+      "status": "EXPIRED",
+      "type": "ประกันเดินทาง",
+      "period": "1 ม.ค. 2568 - 31 ธ.ค. 2568",
+      "insured": "500,000 บาท",
+      "plate": "ญี่ปุ่น"
+    },
+    {
+      "no": "POL-2568-001234",
+      "status": "ACTIVE",
+      "type": "ประกันอุปกรณ์อิเล็กทรอนิกส์",
+      "period": "1 ม.ค. 2570 - 31 ธ.ค. 2570",
+      "insured": "50,000 บาท",
+      "plate": "356789123456789"
+    },
+    {
+      "no": "POL-2568-001301",
+      "status": "NEAR_EXPIRE",
+      "type": "ประกันอุบัติเหตุ",
+      "period": "1 ก.พ. 2570 - 28 ก.พ. 2570",
+      "insured": "300,000 บาท",
+      "plate": "-"
+    }
+  ],
+  "claims": [
+    {
+      "id": "CLM-2570-040",
+      "policyNo": "POL-2568-001234",
+      "status": "pending",
+      "submitDate": "20 เม.ย. 2570"
+    },
+    {
+      "id": "CLM-2570-038",
+      "policyNo": "POL-2568-001234",
+      "status": "success",
+      "submitDate": "10 มี.ค. 2570"
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+[
+  { "id": 1, "name": "สมชาย ใจดี", "email": "somchai@email.com", "phone": "081-234-5678", "hasPolicy": true, "isActive": true },
+  { "id": 2, "name": "สมหญิง รักสุข", "email": "somying@email.com", "phone": "089-876-5432", "hasPolicy": true, "isActive": true },
+  { "id": 3, "name": "วิชัย มั่นคง", "email": "wichai@email.com", "phone": "062-111-2233", "hasPolicy": false, "isActive": false },
+  { "id": 4, "name": "นภา สว่างจิต", "email": "napa@email.com", "phone": "095-444-5566", "hasPolicy": true, "isActive": true },
+  { "id": 5, "name": "ธนา เจริญสุข", "email": "thana@email.com", "phone": "083-777-8899", "hasPolicy": false, "isActive": true },
+  { "id": 6, "name": "พิมพ์ใจ ดีงาม", "email": "pimjai@email.com", "phone": "091-222-3344", "hasPolicy": true, "isActive": false },
+  { "id": 7, "name": "อนันต์ สุขใจ", "email": "anan@email.com", "phone": "086-555-6677", "hasPolicy": true, "isActive": true }
+]
