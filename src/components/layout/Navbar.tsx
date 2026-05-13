@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -24,6 +25,13 @@ const menuItems = [
 
 export default function Navbar() {
   const pathname = usePathname();
+  const [fullName, setFullName] = useState("Admin");
+  const [role, setRole] = useState("");
+
+  useEffect(() => {
+    setFullName(localStorage.getItem("fullName") || "Admin");
+    setRole(localStorage.getItem("role") || "");
+  }, []);
 
   return (
     <header className="sticky top-0 z-50 border-t-[3px] border-t-primary bg-white shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
@@ -70,9 +78,14 @@ export default function Navbar() {
           </button>
           <button className="flex items-center gap-2 px-3 py-2 rounded-lg border border-[#EAEAEA] hover:border-primary/30 hover:bg-primary/5 transition-all">
             <div className="w-7 h-7 bg-primary/10 rounded-full flex items-center justify-center">
-              <span className="text-xs font-semibold text-primary">A</span>
+              <span className="text-xs font-semibold text-primary">
+                {fullName.charAt(0)}
+              </span>
             </div>
-            <span className="text-sm font-medium text-gray-700">Admin</span>
+            <div className="text-left">
+              <p className="text-sm font-medium text-gray-700 leading-tight">{fullName}</p>
+              <p className="text-[10px] text-gray-400 leading-tight">{role}</p>
+            </div>
             <ChevronDown size={14} className="text-gray-400" />
           </button>
         </div>
