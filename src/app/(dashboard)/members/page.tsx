@@ -1,11 +1,12 @@
 "use client";
 
-import { Eye, Power, ChevronLeft, ChevronRight } from "lucide-react";
+import { Eye, Power } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ActionIconButton } from "@/components/ui/action-button";
 import { Select } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { TablePagination } from "@/components/ui/table-pagination";
 import { memberApi } from "@/api/member";
 import type { Member } from "@/types/member";
 
@@ -20,16 +21,16 @@ export default function MembersPage() {
 
   return (
     <div>
-      {/* Page Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">รายการสมาชิก</h1>
-        <p className="mt-1 text-sm text-gray-400">
-          จัดการข้อมูลสมาชิกและกรมธรรม์ได้ในที่เดียว
-        </p>
-      </div>
-
       {/* Content Card */}
-      <div className="bg-white rounded-3xl shadow-[0_2px_12px_rgba(0,0,0,0.04)] border border-[#EAEAEA] p-8">
+      <div className="flex w-full flex-col rounded-[18px] bg-white p-8 shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
+        {/* Page Header */}
+        <div className="mb-6 border-b border-[#EAEAEA] pb-5">
+          <h1 className="text-lg font-bold text-[#243333]">รายการสมาชิก</h1>
+          <p className="mt-1 text-sm text-[#9CA3AF]">
+            จัดการข้อมูลสมาชิกและกรมธรรม์ได้ในที่เดียว
+          </p>
+        </div>
+
         {/* Filter Bar */}
         <div className="flex items-center gap-3 mb-8">
           <Input
@@ -118,23 +119,7 @@ export default function MembersPage() {
           </table>
         </div>
 
-        {/* Pagination */}
-        <div className="flex items-center justify-between mt-6 pt-4">
-          <p className="text-sm text-gray-400">
-            แสดง {members.length} จาก {members.length} รายการ
-          </p>
-          <div className="flex items-center gap-1">
-            <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-[#EAEAEA] text-gray-400 hover:border-primary hover:text-primary transition-colors">
-              <ChevronLeft size={16} />
-            </button>
-            <button className="w-8 h-8 flex items-center justify-center rounded-lg bg-primary text-white text-sm font-medium">
-              1
-            </button>
-            <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-[#EAEAEA] text-gray-400 hover:border-primary hover:text-primary transition-colors">
-              <ChevronRight size={16} />
-            </button>
-          </div>
-        </div>
+        <TablePagination current={members.length} total={members.length} />
       </div>
     </div>
   );

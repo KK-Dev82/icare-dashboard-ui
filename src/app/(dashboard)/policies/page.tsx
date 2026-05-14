@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Eye, Pencil, Power, Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import { Eye, Pencil, Power, Plus } from "lucide-react";
 import { ActionIconButton } from "@/components/ui/action-button";
+import { TablePagination } from "@/components/ui/table-pagination";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { ConfirmModal, ContentPreviewModal } from "@/components/ui/modal";
@@ -81,7 +82,7 @@ export default function ProductsPage() {
   return (
     <div>
       {/* Content Card */}
-      <div className="bg-white rounded-3xl shadow-[0_2px_12px_rgba(0,0,0,0.04)] border border-[#EAEAEA] p-8">
+      <div className="flex w-full flex-col rounded-[18px] bg-white p-8 shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
         {/* Page Header */}
         <div className="flex items-center justify-between pb-6 mb-6 border-b border-[#EAEAEA]">
           <div>
@@ -237,41 +238,13 @@ export default function ProductsPage() {
           </table>
         </div>
 
-        {/* Pagination */}
-        <div className="flex items-center justify-between mt-6 pt-4">
-          <p className="text-sm text-gray-400">
-            แสดง {items.length} จาก {meta.total} รายการ
-          </p>
-          <div className="flex items-center gap-1">
-            <button
-              disabled={meta.page <= 1}
-              onClick={() => handlePageChange(meta.page - 1)}
-              className="w-8 h-8 flex items-center justify-center rounded-lg border border-[#EAEAEA] text-gray-400 hover:border-primary hover:text-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              <ChevronLeft size={16} />
-            </button>
-            {Array.from({ length: meta.totalPages }, (_, i) => i + 1).map((p) => (
-              <button
-                key={p}
-                onClick={() => handlePageChange(p)}
-                className={`w-8 h-8 flex items-center justify-center rounded-lg text-sm font-medium transition-colors ${
-                  p === meta.page
-                    ? "bg-primary text-white"
-                    : "border border-[#EAEAEA] text-gray-400 hover:border-primary hover:text-primary"
-                }`}
-              >
-                {p}
-              </button>
-            ))}
-            <button
-              disabled={meta.page >= meta.totalPages}
-              onClick={() => handlePageChange(meta.page + 1)}
-              className="w-8 h-8 flex items-center justify-center rounded-lg border border-[#EAEAEA] text-gray-400 hover:border-primary hover:text-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              <ChevronRight size={16} />
-            </button>
-          </div>
-        </div>
+        <TablePagination
+          current={items.length}
+          total={meta.total}
+          page={meta.page}
+          totalPages={meta.totalPages}
+          onPageChange={handlePageChange}
+        />
       </div>
 
       {/* Confirm Modal */}
