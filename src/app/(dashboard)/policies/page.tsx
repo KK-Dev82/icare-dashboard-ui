@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, Pencil, Power, Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import { ActionIconButton } from "@/components/ui/action-button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { ConfirmModal, ContentPreviewModal } from "@/components/ui/modal";
@@ -212,28 +213,21 @@ export default function ProductsPage() {
                     </td>
                     <td className="py-4 px-4">
                       <div className="flex items-center justify-end gap-2">
-                        <button
+                        <ActionIconButton
+                          icon={Eye}
+                          variant="primary"
                           onClick={() => setPreviewItem(item)}
-                          className="w-8 h-8 flex items-center justify-center rounded-lg bg-[#07A2A2] text-white hover:bg-[#07A2A2]/85 transition-colors"
-                        >
-                          <Eye size={15} />
-                        </button>
-                        <button
+                        />
+                        <ActionIconButton
+                          icon={Pencil}
+                          variant="accent"
                           onClick={() => router.push(`/policies/${item.id}/edit`)}
-                          className="w-8 h-8 flex items-center justify-center rounded-lg bg-[#FF944D] text-white hover:bg-[#FF944D]/85 transition-colors"
-                        >
-                          <Pencil size={15} />
-                        </button>
-                        <button
+                        />
+                        <ActionIconButton
+                          icon={Power}
+                          variant={item.isPublish ? "danger" : "success"}
                           onClick={() => handleTogglePublish(item)}
-                          className={`w-8 h-8 flex items-center justify-center rounded-lg text-white transition-colors ${
-                            item.isPublish
-                              ? "bg-[#F44034] hover:bg-[#F44034]/85"
-                              : "bg-[#24A148] hover:bg-[#24A148]/85"
-                          }`}
-                        >
-                          <Power size={15} />
-                        </button>
+                        />
                       </div>
                     </td>
                   </tr>

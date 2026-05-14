@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { ArrowLeft, Plus, X } from "lucide-react";
+import { Plus, X } from "lucide-react";
+import { PageBackHeader } from "@/components/layout/PageBackHeader";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { ImageUpload } from "@/components/ui/upload";
@@ -112,15 +113,11 @@ export default function EditProductPage() {
 
   return (
     <div>
-      <div className="flex items-center gap-4 mb-6">
-        <button onClick={() => router.back()} className="w-9 h-9 flex items-center justify-center rounded-lg border border-[#EAEAEA] text-[#565656] hover:border-primary hover:text-primary transition-colors">
-          <ArrowLeft size={18} />
-        </button>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">แก้ไขผลิตภัณฑ์</h1>
-          <p className="mt-1 text-sm text-[#9CA3AF]">แก้ไขแผนประกัน</p>
-        </div>
-      </div>
+      <PageBackHeader
+        title="แก้ไขผลิตภัณฑ์"
+        description="แก้ไขแผนประกัน"
+        onBack={() => router.back()}
+      />
 
       <form onSubmit={handleSubmit}>
         <div className="grid grid-cols-[1fr_320px] gap-6">
