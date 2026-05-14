@@ -3,6 +3,7 @@
 import { Eye, Power, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { ActionIconButton } from "@/components/ui/action-button";
 import { Select } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { memberApi } from "@/api/member";
@@ -100,19 +101,15 @@ export default function MembersPage() {
                   </td>
                   <td className="py-4 px-4">
                     <div className="flex items-center justify-end gap-2">
-                      <button
+                      <ActionIconButton
+                        icon={Eye}
+                        variant="primary"
                         onClick={() => router.push(`/members/${member.id}`)}
-                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-primary text-white hover:bg-primary/85 transition-colors"
-                      >
-                        <Eye size={15} />
-                      </button>
-                      <button
-                        className={`w-8 h-8 flex items-center justify-center rounded-lg text-white transition-colors ${
-                          member.isActive ? "bg-error hover:bg-error/85" : "bg-primary hover:bg-primary/85"
-                        }`}
-                      >
-                        <Power size={15} />
-                      </button>
+                      />
+                      <ActionIconButton
+                        icon={Power}
+                        variant={member.isActive ? "danger" : "primary"}
+                      />
                     </div>
                   </td>
                 </tr>
