@@ -3,8 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  ChevronLeft,
-  ChevronRight,
   CirclePlus,
   Power,
   Search,
@@ -15,6 +13,7 @@ import { ActionIconButton } from "@/components/ui/action-button";
 import { Input } from "@/components/ui/input";
 import { UserDetailModal } from "@/components/ui/modal";
 import { Select } from "@/components/ui/select";
+import { TablePagination } from "@/components/ui/table-pagination";
 import type { AdminUser } from "@/types/user";
 
 const roleLabel: Record<string, string> = {
@@ -128,7 +127,7 @@ export default function PolicyCategoriesPage() {
 
   return (
     <div>
-      <div className="bg-white rounded-3xl shadow-[0_2px_12px_rgba(0,0,0,0.04)] border border-[#EAEAEA] p-8">
+      <div className="flex w-full flex-col rounded-[18px] bg-white p-8 shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
         <div className="flex items-center justify-between pb-5 mb-6 border-b border-[#EAEAEA]">
           <div>
             <h1 className="text-lg font-bold text-[#243333]">รายการผู้ใช้งาน</h1>
@@ -334,20 +333,7 @@ export default function PolicyCategoriesPage() {
           </table>
         </div>
 
-        <div className="mt-6 flex items-center justify-between pt-2">
-          <p className="text-xs text-[#9CA3AF]">
-            แสดง {filteredUsers.length} จาก {users.length} รายการ
-          </p>
-          <div className="flex items-center gap-1 text-[#C9C9C9]">
-            <button className="flex h-7 w-7 items-center justify-center rounded-md transition-colors hover:text-primary">
-              <ChevronLeft size={16} />
-            </button>
-            <span className="text-xs">1</span>
-            <button className="flex h-7 w-7 items-center justify-center rounded-md transition-colors hover:text-primary">
-              <ChevronRight size={16} />
-            </button>
-          </div>
-        </div>
+        <TablePagination current={filteredUsers.length} total={users.length} />
       </div>
 
       <UserDetailModal

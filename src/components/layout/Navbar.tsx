@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -25,13 +25,8 @@ const menuItems = [
 
 export default function Navbar() {
   const pathname = usePathname();
-  const [fullName, setFullName] = useState("Admin");
-  const [role, setRole] = useState("");
-
-  useEffect(() => {
-    setFullName(localStorage.getItem("fullName") || "Admin");
-    setRole(localStorage.getItem("role") || "");
-  }, []);
+  const fullName = useLocalStorageValue("fullName", "Admin");
+  const role = useLocalStorageValue("role", "");
 
   return (
     <header className="sticky top-0 z-50 border-t-[3px] border-t-primary bg-white shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
@@ -47,14 +42,14 @@ export default function Navbar() {
         </Link>
 
         {/* Center - Navigation */}
-        <nav className="flex items-center gap-1">
+        <nav className="flex h-full items-center gap-1">
           {menuItems.map((item) => {
             const isActive = pathname.startsWith(item.href);
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`relative flex items-center gap-2 px-4 py-2.5 rounded-lg text-[13px] font-medium transition-all ${
+                className={`relative flex h-full items-center gap-2 px-4 text-[13px] font-medium transition-all ${
                   isActive
                     ? "text-primary"
                     : "text-gray-500 hover:text-primary hover:bg-primary/5"
@@ -63,7 +58,7 @@ export default function Navbar() {
                 <item.icon size={18} strokeWidth={1.8} />
                 {item.label}
                 {isActive && (
-                  <span className="absolute bottom-0 left-4 right-4 h-[2px] bg-primary rounded-full" />
+                  <span className="absolute bottom-0 left-0 right-0 h-[3px] rounded-full bg-primary" />
                 )}
               </Link>
             );
@@ -91,5 +86,16 @@ export default function Navbar() {
         </div>
       </div>
     </header>
+  );
+}
+
+function useLocalStorageValue(key: string, fallback: string) {
+  return useSyncExternalStore(
+    (onStoreChange) => {
+      window.addEventListener("storage", onStoreChange);
+      return () => window.removeEventListener("storage", onStoreChange);
+    },
+    () => localStorage.getItem(key) || fallback,
+    () => fallback
   );
 }
