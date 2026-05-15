@@ -1,0 +1,90 @@
+{
+  "systemSettings": [
+    {
+      "id": 1,
+      "label": "เบอร์ติดต่อ",
+      "value": "Ins 02-123-4567"
+    },
+    {
+      "id": 2,
+      "label": "อีเมล",
+      "value": "ici@icare-insurance.com"
+    },
+    {
+      "id": 3,
+      "label": "เวลาเปิด - ปิด",
+      "value": "จันทร์-ศุกร์ 8:30-17:30 น."
+    }
+  ],
+  "policyTypeSettings": [
+    {
+      "id": 1,
+      "name": "ประกันอุบัติเหตุ",
+      "isActive": true,
+      "bannerImage": {
+        "path": "",
+        "fileName": "",
+        "isActive": false
+      },
+      "iconImage": {
+        "path": "",
+        "fileName": "",
+        "isActive": false
+      }
+    },
+    {
+      "id": 2,
+      "name": "ประกันเกี่ยวกับทรัพย์สิน",
+      "isActive": true,
+      "bannerImage": {
+        "path": "",
+        "fileName": "",
+        "isActive": false
+      },
+      "iconImage": {
+        "path": "",
+        "fileName": "",
+        "isActive": false
+      }
+    },
+    {
+      "id": 3,
+      "name": "ประกันภัยเดินทาง",
+      "isActive": true,
+      "bannerImage": {
+        "path": "",
+        "fileName": "",
+        "isActive": false
+      },
+      "iconImage": {
+        "path": "",
+        "fileName": "",
+        "isActive": false
+      }
+    }
+  ],
+  "newsPromotionSettings": [
+    {
+      "id": 1,
+      "label": "ประเภท",
+      "value": "ข่าวสาร",
+      "isActive": true,
+      "bannerImage": {
+        "path": "",
+        "fileName": "",
+        "isActive": true
+      }
+    },
+    {
+      "id": 2,
+      "label": "ประเภท",
+      "value": "ประกาศ",
+      "isActive": true,
+      "bannerImage": {
+        "path": "",
+        "fileName": "",
+        "isActive": true
+      }
+    }
+  ]
+}
