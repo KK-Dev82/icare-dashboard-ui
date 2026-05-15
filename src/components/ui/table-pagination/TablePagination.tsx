@@ -2,11 +2,31 @@
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
+export const TABLE_PAGINATION_PAGE_SIZE = 10;
+
+export function getTableTotalPages(total: number, pageSize = TABLE_PAGINATION_PAGE_SIZE) {
+  return Math.max(1, Math.ceil(total / pageSize));
+}
+
+export function getTablePageStart(page: number, pageSize = TABLE_PAGINATION_PAGE_SIZE) {
+  return (page - 1) * pageSize;
+}
+
+export function getTablePageItems<T>(
+  items: T[],
+  page: number,
+  pageSize = TABLE_PAGINATION_PAGE_SIZE
+) {
+  const pageStart = getTablePageStart(page, pageSize);
+  return items.slice(pageStart, pageStart + pageSize);
+}
+
 interface TablePaginationProps {
   current: number;
   total: number;
   page?: number;
   totalPages?: number;
+  pageSize?: number;
   onPageChange?: (page: number) => void;
   stickToBottom?: boolean;
   className?: string;
@@ -16,17 +36,19 @@ export function TablePagination({
   current,
   total,
   page = 1,
-  totalPages = 1,
+  totalPages,
+  pageSize = TABLE_PAGINATION_PAGE_SIZE,
   onPageChange,
   stickToBottom = true,
   className = "",
 }: TablePaginationProps) {
-  const pages = Array.from({ length: Math.max(totalPages, 1) }, (_, i) => i + 1);
+  const pageCount = totalPages ?? getTableTotalPages(total, pageSize);
+  const pages = Array.from({ length: pageCount }, (_, i) => i + 1);
   const canGoPrev = page > 1;
-  const canGoNext = page < totalPages;
+  const canGoNext = page < pageCount;
 
   const handlePageChange = (nextPage: number) => {
-    if (!onPageChange || nextPage < 1 || nextPage > totalPages || nextPage === page) return;
+    if (!onPageChange || nextPage < 1 || nextPage > pageCount || nextPage === page) return;
     onPageChange(nextPage);
   };
 

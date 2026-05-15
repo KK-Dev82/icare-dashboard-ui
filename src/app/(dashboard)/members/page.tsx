@@ -6,18 +6,28 @@ import { useRouter } from "next/navigation";
 import { ActionIconButton } from "@/components/ui/action-button";
 import { Select } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { TablePagination } from "@/components/ui/table-pagination";
+import {
+  TablePagination,
+  getTablePageItems,
+  getTablePageStart,
+  getTableTotalPages,
+} from "@/components/ui/table-pagination";
 import { memberApi } from "@/api/member";
 import type { Member } from "@/types/member";
 
 export default function MembersPage() {
   const [search, setSearch] = useState("");
   const [members, setMembers] = useState<Member[]>([]);
+  const [page, setPage] = useState(1);
   const router = useRouter();
 
   useEffect(() => {
     memberApi.getMembers().then(setMembers);
   }, []);
+
+  const totalPages = getTableTotalPages(members.length);
+  const pageStart = getTablePageStart(page);
+  const paginatedMembers = getTablePageItems(members, page);
 
   return (
     <div>
@@ -68,7 +78,7 @@ export default function MembersPage() {
 
         {/* Table */}
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full [&_tbody_td:nth-child(4)]:hidden [&_thead_th:nth-child(2)]:hidden [&_thead_th:nth-child(5)]:hidden">
             <thead>
               <tr className="border-b border-[#EAEAEA]">
                 <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide py-3 px-4">ลำดับ</th>
@@ -81,15 +91,14 @@ export default function MembersPage() {
               </tr>
             </thead>
             <tbody>
-              {members.map((member, idx) => (
+              {paginatedMembers.map((member, idx) => (
                 <tr
                   key={member.id}
                   className="border-b border-[#F5F5F5] hover:bg-primary/[0.02] transition-colors"
                 >
-                  <td className="py-4 px-4 text-sm text-gray-600">{idx + 1}</td>
-                  <td className="py-4 px-4 text-sm font-medium text-gray-800">{member.name}</td>
-                  <td className="py-4 px-4 text-sm text-gray-600">{member.email}</td>
-                  <td className="py-4 px-4 text-sm text-gray-600">{member.phone}</td>
+                  <td className="py-4 px-4 text-sm text-gray-600">{pageStart + idx + 1}</td>
+                  <td className="py-4 px-4 text-sm text-gray-600">{member.email || "-"}</td>
+                  <td className="py-4 px-4 text-sm text-gray-600">{member.phone || "-"}</td>
                   <td className="py-4 px-4">
                     <span className={`text-sm font-medium ${member.hasPolicy ? "text-primary" : "text-[#BDBDBD]"}`}>
                       {member.hasPolicy ? "มีกรมธรรม์" : "ไม่มีกรมธรรม์"}
@@ -119,7 +128,13 @@ export default function MembersPage() {
           </table>
         </div>
 
-        <TablePagination current={members.length} total={members.length} />
+        <TablePagination
+          current={paginatedMembers.length}
+          total={members.length}
+          page={page}
+          totalPages={totalPages}
+          onPageChange={setPage}
+        />
       </div>
     </div>
   );
