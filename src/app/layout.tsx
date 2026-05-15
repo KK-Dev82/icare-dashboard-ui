@@ -19,8 +19,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="th" className={`${notoSansThai.variable} antialiased`}>
-      <body>{children}</body>
+    <html lang="th" className={`${notoSansThai.variable} antialiased`} suppressHydrationWarning>
+      <body suppressHydrationWarning>{children}</body>
     </html>
   );
 }

@@ -49,10 +49,12 @@ export function Select({
   className,
 }: SelectProps) {
   const [open, setOpen] = useState(false);
+  const [internalValue, setInternalValue] = useState(value || "");
   const ref = useRef<HTMLDivElement>(null);
   const s = sizes[size];
 
-  const selected = options.find((o) => o.value === value);
+  const currentValue = value !== undefined ? value : internalValue;
+  const selected = options.find((o) => o.value === currentValue);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -97,12 +99,13 @@ export function Select({
       {open && (
         <div className="absolute z-50 top-full mt-2 w-full bg-white rounded-xl border border-[#EAEAEA] shadow-[0_8px_24px_rgba(0,0,0,0.08)] py-1.5">
           {options.map((option) => {
-            const isSelected = option.value === value;
+            const isSelected = option.value === currentValue;
             return (
               <button
                 key={option.value}
                 type="button"
                 onClick={() => {
+                  setInternalValue(option.value);
                   onChange?.(option.value);
                   setOpen(false);
                 }}

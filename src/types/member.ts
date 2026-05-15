@@ -7,6 +7,7 @@ export interface Member {
   phone: string;
   hasPolicy: boolean;
   isActive: boolean;
+  registerDate?: string;
 }
 
 export interface MemberDetail {
