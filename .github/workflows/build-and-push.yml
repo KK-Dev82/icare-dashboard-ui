@@ -69,11 +69,18 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           password: ${{ secrets.SSH_PASSWORD }}
           port:     22
+          # Forward Docker Hub credentials into the remote shell so we don't
+          # depend on a persistent `docker login` on the server.
+          envs: DOCKERHUB_USERNAME,DOCKERHUB_TOKEN
           # Pull the freshly-pushed :staging image, recreate the container
           # only if its digest changed, then garbage-collect dangling images.
           script: |
             set -euo pipefail
+            echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
             cd /srv/deploy/icare/icare-app-dashboard
             docker compose pull dashboard
             docker compose up -d
             docker image prune -f
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN:    ${{ secrets.DOCKERHUB_TOKEN }}
