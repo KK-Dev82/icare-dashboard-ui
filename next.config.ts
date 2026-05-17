@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
-const API_PROXY_TARGET =
-  process.env.API_PROXY_TARGET ?? "http://localhost:3001";
+// API routing is handled by nginx (icare-dashboard.uat-system.com → /api/* → icare-app-api).
+// Do NOT add a `rewrites()` here: `next.config.ts` is evaluated at build time,
+// so any `process.env.*` reads would be frozen into the image and ignored at runtime.
 
 const nextConfig: NextConfig = {
   output: "standalone",
@@ -17,14 +18,6 @@ const nextConfig: NextConfig = {
         port: "3001",
       },
     ],
-  },
-  async rewrites() {
-    return [
-      {
-        source: "/api/:path*",
-        destination: `${API_PROXY_TARGET}/api/:path*`,
-      },
-    ];
   },
 };
 

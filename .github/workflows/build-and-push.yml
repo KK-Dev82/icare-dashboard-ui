@@ -74,6 +74,6 @@ jobs:
           script: |
             set -euo pipefail
             cd /srv/deploy/icare/icare-app-dashboard
-            docker compose --env-file .env.docker pull dashboard
-            docker compose --env-file .env.docker up -d
+            docker compose pull dashboard
+            docker compose up -d
             docker image prune -f

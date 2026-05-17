@@ -3,7 +3,8 @@
 #
 # On the VPS, place at:
 #   /srv/deploy/icare/icare-app-dashboard/docker-compose.yml
-# alongside .env.docker (see .env.docker.example).
+# alongside a .env file (see .env.example) which Compose auto-loads
+# — currently empty, but the file should exist so Compose doesn't warn.
 #
 # Tag strategy:
 #   :staging              ← floating tag the compose tracks
@@ -14,8 +15,8 @@
 #
 # First run on server (one-time):
 #   docker login                # Docker Hub
-#   docker compose --env-file .env.docker pull
-#   docker compose --env-file .env.docker up -d
+#   docker compose pull
+#   docker compose up -d
 #
 # Subsequent deploys are performed by the GitHub Actions "deploy" job via SSH.
 
@@ -29,8 +30,8 @@ services:
       NODE_ENV: production
       PORT:     "3000"
       HOSTNAME: "0.0.0.0"
-      # /api/* rewrite target. Uses docker network hostname to skip nginx hop.
-      API_PROXY_TARGET: "http://icare-app-api:3001"
+      # /api/* is proxied by nginx (see nginx/conf.d/icare-dashboard.*).
+      # No need to expose the backend URL to the dashboard container.
     networks:
       - web
 
