@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm install *)",
+      "Bash(ls /Users/athip-ch/Work/Korrakang/KK_Client_Work/iCare/Code/nginx 2>/dev/null || echo \"NOT_EXISTS\")",
+      "Read(//Users/athip-ch/Work/Korrakang/KK_Client_Work/iCare/Code/nginx/**)",
+      "Bash(mkdir -p /Users/athip-ch/Work/Korrakang/KK_Client_Work/iCare/Code/watchtower)"
+    ],
+    "additionalDirectories": [
+      "/Users/athip-ch/Work/Korrakang/KK_Client_Work/iCare/Code/nginx/conf.d",
+      "/Users/athip-ch/Work/Korrakang/KK_Client_Work/iCare/Code/nginx/snippets",
+      "/Users/athip-ch/Work/Korrakang/KK_Client_Work/iCare/Code/nginx",
+      "/Users/athip-ch/Work/Korrakang/KK_Client_Work/iCare/Code"
+    ]
+  }
+}

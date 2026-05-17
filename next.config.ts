@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
 
+const API_PROXY_TARGET =
+  process.env.API_PROXY_TARGET ?? "http://localhost:3001";
+
 const nextConfig: NextConfig = {
+  output: "standalone",
   images: {
     remotePatterns: [
       {
@@ -10,7 +14,7 @@ const nextConfig: NextConfig = {
       {
         protocol: "http",
         hostname: "localhost",
-        port: "3000",
+        port: "3001",
       },
     ],
   },
@@ -18,7 +22,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/api/:path*",
-        destination: "http://localhost:3000/api/:path*",
+        destination: `${API_PROXY_TARGET}/api/:path*`,
       },
     ];
   },

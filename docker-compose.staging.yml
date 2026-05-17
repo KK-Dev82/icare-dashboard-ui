@@ -1,0 +1,39 @@
+# Staging compose for icare-dashboard-ui (Next.js 16).
+# Pulls pre-built image from Docker Hub (private) — does NOT build locally.
+#
+# On the VPS, place at:
+#   /srv/deploy/icare/icare-app-dashboard/docker-compose.yml
+# alongside .env.docker (see .env.docker.example).
+#
+# Tag strategy:
+#   :staging              ← floating tag the compose tracks
+#   :staging-sha-<short>  ← immutable per-commit tag for rollback
+#
+# Prereq: icare-app-api stack must already be running (provides `icare-app-api`
+# container on the `web` network, used as API_PROXY_TARGET).
+#
+# First run on server (one-time):
+#   docker login                # Docker Hub
+#   docker compose --env-file .env.docker pull
+#   docker compose --env-file .env.docker up -d
+#
+# Subsequent deploys are performed by the GitHub Actions "deploy" job via SSH.
+
+services:
+  dashboard:
+    image: kkdev82/icare-app-dashboard:staging
+    container_name: icare-app-dashboard
+    restart: unless-stopped
+    # No `ports:` — central nginx accesses via shared `web` network.
+    environment:
+      NODE_ENV: production
+      PORT:     "3000"
+      HOSTNAME: "0.0.0.0"
+      # /api/* rewrite target. Uses docker network hostname to skip nginx hop.
+      API_PROXY_TARGET: "http://icare-app-api:3001"
+    networks:
+      - web
+
+networks:
+  web:
+    external: true
