@@ -9,7 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { ConfirmModal, ContentPreviewModal } from "@/components/ui/modal";
 import { contentApi } from "@/api/content";
-import type { Content, ContentStatus, ContentType } from "@/types/content";
+import type { Content, ContentStatus } from "@/types/content";
+import type { ContentCategory } from "@/types/content-category";
+import { contentCategoryApi } from "@/api/content-category";
 
 const statusConfig: Record<ContentStatus, { label: string; color: string }> = {
   PUBLISHED: { label: "เผยแพร่", color: "#24A148" },
@@ -17,15 +19,11 @@ const statusConfig: Record<ContentStatus, { label: string; color: string }> = {
   UNPUBLISHED: { label: "ปิดการใช้งาน", color: "#F44034" },
 };
 
-const typeLabel: Record<ContentType, string> = {
-  NEWS: "ข่าวสาร",
-  PROMOTION: "โปรโมชั่น",
-};
-
 export default function NewsPage() {
   const [items, setItems] = useState<Content[]>([]);
   const [search, setSearch] = useState("");
-  const [filterType, setFilterType] = useState("");
+  const [filterCategory, setFilterCategory] = useState("");
+  const [categories, setCategories] = useState<ContentCategory[]>([]);
   const [filterStatus, setFilterStatus] = useState("");
   const [confirmItem, setConfirmItem] = useState<Content | null>(null);
   const [previewItem, setPreviewItem] = useState<Content | null>(null);
@@ -38,7 +36,7 @@ export default function NewsPage() {
     setLoading(true);
     const params: Record<string, string | number> = { page: p || page, limit: 10 };
     if (search) params.keyword = search;
-    if (filterType) params.type = filterType;
+    if (filterCategory) params.categoryId = filterCategory;
     if (filterStatus) params.status = filterStatus;
     const res = await contentApi.getAll(params);
     if (res.success) {
@@ -50,6 +48,9 @@ export default function NewsPage() {
 
   useEffect(() => {
     fetchData();
+    contentCategoryApi.getAll().then((res) => {
+      if (res.success) setCategories(res.data);
+    });
   }, []);
 
   const handleSearch = () => {
@@ -119,12 +120,9 @@ export default function NewsPage() {
             className="w-[200px]"
             label="หมวดหมู่"
             placeholder="เลือกหมวดหมู่"
-            value={filterType}
-            onChange={setFilterType}
-            options={[
-              { label: "ข่าวสาร", value: "NEWS" },
-              { label: "โปรโมชั่น", value: "PROMOTION" },
-            ]}
+            value={filterCategory}
+            onChange={setFilterCategory}
+            options={categories.map((c) => ({ label: c.name, value: c.id }))}
           />
           <Select
             size="md"
@@ -215,7 +213,7 @@ export default function NewsPage() {
                       )}
                     </td>
                     <td className="py-4 px-4 text-sm text-gray-600">
-                      {typeLabel[item.type]}
+                      {item.category?.name || "-"}
                     </td>
                     <td className="py-4 px-4 text-sm text-gray-600">
                       {item.publishedAt
