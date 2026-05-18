@@ -5,21 +5,21 @@ import type { PolicyCategory, CreatePolicyCategoryPayload, UpdatePolicyCategoryP
 export const policyCategoryApi = {
   getAll: async (): Promise<ApiResponse<PolicyCategory[]>> => {
     const { data } = await apiClient.get<ApiResponse<PolicyCategory[]>>(
-      "/api/v1/admin/policy-categories"
+      "/api/v1/admin/product-categories"
     );
     return data;
   },
 
   getById: async (id: string): Promise<ApiResponse<PolicyCategory>> => {
     const { data } = await apiClient.get<ApiResponse<PolicyCategory>>(
-      `/api/v1/admin/policy-categories/${id}`
+      `/api/v1/admin/product-categories/${id}`
     );
     return data;
   },
 
   create: async (payload: CreatePolicyCategoryPayload): Promise<ApiResponse<PolicyCategory>> => {
     const { data } = await apiClient.post<ApiResponse<PolicyCategory>>(
-      "/api/v1/admin/policy-categories",
+      "/api/v1/admin/product-categories",
       payload
     );
     return data;
@@ -27,7 +27,7 @@ export const policyCategoryApi = {
 
   update: async (id: string, payload: UpdatePolicyCategoryPayload): Promise<ApiResponse<PolicyCategory>> => {
     const { data } = await apiClient.patch<ApiResponse<PolicyCategory>>(
-      `/api/v1/admin/policy-categories/${id}`,
+      `/api/v1/admin/product-categories/${id}`,
       payload
     );
     return data;
@@ -35,7 +35,7 @@ export const policyCategoryApi = {
 
   delete: async (id: string): Promise<ApiResponse<PolicyCategory>> => {
     const { data } = await apiClient.delete<ApiResponse<PolicyCategory>>(
-      `/api/v1/admin/policy-categories/${id}`
+      `/api/v1/admin/product-categories/${id}`
     );
     return data;
   },
