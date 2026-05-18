@@ -1,22 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, X } from "lucide-react";
-import { PageBackHeader } from "@/components/layout/PageBackHeader";
+import { ArrowLeft, Plus, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { ImageUpload } from "@/components/ui/upload";
 import { uploadApi } from "@/api/upload";
 import { contentApi } from "@/api/content";
-import type { ContentType } from "@/types/content";
+import { contentCategoryApi } from "@/api/content-category";
+import type { ContentCategory } from "@/types/content-category";
 
 export default function CreateNewsPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
   const [title, setTitle] = useState("");
-  const [type, setType] = useState<ContentType>("NEWS");
+  const [categoryId, setCategoryId] = useState("");
+  const [categories, setCategories] = useState<ContentCategory[]>([]);
   const [summary, setSummary] = useState("");
   const [content, setContent] = useState("");
   const [mainImage, setMainImage] = useState("");
@@ -28,6 +29,12 @@ export default function CreateNewsPage() {
   const [expiredAt, setExpiredAt] = useState("");
   const [publishDate, setPublishDate] = useState("");
   const [albumUploading, setAlbumUploading] = useState(false);
+
+  useEffect(() => {
+    contentCategoryApi.getAll().then((res) => {
+      if (res.success) setCategories(res.data);
+    });
+  }, []);
 
   const handleAlbumUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -50,7 +57,7 @@ export default function CreateNewsPage() {
 
   const isValid = () => {
     if (!title || !mainImage) return false;
-    if (type === "PROMOTION" && !bannerImage) return false;
+    if (!categoryId) return false;
     return true;
   };
 
@@ -61,7 +68,7 @@ export default function CreateNewsPage() {
 
     try {
       const res = await contentApi.create({
-        type,
+        categoryId,
         title,
         summary: summary || undefined,
         content: content || undefined,
@@ -84,11 +91,18 @@ export default function CreateNewsPage() {
 
   return (
     <div>
-      <PageBackHeader
-        title="เพิ่มข่าวสาร"
-        description="สร้างเนื้อหาข่าวสารหรือโปรโมชั่นใหม่"
-        onBack={() => router.back()}
-      />
+      <div className="flex items-center gap-4 mb-6">
+        <button
+          onClick={() => router.back()}
+          className="w-9 h-9 flex items-center justify-center rounded-lg border border-[#EAEAEA] text-[#565656] hover:border-primary hover:text-primary transition-colors"
+        >
+          <ArrowLeft size={18} />
+        </button>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">เพิ่มข่าวสาร</h1>
+          <p className="mt-1 text-sm text-[#9CA3AF]">สร้างเนื้อหาข่าวสารหรือโปรโมชั่นใหม่</p>
+        </div>
+      </div>
 
       <form onSubmit={handleSubmit}>
         <div className="grid grid-cols-[1fr_320px] gap-6">
@@ -107,14 +121,11 @@ export default function CreateNewsPage() {
               <Select
                 size="lg"
                 className="w-full"
-                label="ประเภท"
-                placeholder="เลือกประเภท"
-                value={type}
-                onChange={(v) => setType(v as ContentType)}
-                options={[
-                  { label: "ข่าวสาร", value: "NEWS" },
-                  { label: "โปรโมชั่น", value: "PROMOTION" },
-                ]}
+                label="หมวดหมู่ *"
+                placeholder="เลือกหมวดหมู่"
+                value={categoryId}
+                onChange={setCategoryId}
+                options={categories.map((c) => ({ label: c.name, value: c.id }))}
               />
             </div>
 
@@ -149,15 +160,11 @@ export default function CreateNewsPage() {
               <ImageUpload value={mainImage} onChange={setMainImage} />
             </div>
 
-            {/* Banner Image (required for PROMOTION) */}
-            {type === "PROMOTION" && (
-              <div>
-                <p className="text-[14px] font-bold text-dark mb-2">
-                  รูป Banner *
-                </p>
-                <ImageUpload value={bannerImage} onChange={setBannerImage} />
-              </div>
-            )}
+            {/* Banner Image */}
+            <div>
+              <p className="text-[14px] font-bold text-dark mb-2">รูป Banner</p>
+              <ImageUpload value={bannerImage} onChange={setBannerImage} />
+            </div>
 
             {/* Album */}
             <div>

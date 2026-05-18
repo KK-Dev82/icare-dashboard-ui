@@ -1,7 +1,7 @@
 "use client";
 
 import { X, Pin } from "lucide-react";
-import type { Content, ContentStatus, ContentType } from "@/types/content";
+import type { ContentStatus } from "@/types/content";
 
 const statusConfig: Record<ContentStatus, { label: string; color: string; bg: string }> = {
   PUBLISHED: { label: "เผยแพร่", color: "#24A148", bg: "#E8F5E9" },
@@ -9,10 +9,6 @@ const statusConfig: Record<ContentStatus, { label: string; color: string; bg: st
   UNPUBLISHED: { label: "ปิดการใช้งาน", color: "#F44034", bg: "#FDECEC" },
 };
 
-const typeLabel: Record<ContentType, string> = {
-  NEWS: "ข่าวสาร",
-  PROMOTION: "โปรโมชั่น",
-};
 
 interface PreviewContent {
   title: string;
@@ -58,9 +54,9 @@ export function ContentPreviewModal({ open, content, onClose }: ContentPreviewMo
             >
               {status.label}
             </span>
-            {content.type && typeLabel[content.type as ContentType] && (
+            {content.category && (
               <span className="px-3 py-1 rounded-full text-xs font-medium bg-[#F0F0F0] text-[#565656]">
-                {typeLabel[content.type as ContentType]}
+                {content.category.name}
               </span>
             )}
             {content.isPinned && (

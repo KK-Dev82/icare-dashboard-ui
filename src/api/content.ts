@@ -1,10 +1,10 @@
 import { apiClient } from "@/lib/apiClient";
 import type { ApiResponse } from "@/types/auth";
-import type { Content, CreateContentPayload, UpdateContentPayload, ContentType } from "@/types/content";
+import type { Content, CreateContentPayload, UpdateContentPayload } from "@/types/content";
 
 interface ContentListParams {
   keyword?: string;
-  type?: ContentType;
+  categoryId?: string;
   status?: string;
   page?: number;
   limit?: number;

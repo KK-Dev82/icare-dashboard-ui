@@ -9,7 +9,8 @@ import { Select } from "@/components/ui/select";
 import { ImageUpload } from "@/components/ui/upload";
 import { uploadApi } from "@/api/upload";
 import { contentApi } from "@/api/content";
-import type { ContentType } from "@/types/content";
+import { contentCategoryApi } from "@/api/content-category";
+import type { ContentCategory } from "@/types/content-category";
 
 export default function EditNewsPage() {
   const router = useRouter();
@@ -20,7 +21,8 @@ export default function EditNewsPage() {
   const [fetching, setFetching] = useState(true);
 
   const [title, setTitle] = useState("");
-  const [type, setType] = useState<ContentType>("NEWS");
+  const [categoryId, setCategoryId] = useState("");
+  const [categories, setCategories] = useState<ContentCategory[]>([]);
   const [summary, setSummary] = useState("");
   const [content, setContent] = useState("");
   const [mainImage, setMainImage] = useState("");
@@ -38,7 +40,7 @@ export default function EditNewsPage() {
       if (res.success) {
         const d = res.data;
         setTitle(d.title);
-        setType(d.type);
+        setCategoryId(d.categoryId || "");
         setSummary(d.summary || "");
         setContent(d.content || "");
         setMainImage(d.mainImage || "");
@@ -75,7 +77,7 @@ export default function EditNewsPage() {
 
   const isValid = () => {
     if (!title || !mainImage) return false;
-    if (type === "PROMOTION" && !bannerImage) return false;
+    if (!categoryId) return false;
     return true;
   };
 
@@ -86,7 +88,7 @@ export default function EditNewsPage() {
 
     try {
       const res = await contentApi.update(id, {
-        type,
+        categoryId,
         title,
         summary: summary || undefined,
         content: content || undefined,
@@ -142,8 +144,8 @@ export default function EditNewsPage() {
                 className="w-full"
                 label="ประเภท"
                 placeholder="เลือกประเภท"
-                value={type}
-                onChange={(v) => setType(v as ContentType)}
+                value={categoryId}
+                onChange={setCategoryId}
                 options={[
                   { label: "ข่าวสาร", value: "NEWS" },
                   { label: "โปรโมชั่น", value: "PROMOTION" },
@@ -183,7 +185,7 @@ export default function EditNewsPage() {
             </div>
 
             {/* Banner Image (required for PROMOTION) */}
-            {type === "PROMOTION" && (
+            {true && (
               <div>
                 <p className="text-[14px] font-bold text-dark mb-2">
                   รูป Banner *
