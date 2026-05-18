@@ -1,9 +1,8 @@
-export type ContentType = "NEWS" | "PROMOTION";
 export type ContentStatus = "DRAFT" | "PUBLISHED" | "UNPUBLISHED";
 
 export interface Content {
   id: string;
-  type: ContentType;
+  categoryId: string;
   title: string;
   summary: string | null;
   content: string | null;
@@ -21,10 +20,11 @@ export interface Content {
   updatedAt: string;
   publishedAt: string | null;
   deletedAt: string | null;
+  category?: { id: string; name: string };
 }
 
 export interface CreateContentPayload {
-  type?: ContentType;
+  categoryId: string;
   title: string;
   summary?: string;
   content?: string;
@@ -34,7 +34,7 @@ export interface CreateContentPayload {
   isPinned?: boolean;
   sortOrder?: number;
   isPublish?: boolean;
-  expiredAt?: string; // YYYY-MM-DD
+  expiredAt?: string;
 }
 
 export type UpdateContentPayload = Partial<CreateContentPayload>;

@@ -32,10 +32,10 @@ export default function SettingsPage() {
         <SystemSettingsPanel settings={settings?.systemSettings} />
       )}
       {activeTab === "policy" && (
-        <PolicyTypeSettingsPanel policyTypes={settings?.policyTypeSettings} />
+        <PolicyTypeSettingsPanel />
       )}
       {activeTab === "content" && (
-        <NewsPromotionSettingsPanel contentSettings={settings?.newsPromotionSettings} />
+        <NewsPromotionSettingsPanel />
       )}
     </div>
   );

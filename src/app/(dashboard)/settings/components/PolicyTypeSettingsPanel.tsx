@@ -1,61 +1,193 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { CirclePlus, Power, SquarePen } from "lucide-react";
-import { ActionIconButton } from "@/components/ui/action-button";
 import { Input } from "@/components/ui/input";
 import { ImageUpload } from "@/components/ui/upload";
-import type { PolicyTypeSettingItem } from "@/types/settings";
+import { policyCategoryApi } from "@/api/policy-category";
+import type { PolicyCategory } from "@/types/policy-category";
 
-type PolicyTypeSettingsPanelItem = Pick<PolicyTypeSettingItem, "id" | "name">;
-
-const policyTypes = [
-  { id: 1, name: "ประกันอุบัติเหตุ" },
-  { id: 3, name: "ประกันเกี่ยวกับทรัพย์สิน" },
-  { id: 3, name: "ประกันภัยเดินทาง" },
-];
-
-interface PolicyTypeSettingsPanelProps {
-  policyTypes?: PolicyTypeSettingsPanelItem[];
+interface LocalCategory {
+  id: string;
+  name: string;
+  bannerImage: string;
+  icon: string;
+  isActive: boolean;
+  isNew?: boolean;
+  isDirty?: boolean;
 }
 
-export function PolicyTypeSettingsPanel({
-  policyTypes: items = policyTypes,
-}: PolicyTypeSettingsPanelProps) {
+function toLocal(item: PolicyCategory): LocalCategory {
+  return {
+    id: item.id,
+    name: item.name,
+    bannerImage: item.bannerImage || "",
+    icon: item.icon || "",
+    isActive: item.isActive,
+    isNew: false,
+    isDirty: false,
+  };
+}
+
+export function PolicyTypeSettingsPanel() {
+  const [items, setItems] = useState<LocalCategory[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  const fetchData = async () => {
+    setLoading(true);
+    const res = await policyCategoryApi.getAll();
+    if (res.success) setItems(res.data.map(toLocal));
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const updateItem = (index: number, field: keyof LocalCategory, value: string | boolean) => {
+    setItems((prev) =>
+      prev.map((item, i) =>
+        i === index ? { ...item, [field]: value, isDirty: true } : item
+      )
+    );
+  };
+
+  const addItem = () => {
+    setItems((prev) => [
+      ...prev,
+      {
+        id: `new-${Date.now()}`,
+        name: "",
+        bannerImage: "",
+        icon: "",
+        isActive: true,
+        isNew: true,
+        isDirty: true,
+      },
+    ]);
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      for (const item of items) {
+        if (!item.isDirty) continue;
+
+        const payload = {
+          name: item.name,
+          bannerImage: item.bannerImage || undefined,
+          icon: item.icon || undefined,
+        };
+
+        if (item.isNew) {
+          if (!item.name.trim()) continue;
+          await policyCategoryApi.create(payload);
+        } else {
+          await policyCategoryApi.update(item.id, payload);
+        }
+      }
+      await fetchData();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleToggle = async (index: number) => {
+    const item = items[index];
+    if (item.isNew) {
+      setItems((prev) => prev.filter((_, i) => i !== index));
+      return;
+    }
+    await policyCategoryApi.delete(item.id);
+    fetchData();
+  };
+
+  const hasDirty = items.some((item) => item.isDirty);
+
+  if (loading) {
+    return (
+      <section className="rounded-[18px] bg-white p-8 shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
+        <div className="space-y-7 animate-pulse">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="space-y-4 border-b border-[#EAEAEA] pb-7">
+              <div className="h-[39px] bg-gray-100 rounded-lg" />
+              <div className="h-[68px] bg-gray-100 rounded-lg" />
+              <div className="h-[68px] bg-gray-100 rounded-lg" />
+            </div>
+          ))}
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="rounded-[18px] bg-white p-8 shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
-      <PanelHeader title="การตั้งค่าประเภทประกัน" />
+      {/* Header */}
+      <div className="mb-5 flex items-center justify-between border-b border-[#EAEAEA] pb-5">
+        <h2 className="text-lg font-bold text-[#243333]">การตั้งค่าประเภทประกัน</h2>
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={saving || !hasDirty}
+          className="h-[39px] min-w-[145px] rounded-[6px] bg-[#24A148] px-6 text-sm font-medium text-white transition-colors hover:bg-[#1e8e3e] disabled:opacity-60 disabled:cursor-not-allowed"
+        >
+          {saving ? "กำลังบันทึก..." : "บันทึก"}
+        </button>
+      </div>
 
+      {/* Items */}
       <div className="space-y-7">
         {items.map((item, index) => (
           <div
-            key={`${item.name}-${index}`}
+            key={item.id}
             className="space-y-4 border-b border-[#EAEAEA] pb-7 last:border-b-0"
           >
             <div className="grid grid-cols-[40px_1fr_39px_39px] items-center gap-3">
-              <IndexBadge value={item.id} />
-              <Input size="md" className="w-full" label="ประเภท" value={item.name} readOnly />
-              <ActionIconButton
-                icon={SquarePen}
-                variant="accent"
-                className="h-[39px] w-[39px] rounded-[6px]"
-                iconSize={16}
+              <div className="flex h-[39px] items-center justify-center rounded-[6px] border border-[#DCDCDC] text-sm text-[#707070]">
+                {index + 1}
+              </div>
+              <Input
+                size="md"
+                className="w-full"
+                label="ประเภท"
+                placeholder="กรอกชื่อประเภท"
+                value={item.name}
+                onChange={(e) => updateItem(index, "name", e.target.value)}
               />
-              <ActionIconButton
-                icon={Power}
-                variant="danger"
-                className="h-[39px] w-[39px] rounded-[6px]"
-                iconSize={16}
-                iconStrokeWidth={3}
-              />
+              <div className="h-[39px] w-[39px]" />
+              <button
+                type="button"
+                onClick={() => handleToggle(index)}
+                className={`h-[39px] w-[39px] flex items-center justify-center rounded-[6px] text-white transition-colors ${
+                  item.isActive ? "bg-[#F44034] hover:bg-[#F44034]/85" : "bg-[#24A148] hover:bg-[#24A148]/85"
+                }`}
+              >
+                <Power size={16} strokeWidth={3} />
+              </button>
             </div>
 
-            <ImageUpload variant="settings-row" label="ภาพแบนเนอร์" />
-            <ImageUpload variant="settings-row" label="ภาพไอคอน" />
+            <ImageUpload
+              variant="settings-row"
+              label="ภาพแบนเนอร์"
+              value={item.bannerImage}
+              onChange={(url) => updateItem(index, "bannerImage", url)}
+            />
+            <ImageUpload
+              variant="settings-row"
+              label="ภาพไอคอน"
+              value={item.icon}
+              onChange={(url) => updateItem(index, "icon", url)}
+            />
           </div>
         ))}
       </div>
 
+      {/* Add button */}
       <div className="mt-7 flex justify-center">
         <button
           type="button"
+          onClick={addItem}
           className="flex h-[39px] items-center justify-center gap-2 rounded-[6px] bg-primary px-5 text-sm font-medium text-white transition-opacity hover:opacity-90"
         >
           <CirclePlus size={16} />
@@ -63,27 +195,5 @@ export function PolicyTypeSettingsPanel({
         </button>
       </div>
     </section>
-  );
-}
-
-function PanelHeader({ title }: { title: string }) {
-  return (
-    <div className="mb-5 flex items-center justify-between border-b border-[#EAEAEA] pb-5">
-      <h2 className="text-lg font-bold text-[#243333]">{title}</h2>
-      <button
-        type="button"
-        className="h-[39px] min-w-[145px] rounded-[6px] bg-[#24A148] px-6 text-sm font-medium text-white transition-colors hover:bg-[#1e8e3e]"
-      >
-        บันทึก
-      </button>
-    </div>
-  );
-}
-
-function IndexBadge({ value }: { value: number }) {
-  return (
-    <div className="flex h-[39px] items-center justify-center rounded-[6px] border border-[#DCDCDC] text-sm text-[#707070]">
-      {value}
-    </div>
   );
 }
