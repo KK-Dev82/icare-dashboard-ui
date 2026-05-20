@@ -90,7 +90,7 @@ export default function DashboardPage() {
       if (res.success && res.meta) setPolicyTotal(res.meta.total);
     });
 
-    memberApi.getMembers().then(setNewMembers);
+    memberApi.getAll({ limit: 5 }).then((r) => r.data).then(setNewMembers);
     claimApi.getClaims().then(setClaims);
   }, []);
 
@@ -198,15 +198,15 @@ export default function DashboardPage() {
                 {newMembers.map((member, index) => (
                   <tr key={member.id} className="border-b border-[#F5F5F5]">
                     <TableCell>{index + 1}</TableCell>
-                    <TableCell>{member.name}</TableCell>
+                    <TableCell>{[member.firstName, member.lastName].filter(Boolean).join(" ") || member.phone}</TableCell>
                     <TableCell>{member.email}</TableCell>
                     <TableCell>{member.phone}</TableCell>
                     <TableCell>
-                      <span className={member.hasPolicy ? "text-[#24A148]" : "text-[#9FA2A9]"}>
-                        {member.hasPolicy ? "มีกรมธรรม์" : "ไม่มีกรมธรรม์"}
+                      <span className={member.accountLevel === "CUSTOMER" ? "text-[#24A148]" : "text-[#9FA2A9]"}>
+                        {member.accountLevel === "CUSTOMER" ? "ลูกค้า" : "สมาชิก"}
                       </span>
                     </TableCell>
-                    <TableCell>{member.registerDate ?? "-"}</TableCell>
+                    <TableCell>{new Date(member.createdAt).toLocaleDateString("th-TH")}</TableCell>
                     <TableCell>
                       <ActionIconButton
                         icon={Search}

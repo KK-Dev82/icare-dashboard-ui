@@ -3,59 +3,38 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { User, CheckCircle } from "lucide-react";
-import { PolicyCard } from "@/components/ui/card";
 import { Select } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { memberApi } from "@/api/member";
-import type { MemberDetail, ClaimItem } from "@/types/member";
-
-function ClaimCard({ claim }: { claim: ClaimItem }) {
-  return (
-    <div className="rounded-[20px] border border-[#EAEAEA] bg-white p-5">
-      <div className="mb-4 flex items-center justify-between">
-        <p className="text-xs text-[#9CA3AF]">เลขที่เคลม</p>
-        <span
-          className={`rounded-full px-3 py-1 text-xs ${
-            claim.status === "pending"
-              ? "bg-[#FFF0E6] text-[#FF944D]"
-              : "bg-[#DDF7F7] text-[#07A2A2]"
-          }`}
-        >
-          {claim.status === "pending" ? "รอตรวจสอบ" : "สำเร็จ"}
-        </span>
-      </div>
-
-      <h4 className="font-bold text-[#111827]">{claim.id}</h4>
-      <p className="mt-2 text-xs text-[#8A8A8A]">ยื่นเมื่อ : {claim.submitDate}</p>
-      <p className="mt-1 text-xs text-[#8A8A8A]">
-        เลขกรมธรรม์ : {claim.policyNo}
-      </p>
-
-      <div className="mt-5 grid grid-cols-4 gap-2 text-center text-[11px] text-[#07A2A2]">
-        {["ยื่นคำร้อง", "กำลังตรวจสอบ", "อนุมัติ", "สำเร็จ"].map((item) => (
-          <div key={item} className="space-y-1">
-            <CheckCircle className="mx-auto h-4 w-4 fill-[#07A2A2] text-white" />
-            <p>{item}</p>
-          </div>
-        ))}
-      </div>
-
-      <div className="mt-3 h-1.5 rounded-full bg-[#CDF5F5]">
-        <div className="h-full w-full rounded-full bg-[#07A2A2]" />
-      </div>
-    </div>
-  );
-}
+import type { Member, MemberInsuranceItem } from "@/types/member";
 
 export default function MemberDetailPage() {
   const params = useParams();
-  const [member, setMember] = useState<MemberDetail | null>(null);
+  const id = params.id as string;
+  const [member, setMember] = useState<Member | null>(null);
+  const [insurance, setInsurance] = useState<MemberInsuranceItem[]>([]);
+  const [insuranceTotal, setInsuranceTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    memberApi.getMemberById(params.id as string).then(setMember);
-  }, [params.id]);
+    Promise.all([
+      memberApi.getById(id),
+      memberApi.getInsurance(id).catch(() => null),
+    ]).then(([memberRes, insuranceRes]) => {
+      if (memberRes.success) setMember(memberRes.data);
+      if (insuranceRes?.success) {
+        setInsurance(insuranceRes.data.data);
+        setInsuranceTotal(insuranceRes.data.total);
+      }
+      setLoading(false);
+    });
+  }, [id]);
 
-  if (!member) return null;
+  if (loading || !member) return null;
+
+  const fullName = [member.firstName, member.lastName].filter(Boolean).join(" ") || "-";
+  const activeCount = insurance.filter((i) => i.status === "A").length;
+  const expiredCount = insurance.filter((i) => i.status !== "A").length;
 
   return (
     <div className="min-h-screen bg-[#F4FAFA] p-6">
@@ -65,16 +44,14 @@ export default function MemberDetailPage() {
           <div className="border-b border-[#EAEAEA] pb-5">
             <div className="flex items-center gap-3">
               <div>
-                <h1 className="text-lg font-bold text-[#243333]">
-                  ข้อมูลสมาชิก
-                </h1>
-                <p className="text-sm text-[#9CA3AF]">
-                  Member ID: {member.memberId}
-                </p>
+                <h1 className="text-lg font-bold text-[#243333]">ข้อมูลสมาชิก</h1>
+                <p className="text-sm text-[#9CA3AF]">ID: {member.id}</p>
               </div>
-
-              <span className="rounded-full bg-[#FF944D] px-4 py-1 text-xs font-medium text-white">
-                {member.hasPolicy ? "มีกรมธรรม์" : "ไม่มีกรมธรรม์"}
+              <span
+                className="rounded-full px-4 py-1 text-xs font-medium text-white"
+                style={{ backgroundColor: member.accountLevel === "CUSTOMER" ? "#07A2A2" : "#FF944D" }}
+              >
+                {member.accountLevel === "CUSTOMER" ? "ลูกค้า" : "สมาชิก"}
               </span>
             </div>
           </div>
@@ -88,97 +65,69 @@ export default function MemberDetailPage() {
             <div className="relative overflow-hidden rounded-[20px] bg-[#07A2A2] p-6 text-white">
               <div className="absolute -right-8 -top-8 h-48 w-48 rounded-full bg-white/10" />
               <div className="relative grid grid-cols-2 gap-y-4 text-sm">
-                <InfoWhite label="ชื่อ - นามสกุล:" value={member.name} />
-                <InfoWhite label="อีเมล:" value={member.email} />
-                <InfoWhite label="Member ID:" value={member.memberId} />
-                <InfoWhite label="วันสมัครสมาชิก:" value={member.registerDate} />
+                <InfoWhite label="ชื่อ - นามสกุล:" value={fullName} />
+                <InfoWhite label="อีเมล:" value={member.email || "-"} />
                 <InfoWhite label="เบอร์โทรศัพท์:" value={member.phone} />
-                <InfoWhite label="สถานะสมาชิก:" value={member.status} />
+                <InfoWhite label="สถานะ:" value={member.status === "ACTIVE" ? "ใช้งานอยู่" : "ปิดใช้งาน"} />
+                <InfoWhite label="ยืนยันเบอร์:" value={member.isPhoneVerified ? "ยืนยันแล้ว" : "ยังไม่ยืนยัน"} />
+                <InfoWhite label="วันสมัคร:" value={new Date(member.createdAt).toLocaleDateString("th-TH")} />
               </div>
             </div>
 
             <div className="rounded-[14px] border border-[#EAEAEA] bg-white p-5">
               <h3 className="font-bold text-[#243333]">ภาพรวมกรมธรรม์</h3>
               <div className="mt-4 space-y-2 text-xs">
-                <SummaryRow label="กรมธรรม์ทั้งหมด" value={`${member.policySummary.total} รายการ`} />
-                <SummaryRow label="กำลังคุ้มครอง" value={`${member.policySummary.active} รายการ`} />
-                <SummaryRow label="ใกล้หมดอายุ" value={`${member.policySummary.nearExpire} รายการ`} />
-                <SummaryRow label="หมดอายุ" value={`${member.policySummary.expired} รายการ`} />
+                <SummaryRow label="กรมธรรม์ทั้งหมด" value={`${insuranceTotal} รายการ`} />
+                <SummaryRow label="กำลังคุ้มครอง" value={`${activeCount} รายการ`} />
+                <SummaryRow label="หมดอายุ" value={`${expiredCount} รายการ`} />
               </div>
             </div>
           </div>
 
           {/* Filter */}
           <div className="mt-6 flex items-center gap-3">
-            <Input
-              size="md"
-              className="w-[190px]"
-              label="ค้นหา"
-              placeholder="ค้นหา"
-            />
-
+            <Input size="md" className="w-[190px]" label="ค้นหา" placeholder="ค้นหา" />
             <Select
               size="md"
               className="w-[170px]"
               label="สถานะกรมธรรม์"
               placeholder="เลือกสถานะ"
               options={[
-                { label: "คุ้มครอง", value: "active" },
-                { label: "หมดอายุ", value: "expired" },
-                { label: "ใกล้หมดอายุ", value: "near_expire" },
+                { label: "คุ้มครอง", value: "A" },
+                { label: "หมดอายุ", value: "E" },
               ]}
             />
-
             <Select
               size="md"
               className="w-[170px]"
               label="ประเภทประกัน"
               placeholder="เลือกประเภท"
               options={[
-                { label: "ประกันรถยนต์", value: "car" },
-                { label: "ประกันเดินทาง", value: "travel" },
-                { label: "ประกันอุบัติเหตุ", value: "accident" },
+                { label: "MOBILE", value: "MOBILE" },
+                { label: "MOTOR", value: "MOTOR" },
               ]}
             />
-
-            <Select
-              size="md"
-              className="w-[170px]"
-              label="สถานะการใช้งาน"
-              placeholder="เลือกสถานะ"
-              options={[
-                { label: "เปิดการใช้งาน", value: "active" },
-                { label: "ปิดการใช้งาน", value: "inactive" },
-              ]}
-            />
-
             <button className="h-[42px] flex-1 rounded-[10px] bg-[#FF944D] text-sm font-medium text-white hover:bg-[#f28338]">
               ค้นหา
             </button>
           </div>
 
-          {/* Policy Cards */}
+          {/* Insurance Cards */}
           <div className="mt-8 grid grid-cols-3 gap-6">
-            {member.policies.map((policy) => (
-              <PolicyCard
-                key={policy.no}
-                policyNumber={policy.no}
-                status={policy.status}
-                type={policy.type}
-                coverageDate={policy.period}
-                sumInsured={policy.insured}
-                licensePlate={policy.plate}
-              />
-            ))}
+            {insurance.length === 0 ? (
+              <div className="col-span-3 py-12 text-center text-sm text-[#9CA3AF]">ไม่พบข้อมูลกรมธรรม์</div>
+            ) : (
+              insurance.map((item) => (
+                <InsuranceCard key={item.id} item={item} />
+              ))
+            )}
           </div>
         </section>
 
-        {/* Right Claim Panel */}
+        {/* Right Panel */}
         <aside className="rounded-[24px] bg-white p-6">
           <div className="border-b border-[#EAEAEA] pb-5">
-            <h2 className="text-lg font-bold text-[#243333]">
-              ข้อมูลการเคลม
-            </h2>
+            <h2 className="text-lg font-bold text-[#243333]">ข้อมูลการเคลม</h2>
           </div>
 
           <div className="mt-5 flex gap-3">
@@ -186,7 +135,7 @@ export default function MemberDetailPage() {
               size="md"
               className="flex-1"
               placeholder="เลือกกรมธรรม์"
-              options={member.policies.map((p) => ({ label: p.no, value: p.no }))}
+              options={insurance.map((i) => ({ label: i.policies?.[0]?.no || i.certificateNo, value: String(i.id) }))}
             />
             <button className="h-[42px] rounded-[10px] bg-[#FF944D] px-5 text-xs font-medium text-white">
               ค้นหา
@@ -194,12 +143,83 @@ export default function MemberDetailPage() {
           </div>
 
           <div className="mt-6 space-y-5">
-            {member.claims.map((claim) => (
-              <ClaimCard key={claim.id} claim={claim} />
-            ))}
+            <MockClaimCard status="pending" />
+            <MockClaimCard status="success" />
           </div>
         </aside>
       </div>
+    </div>
+  );
+}
+
+function InsuranceCard({ item }: { item: MemberInsuranceItem }) {
+  const isActive = item.status === "A";
+  const policyNo = item.policies?.[0]?.no || item.certificateNo;
+
+  return (
+    <div className="relative rounded-[20px] border border-[#EAEAEA] bg-white p-6 transition hover:border-[#07A2A2] hover:shadow-sm">
+      <div className="mb-7">
+        <p className="text-xs text-[#9CA3AF]">เลขที่กรมธรรม์</p>
+        <h3 className="mt-1 text-[15px] font-bold text-[#111827]">{policyNo}</h3>
+      </div>
+
+      <span
+        className={`absolute right-5 top-5 rounded-full px-4 py-1.5 text-xs font-medium text-white ${isActive ? "bg-[#07A2A2]" : "bg-[#F44034]"}`}
+      >
+        {isActive ? "คุ้มครอง" : "หมดอายุ"}
+      </span>
+
+      <div className="space-y-5 text-sm">
+        <InfoRow label="ผลิตภัณฑ์" value={item.product.name} />
+        <InfoRow label="วันเริ่มคุ้มครอง" value={new Date(item.effectiveOn).toLocaleDateString("th-TH")} />
+        <InfoRow label="วันสิ้นสุด" value={new Date(item.expireOn).toLocaleDateString("th-TH")} />
+        <InfoRow label="ทุนประกัน" value={`${Number(item.sumInsured).toLocaleString()} บาท`} />
+        {item.mobile && <InfoRow label="อุปกรณ์" value={`${item.mobile.brand} ${item.mobile.model}`} />}
+        {item.vehicle && <InfoRow label="ทะเบียน" value={item.vehicle.plateNo} />}
+      </div>
+    </div>
+  );
+}
+
+function MockClaimCard({ status }: { status: "pending" | "success" }) {
+  return (
+    <div className="rounded-[20px] border border-[#EAEAEA] bg-white p-5">
+      <div className="mb-4 flex items-center justify-between">
+        <p className="text-xs text-[#9CA3AF]">เลขที่เคลม</p>
+        <span
+          className={`rounded-full px-3 py-1 text-xs ${
+            status === "pending"
+              ? "bg-[#FFF0E6] text-[#FF944D]"
+              : "bg-[#DDF7F7] text-[#07A2A2]"
+          }`}
+        >
+          {status === "pending" ? "รอตรวจสอบ" : "สำเร็จ"}
+        </span>
+      </div>
+      <h4 className="font-bold text-[#111827]">CLM-2570-040</h4>
+      <p className="mt-2 text-xs text-[#8A8A8A]">ยื่นเมื่อ : 20 เม.ย. 2570</p>
+      <p className="mt-1 text-xs text-[#8A8A8A]">เลขกรมธรรม์ : POL-2568-001234</p>
+
+      <div className="mt-5 grid grid-cols-4 gap-2 text-center text-[11px] text-[#07A2A2]">
+        {["ยื่นคำร้อง", "กำลังตรวจสอบ", "อนุมัติ", "สำเร็จ"].map((item) => (
+          <div key={item} className="space-y-1">
+            <CheckCircle className="mx-auto h-4 w-4 fill-[#07A2A2] text-white" />
+            <p>{item}</p>
+          </div>
+        ))}
+      </div>
+      <div className="mt-3 h-1.5 rounded-full bg-[#CDF5F5]">
+        <div className="h-full w-full rounded-full bg-[#07A2A2]" />
+      </div>
+    </div>
+  );
+}
+
+function InfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="grid grid-cols-[110px_1fr] gap-4">
+      <p className="text-xs text-[#9CA3AF]">{label}</p>
+      <p className="text-right text-sm font-semibold text-[#565656]">{value}</p>
     </div>
   );
 }

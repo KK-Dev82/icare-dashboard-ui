@@ -59,6 +59,14 @@ export default function ProductsPage() {
     fetchData(1);
   };
 
+  const handleClear = () => {
+    setSearch("");
+    setFilterCategory("");
+    setFilterStatus("");
+    setPage(1);
+    fetchData(1);
+  };
+
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
     fetchData(newPage);
@@ -139,6 +147,12 @@ export default function ProductsPage() {
             className="h-[42px] rounded-[8px] bg-[#FF944D] px-8 text-[14px] font-medium text-white transition hover:bg-[#f28338]"
           >
             ค้นหา
+          </button>
+          <button
+            onClick={handleClear}
+            className="h-[42px] rounded-[8px] border border-[#DCDCDC] px-8 text-[14px] font-medium text-[#565656] transition hover:bg-gray-50"
+          >
+            ล้าง
           </button>
         </div>
 
