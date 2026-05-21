@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { User, CheckCircle } from "lucide-react";
+import { User } from "lucide-react";
 import { Select } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { memberApi } from "@/api/member";
@@ -130,21 +130,8 @@ export default function MemberDetailPage() {
             <h2 className="text-lg font-bold text-[#243333]">ข้อมูลการเคลม</h2>
           </div>
 
-          <div className="mt-5 flex gap-3">
-            <Select
-              size="md"
-              className="flex-1"
-              placeholder="เลือกกรมธรรม์"
-              options={insurance.map((i) => ({ label: i.policies?.[0]?.no || i.certificateNo, value: String(i.id) }))}
-            />
-            <button className="h-[42px] rounded-[10px] bg-[#FF944D] px-5 text-xs font-medium text-white">
-              ค้นหา
-            </button>
-          </div>
-
-          <div className="mt-6 space-y-5">
-            <MockClaimCard status="pending" />
-            <MockClaimCard status="success" />
+          <div className="mt-5 flex flex-1 items-center justify-center py-12">
+            <p className="text-sm text-[#9CA3AF]">ยังไม่มีข้อมูลการเคลม</p>
           </div>
         </aside>
       </div>
@@ -181,39 +168,6 @@ function InsuranceCard({ item }: { item: MemberInsuranceItem }) {
   );
 }
 
-function MockClaimCard({ status }: { status: "pending" | "success" }) {
-  return (
-    <div className="rounded-[20px] border border-[#EAEAEA] bg-white p-5">
-      <div className="mb-4 flex items-center justify-between">
-        <p className="text-xs text-[#9CA3AF]">เลขที่เคลม</p>
-        <span
-          className={`rounded-full px-3 py-1 text-xs ${
-            status === "pending"
-              ? "bg-[#FFF0E6] text-[#FF944D]"
-              : "bg-[#DDF7F7] text-[#07A2A2]"
-          }`}
-        >
-          {status === "pending" ? "รอตรวจสอบ" : "สำเร็จ"}
-        </span>
-      </div>
-      <h4 className="font-bold text-[#111827]">CLM-2570-040</h4>
-      <p className="mt-2 text-xs text-[#8A8A8A]">ยื่นเมื่อ : 20 เม.ย. 2570</p>
-      <p className="mt-1 text-xs text-[#8A8A8A]">เลขกรมธรรม์ : POL-2568-001234</p>
-
-      <div className="mt-5 grid grid-cols-4 gap-2 text-center text-[11px] text-[#07A2A2]">
-        {["ยื่นคำร้อง", "กำลังตรวจสอบ", "อนุมัติ", "สำเร็จ"].map((item) => (
-          <div key={item} className="space-y-1">
-            <CheckCircle className="mx-auto h-4 w-4 fill-[#07A2A2] text-white" />
-            <p>{item}</p>
-          </div>
-        ))}
-      </div>
-      <div className="mt-3 h-1.5 rounded-full bg-[#CDF5F5]">
-        <div className="h-full w-full rounded-full bg-[#07A2A2]" />
-      </div>
-    </div>
-  );
-}
 
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
