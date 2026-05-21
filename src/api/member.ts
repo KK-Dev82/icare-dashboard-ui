@@ -1,26 +1,50 @@
 import { apiClient } from "@/lib/apiClient";
-import type { Member, MemberDetail } from "@/types/member";
+import type { Member, MemberInsuranceResponse, PaginationMeta } from "@/types/member";
 
-// Mock imports (ลบออกเมื่อมี API จริง)
-import membersData from "@/mock-data/members.json";
-import memberDetailData from "@/mock-data/member-detail.json";
+interface MemberListParams {
+  keyword?: string;
+  accountLevel?: string;
+  status?: string;
+  page?: number;
+  limit?: number;
+}
 
-const USE_MOCK = true; // เปลี่ยนเป็น false เมื่อมี API จริง
+interface MemberListResponse {
+  success: boolean;
+  data: Member[];
+  meta: PaginationMeta;
+}
+
+interface MemberDetailResponse {
+  success: boolean;
+  data: Member;
+}
+
+interface MemberInsuranceApiResponse {
+  success: boolean;
+  data: MemberInsuranceResponse;
+}
 
 export const memberApi = {
-  getMembers: async (): Promise<Member[]> => {
-    if (USE_MOCK) {
-      return membersData as Member[];
-    }
-    const { data } = await apiClient.get("/members");
+  getAll: async (params?: MemberListParams): Promise<MemberListResponse> => {
+    const { data } = await apiClient.get<MemberListResponse>(
+      "/api/v1/admin/members",
+      { params }
+    );
     return data;
   },
 
-  getMemberById: async (id: string): Promise<MemberDetail> => {
-    if (USE_MOCK) {
-      return memberDetailData as unknown as MemberDetail;
-    }
-    const { data } = await apiClient.get(`/members/${id}`);
+  getById: async (id: string): Promise<MemberDetailResponse> => {
+    const { data } = await apiClient.get<MemberDetailResponse>(
+      `/api/v1/admin/members/${id}`
+    );
+    return data;
+  },
+
+  getInsurance: async (id: string): Promise<MemberInsuranceApiResponse> => {
+    const { data } = await apiClient.get<MemberInsuranceApiResponse>(
+      `/api/v1/admin/members/${id}/insurance`
+    );
     return data;
   },
 };

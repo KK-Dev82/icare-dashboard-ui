@@ -1,46 +1,69 @@
-import type { PolicyStatus } from "@/components/ui/card";
+export type AccountLevel = "MEMBER" | "CUSTOMER";
+export type MemberStatus = "ACTIVE" | "INACTIVE" | "SUSPENDED";
 
 export interface Member {
-  id: number;
-  name: string;
-  email: string;
-  phone: string;
-  hasPolicy: boolean;
-  isActive: boolean;
-  registerDate?: string;
-}
-
-export interface MemberDetail {
-  id: number;
-  memberId: string;
-  name: string;
-  email: string;
-  phone: string;
-  registerDate: string;
-  status: string;
-  hasPolicy: boolean;
-  policySummary: {
-    total: number;
-    active: number;
-    nearExpire: number;
-    expired: number;
-  };
-  policies: PolicyItem[];
-  claims: ClaimItem[];
-}
-
-export interface PolicyItem {
-  no: string;
-  status: PolicyStatus;
-  type: string;
-  period: string;
-  insured: string;
-  plate: string;
-}
-
-export interface ClaimItem {
   id: string;
-  policyNo: string;
-  status: "pending" | "success";
-  submitDate: string;
+  phone: string;
+  email: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  accountLevel: AccountLevel;
+  status: MemberStatus;
+  isPhoneVerified: boolean;
+  lastLoginAt: string | null;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface MemberInsurancePolicy {
+  id: number;
+  no: string;
+  documentUrl: string;
+}
+
+export interface MemberInsuranceItem {
+  id: number;
+  status: string;
+  effectiveOn: string;
+  expireOn: string;
+  premium: string;
+  sumInsured: string;
+  certificateNo: string;
+  certificateDocument: string | null;
+  insured: {
+    fullName: string;
+    telephone: string;
+    email: string;
+  };
+  product: {
+    name: string;
+    type: string;
+    categories: { id: number; name: string }[];
+  };
+  policies: MemberInsurancePolicy[];
+  mobile?: {
+    brand: string;
+    model: string;
+    imei: string;
+    serial: string;
+  };
+  vehicle?: {
+    brand: string;
+    model: string;
+    plateNo: string;
+    year: string;
+    color: string;
+  };
+}
+
+export interface MemberInsuranceResponse {
+  total: number;
+  data: MemberInsuranceItem[];
+}
+
+export interface PaginationMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
 }

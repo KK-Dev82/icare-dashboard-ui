@@ -1,61 +1,77 @@
-import { SquarePen } from "lucide-react";
-import { ActionIconButton } from "@/components/ui/action-button";
+"use client";
+
+import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
-import type { SystemSettingItem } from "@/types/settings";
+import { settingsApi } from "@/api/settings";
+import type { SettingItem } from "@/types/settings";
 
-const systemSettings = [
-  {
-    id: 1,
-    label: "เบอร์ติดต่อ",
-    value: "Ins 02-123-4567",
-  },
-  {
-    id: 2,
-    label: "อีเมล",
-    value: "ici@icare-insurance.com",
-  },
-  {
-    id: 3,
-    label: "เวลาเปิด - ปิด",
-    value: "จันทร์-ศุกร์ 8:30-17:30 น.",
-  },
-];
+const keyLabel: Record<string, string> = {
+  contact_phone: "เบอร์ติดต่อ",
+  contact_email: "อีเมล",
+  business_hours: "เวลาเปิด - ปิด",
+};
 
-interface SystemSettingsPanelProps {
-  settings?: SystemSettingItem[];
-}
+export function SystemSettingsPanel() {
+  const [items, setItems] = useState<SettingItem[]>([]);
+  const [formValues, setFormValues] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-export function SystemSettingsPanel({ settings = systemSettings }: SystemSettingsPanelProps) {
+  useEffect(() => {
+    settingsApi.getSettings().then((data) => {
+      setItems(data);
+      const values: Record<string, string> = {};
+      data.forEach((item) => { values[item.key] = item.value; });
+      setFormValues(values);
+      setLoading(false);
+    });
+  }, []);
+
+  const handleSave = async () => {
+    setSaving(true);
+    const settings = Object.entries(formValues).map(([key, value]) => ({ key, value }));
+    await settingsApi.updateSettings({ settings });
+    setSaving(false);
+  };
+
+  if (loading) {
+    return (
+      <section className="rounded-[18px] bg-white p-8 shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
+        <div className="space-y-4 animate-pulse">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="h-[56px] bg-gray-100 rounded-xl" />
+          ))}
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="rounded-[18px] bg-white p-8 shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
       <div className="mb-7 flex items-center justify-between">
         <h2 className="text-lg font-bold text-[#243333]">การตั้งค่าระบบ</h2>
         <button
           type="button"
-          className="h-[39px] min-w-[145px] rounded-[6px] bg-[#24A148] px-6 text-sm font-medium text-white transition-colors hover:bg-[#1e8e3e]"
+          onClick={handleSave}
+          disabled={saving}
+          className="h-[39px] min-w-[145px] rounded-[6px] bg-[#24A148] px-6 text-sm font-medium text-white transition-colors hover:bg-[#1e8e3e] disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          บันทึก
+          {saving ? "กำลังบันทึก..." : "บันทึก"}
         </button>
       </div>
 
       <div className="space-y-4">
-        {settings.map((setting) => (
-          <div key={setting.id} className="grid grid-cols-[40px_1fr_39px] items-center gap-3">
+        {items.map((item, idx) => (
+          <div key={item.key} className="grid grid-cols-[40px_1fr] items-center gap-3">
             <div className="flex h-[39px] items-center justify-center rounded-[6px] border border-[#DCDCDC] text-sm text-[#707070]">
-              {setting.id}
+              {idx + 1}
             </div>
             <Input
               size="md"
               className="w-full"
-              label={setting.label}
-              value={setting.value}
-              readOnly
-            />
-            <ActionIconButton
-              icon={SquarePen}
-              variant="accent"
-              className="h-[39px] w-[39px] rounded-[6px]"
-              iconSize={16}
+              label={keyLabel[item.key] || item.description}
+              value={formValues[item.key] || ""}
+              onChange={(e) => setFormValues((prev) => ({ ...prev, [item.key]: e.target.value }))}
             />
           </div>
         ))}
