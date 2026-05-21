@@ -18,6 +18,7 @@ export function PolicyTypeSettingsPanel() {
   const [formDesc, setFormDesc] = useState("");
   const [formBanner, setFormBanner] = useState("");
   const [formIcon, setFormIcon] = useState("");
+  const [formTagColor, setFormTagColor] = useState("");
   const [saving, setSaving] = useState(false);
 
   const fetchData = async () => {
@@ -37,6 +38,7 @@ export function PolicyTypeSettingsPanel() {
     setFormDesc("");
     setFormBanner("");
     setFormIcon("");
+    setFormTagColor("");
     setShowForm(true);
   };
 
@@ -46,6 +48,7 @@ export function PolicyTypeSettingsPanel() {
     setFormDesc(item.description || "");
     setFormBanner(item.bannerImage || "");
     setFormIcon(item.icon || "");
+    setFormTagColor(item.tagColor || "");
     setShowForm(true);
   };
 
@@ -62,6 +65,7 @@ export function PolicyTypeSettingsPanel() {
       description: formDesc || undefined,
       bannerImage: formBanner || undefined,
       icon: formIcon || undefined,
+      tagColor: formTagColor || undefined,
     };
     if (editItem) {
       await policyCategoryApi.update(editItem.id, payload);
@@ -174,6 +178,24 @@ export function PolicyTypeSettingsPanel() {
                 value={formDesc}
                 onChange={(e) => setFormDesc(e.target.value)}
               />
+              <div>
+                <label className="block text-[14px] font-bold text-dark mb-2">สี Tag</label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="color"
+                    value={formTagColor || "#07A2A2"}
+                    onChange={(e) => setFormTagColor(e.target.value)}
+                    className="w-10 h-10 rounded-lg border border-[#DCDCDC] cursor-pointer"
+                  />
+                  <input
+                    type="text"
+                    placeholder="#FF5733"
+                    value={formTagColor}
+                    onChange={(e) => setFormTagColor(e.target.value)}
+                    className="h-10 flex-1 rounded-[10px] border border-[#DCDCDC] px-4 text-sm text-[#565656] outline-none focus:border-primary transition-colors"
+                  />
+                </div>
+              </div>
               <div>
                 <p className="text-[14px] font-bold text-dark mb-2">ภาพไอคอน</p>
                 <ImageUpload value={formIcon} onChange={setFormIcon} />

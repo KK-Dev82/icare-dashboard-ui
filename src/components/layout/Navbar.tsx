@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import Image from "next/image";
+import iciLogo from "@/../assets/ici.png";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
@@ -89,13 +91,8 @@ export default function Navbar() {
       <header className="sticky top-0 z-50 border-t-[3px] border-t-primary bg-white shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
         <div className="h-[72px] flex items-center justify-between px-8">
           {/* Left - Logo */}
-          <Link href="/dashboard" className="flex items-center gap-2 shrink-0">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">iC</span>
-            </div>
-            <span className="text-lg font-semibold text-gray-800">
-              iCare <span className="text-primary">Insurance</span>
-            </span>
+          <Link href="/dashboard" className="flex items-center shrink-0">
+            <Image src={iciLogo} alt="ICI Logo" height={40} className="w-auto" />
           </Link>
 
           {/* Center - Navigation */}
@@ -124,10 +121,10 @@ export default function Navbar() {
 
           {/* Right - Actions */}
           <div className="flex items-center gap-3 shrink-0">
-            <button className="relative p-2.5 rounded-lg text-gray-500 hover:bg-gray-50 transition-colors">
+            {/* <button className="relative p-2.5 rounded-lg text-gray-500 hover:bg-gray-50 transition-colors">
               <Bell size={20} strokeWidth={1.8} />
               <span className="absolute top-2 right-2 w-2 h-2 bg-error rounded-full" />
-            </button>
+            </button> */}
 
             {/* Profile Dropdown */}
             <div ref={dropdownRef} className="relative">

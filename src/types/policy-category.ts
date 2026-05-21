@@ -4,6 +4,7 @@ export interface PolicyCategory {
   description: string | null;
   bannerImage: string | null;
   icon: string | null;
+  tagColor: string | null;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -14,6 +15,7 @@ export interface CreatePolicyCategoryPayload {
   description?: string;
   bannerImage?: string;
   icon?: string;
+  tagColor?: string;
 }
 
 export type UpdatePolicyCategoryPayload = Partial<CreatePolicyCategoryPayload>;

@@ -10,7 +10,6 @@ import {
   UserRoundCheck,
   type LucideIcon,
 } from "lucide-react";
-import { claimApi } from "@/api/claim";
 import { memberApi } from "@/api/member";
 import { policyApi } from "@/api/policy";
 import { productApi } from "@/api/product";
@@ -18,7 +17,6 @@ import { ActionIconButton } from "@/components/ui/action-button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { TablePagination } from "@/components/ui/table-pagination";
-import type { ClaimRequest, ClaimRequestStatus } from "@/types/claim";
 import type { Member } from "@/types/member";
 
 type SummaryKey = "users" | "policies" | "products" | "visitors";
@@ -65,21 +63,11 @@ const defaultSummaryItems: Array<{
   },
 ];
 
-const claimStatusConfig: Record<
-  ClaimRequestStatus,
-  { label: string; className: string }
-> = {
-  new: { label: "ใหม่", className: "text-[#24A148]" },
-  pending: { label: "รอ", className: "text-[#9FA2A9]" },
-  approved: { label: "อนุมัติ", className: "text-[#24A148]" },
-  rejected: { label: "ปฏิเสธ", className: "text-[#F44034]" },
-};
 
 export default function DashboardPage() {
   const [policyTotal, setPolicyTotal] = useState<number | null>(null);
   const [productTotal, setProductTotal] = useState<number | null>(null);
   const [newMembers, setNewMembers] = useState<Member[]>([]);
-  const [claims, setClaims] = useState<ClaimRequest[]>([]);
 
   useEffect(() => {
     productApi.getAll({ page: 1, limit: 1 }).then((res) => {
@@ -91,7 +79,6 @@ export default function DashboardPage() {
     });
 
     memberApi.getAll({ limit: 5 }).then((r) => r.data).then(setNewMembers);
-    claimApi.getClaims().then(setClaims);
   }, []);
 
   const summaryItems = useMemo(
@@ -227,48 +214,9 @@ export default function DashboardPage() {
         <section className="flex flex-col rounded-[18px] bg-white px-6 py-6 shadow-[0_2px_12px_rgba(0,0,0,0.04)] sm:px-8 xl:col-span-2">
           <PanelHeader title="คำร้องขอเคลม" description="รวมทุกคำร้องขอเคลม" />
 
-          <div className="mt-5 flex flex-col gap-3 border-t border-[#EAEAEA] pt-6 sm:flex-row sm:items-center">
-            <Input
-              size="md"
-              className="w-full sm:flex-1"
-              label="ค้นหา"
-              placeholder="ค้นหา"
-            />
-            <button className="h-[42px] rounded-[8px] bg-[#FF944D] px-8 text-[14px] font-medium text-white transition hover:bg-[#f28338]">
-              ค้นหา
-            </button>
+          <div className="mt-5 flex flex-1 items-center justify-center border-t border-[#EAEAEA] pt-6">
+            <p className="text-sm text-[#9CA3AF]">ยังไม่มีคำร้องขอเคลมในระบบ</p>
           </div>
-
-          <div className="mt-5 overflow-x-auto">
-            <table className="w-full min-w-[520px]">
-              <thead>
-                <tr>
-                  <TableHead>ลำดับ</TableHead>
-                  <TableHead>ชื่อ - นามสกุล</TableHead>
-                  <TableHead>กรมธรรม์</TableHead>
-                  <TableHead>สถานะคำร้อง</TableHead>
-                </tr>
-              </thead>
-              <tbody>
-                {claims.map((claim, index) => {
-                  const status = claimStatusConfig[claim.status];
-
-                  return (
-                    <tr key={claim.id} className="border-b border-[#F5F5F5]">
-                      <TableCell className="leading-8">{index + 1}</TableCell>
-                      <TableCell className="leading-8">{claim.name}</TableCell>
-                      <TableCell className="leading-8">{claim.policyNo}</TableCell>
-                      <TableCell className="leading-8">
-                        <span className={status.className}>{status.label}</span>
-                      </TableCell>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          <TablePagination current={claims.length} total={claims.length} />
         </section>
       </div>
     </div>
