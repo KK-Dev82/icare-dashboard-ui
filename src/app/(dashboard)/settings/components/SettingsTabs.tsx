@@ -7,7 +7,7 @@ interface SettingsTabsProps {
 
 const tabs: Array<{ label: string; value: SettingTab }> = [
   { label: "การตั้งค่าระบบ", value: "system" },
-  { label: "การตั้งค่าประเภทประกัน", value: "policy" },
+  { label: "การตั้งค่าผลิตภัณฑ์", value: "policy" },
   { label: "การตั้งค่าข่าวสาร / โปรโมชั่น", value: "content" },
 ];
 

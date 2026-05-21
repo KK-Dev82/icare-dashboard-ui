@@ -85,7 +85,7 @@ export function PolicyTypeSettingsPanel() {
   return (
     <section className="rounded-[18px] bg-white p-8 shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
       <div className="mb-5 flex items-center justify-between border-b border-[#EAEAEA] pb-5">
-        <h2 className="text-lg font-bold text-[#243333]">การตั้งค่าประเภทประกัน</h2>
+        <h2 className="text-lg font-bold text-[#243333]">การตั้งค่าผลิตภัณฑ์</h2>
       </div>
 
       {loading ? (
@@ -154,7 +154,7 @@ export function PolicyTypeSettingsPanel() {
           <div className="relative bg-white rounded-[24px] shadow-[0_8px_32px_rgba(0,0,0,0.12)] p-8 w-full max-w-[480px] max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-bold text-[#243333]">
-                {editItem ? "แก้ไขประเภทประกัน" : "เพิ่มประเภทประกัน"}
+                {editItem ? "แก้ไขประเภทผลิตภัณฑ์" : "เพิ่มประเภทผลิตภัณฑ์"}
               </h2>
               <button onClick={closeForm} className="text-[#9CA3AF] hover:text-gray-600">
                 <X size={20} />

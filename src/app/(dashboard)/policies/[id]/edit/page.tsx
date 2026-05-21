@@ -140,10 +140,10 @@ export default function EditProductPage() {
               <ImageUpload value={mainImage} onChange={setMainImage} />
             </div>
 
-            <div>
+            {/* <div>
               <p className="text-[14px] font-bold text-dark mb-2">รูป Banner</p>
               <ImageUpload value={bannerImage} onChange={setBannerImage} />
-            </div>
+            </div> */}
 
             <div>
               <p className="text-[14px] font-bold text-dark mb-2">อัลบั้มรูป</p>
