@@ -2,6 +2,10 @@ import axios from "axios";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
+if (typeof window !== "undefined") {
+  console.log("[apiClient] BASE_URL:", BASE_URL || "(empty - will use relative URL)");
+}
+
 export const apiClient = axios.create({
   baseURL: BASE_URL,
   headers: {
