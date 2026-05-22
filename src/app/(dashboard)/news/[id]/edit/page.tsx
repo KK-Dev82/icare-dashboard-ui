@@ -36,6 +36,9 @@ export default function EditNewsPage() {
   const [albumUploading, setAlbumUploading] = useState(false);
 
   useEffect(() => {
+    contentCategoryApi.getAll().then((res) => {
+      if (res.success) setCategories(res.data);
+    });
     contentApi.getById(id).then((res) => {
       if (res.success) {
         const d = res.data;
@@ -142,14 +145,11 @@ export default function EditNewsPage() {
               <Select
                 size="lg"
                 className="w-full"
-                label="ประเภท"
-                placeholder="เลือกประเภท"
+                label="หมวดหมู่ *"
+                placeholder="เลือกหมวดหมู่"
                 value={categoryId}
                 onChange={setCategoryId}
-                options={[
-                  { label: "ข่าวสาร", value: "NEWS" },
-                  { label: "โปรโมชั่น", value: "PROMOTION" },
-                ]}
+                options={categories.map((c) => ({ label: c.name, value: c.id }))}
               />
             </div>
 
