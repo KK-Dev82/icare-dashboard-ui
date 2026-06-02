@@ -22,11 +22,17 @@ export default function Breadcrumb() {
 
   if (segments.length <= 1) return null;
 
-  const crumbs = segments.map((seg, idx) => {
-    const href = "/" + segments.slice(0, idx + 1).join("/");
-    const isLast = idx === segments.length - 1;
-    // If segment looks like a UUID/ID, show "รายละเอียด"
-    const label = labelMap[seg] || (seg.length > 8 && /[0-9a-f-]/.test(seg) ? "รายละเอียด" : seg);
+  // Filter out UUID/ID segments from breadcrumb display
+  const displaySegments = segments.filter(
+    (seg) => !(seg.length > 8 && /^[0-9a-f-]+$/.test(seg))
+  );
+
+  if (displaySegments.length <= 1) return null;
+
+  const crumbs = displaySegments.map((seg, idx) => {
+    const href = "/" + segments.slice(0, segments.indexOf(seg) + 1).join("/");
+    const isLast = idx === displaySegments.length - 1;
+    const label = labelMap[seg] || seg;
 
     return { label, href, isLast };
   });

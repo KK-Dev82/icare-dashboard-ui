@@ -253,7 +253,7 @@ export default function NewsPage() {
                         <ActionIconButton
                           icon={Pencil}
                           variant="accent"
-                          onClick={() => router.push(`/news/${item.id}/edit`)}
+                          onClick={() => router.push(`/news/edit/${item.id}`)}
                         />
                         <ActionIconButton
                           icon={Power}

@@ -236,7 +236,7 @@ export default function ProductsPage() {
                         <ActionIconButton
                           icon={Pencil}
                           variant="accent"
-                          onClick={() => router.push(`/policies/${item.id}/edit`)}
+                          onClick={() => router.push(`/policies/edit/${item.id}`)}
                         />
                         <ActionIconButton
                           icon={Power}
