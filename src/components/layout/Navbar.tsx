@@ -7,12 +7,12 @@ import iciLogo from "@/../assets/ici.png";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
+  MapPin,
   Users,
   Newspaper,
   Package,
   UserCog,
   Settings,
-  Bell,
   ChevronDown,
   KeyRound,
   LogOut,
@@ -25,6 +25,7 @@ const menuItems = [
   { label: "สมาชิก", href: "/members", icon: Users },
   { label: "ข่าวสาร / โปรโมชั่น", href: "/news", icon: Newspaper },
   { label: "จัดการผลิตภัณฑ์", href: "/policies", icon: Package },
+  { label: "คำร้อง / ติดต่อ", href: "/claims", icon: MapPin },
   { label: "ผู้ใช้งาน", href: "/accounts", icon: UserCog },
   { label: "การตั้งค่า", href: "/settings", icon: Settings },
 ];
@@ -43,8 +44,12 @@ export default function Navbar() {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setFullName(localStorage.getItem("fullName") || "Admin");
-    setRole(localStorage.getItem("role") || "");
+    const handle = window.setTimeout(() => {
+      setFullName(localStorage.getItem("fullName") || "Admin");
+      setRole(localStorage.getItem("role") || "");
+    }, 0);
+
+    return () => window.clearTimeout(handle);
   }, []);
 
   useEffect(() => {

@@ -63,11 +63,11 @@ const defaultSummaryItems: Array<{
   },
 ];
 
-
 export default function DashboardPage() {
   const [policyTotal, setPolicyTotal] = useState<number | null>(null);
   const [productTotal, setProductTotal] = useState<number | null>(null);
   const [newMembers, setNewMembers] = useState<Member[]>([]);
+  const [complaintSearch, setComplaintSearch] = useState("");
 
   useEffect(() => {
     productApi.getAll({ page: 1, limit: 1 }).then((res) => {
@@ -212,10 +212,57 @@ export default function DashboardPage() {
         </section>
 
         <section className="flex flex-col rounded-[18px] bg-white px-6 py-6 shadow-[0_2px_12px_rgba(0,0,0,0.04)] sm:px-8 xl:col-span-2">
-          <PanelHeader title="คำร้องขอเคลม" description="รวมทุกคำร้องขอเคลม" />
+          <PanelHeader title="คำร้อง / ติดต่อ" description="รวมทุกคำร้องขอเคลม" />
 
-          <div className="mt-5 flex flex-1 items-center justify-center border-t border-[#EAEAEA] pt-6">
-            <p className="text-sm text-[#9CA3AF]">ยังไม่มีคำร้องขอเคลมในระบบ</p>
+          <div className="mt-5 flex flex-1 flex-col border-t border-[#EAEAEA] pt-6">
+            <div className="flex items-center gap-3">
+              <Input
+                size="md"
+                className="min-w-0 flex-1"
+                label="ค้นหา"
+                placeholder=""
+                value={complaintSearch}
+                onChange={(event) => setComplaintSearch(event.target.value)}
+              />
+              <button className="h-[39px] w-[112px] rounded-[6px] bg-[#FF944D] text-[14px] font-medium text-white transition hover:bg-[#f28338] sm:w-[145px]">
+                ค้นหา
+              </button>
+            </div>
+
+            <div className="mt-6 overflow-x-auto">
+              <table className="w-full min-w-[520px] table-fixed">
+                <colgroup>
+                  <col className="w-[54px]" />
+                  <col className="w-[112px]" />
+                  <col className="w-[108px]" />
+                  <col />
+                  <col className="w-[64px]" />
+                </colgroup>
+                <thead>
+                  <tr>
+                    <TableHead size="compact">ลำดับ</TableHead>
+                    <TableHead size="compact">เลขที่ร้อง</TableHead>
+                    <TableHead size="compact">ประเภท</TableHead>
+                    <TableHead size="compact">หัวข้อ</TableHead>
+                    <TableHead size="compact">จัดการ</TableHead>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td colSpan={5} className="py-12 text-center text-sm text-[#9CA3AF]">
+                      ยังไม่มีข้อมูลคำร้อง / ติดต่อ
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <TablePagination
+              current={0}
+              total={0}
+              page={1}
+              totalPages={1}
+            />
           </div>
         </section>
       </div>
@@ -266,8 +313,8 @@ function PanelHeader({
 }) {
   return (
     <div>
-      <h2 className="text-lg font-bold text-[#243333]">{title}</h2>
-      <p className="mt-1 text-sm text-[#9CA3AF]">{description}</p>
+      <h2 className="text-xl font-bold leading-8 text-[#243333]">{title}</h2>
+      <p className="text-base leading-[25px] text-[#9FA2A9]">{description}</p>
     </div>
   );
 }
@@ -275,15 +322,24 @@ function PanelHeader({
 function TableHead({
   children,
   align = "center",
+  size = "default",
+  className = "",
 }: {
   children: React.ReactNode;
   align?: "left" | "center";
+  size?: "default" | "compact";
+  className?: string;
 }) {
+  const sizeClass =
+    size === "compact"
+      ? "px-2 py-3 text-[11px] font-semibold text-[#707070]"
+      : "px-4 py-3 text-xs font-semibold text-[#707070]";
+
   return (
     <th
-      className={`px-4 py-3 text-xs font-semibold text-[#707070] ${
+      className={`${sizeClass} ${
         align === "center" ? "text-center" : "text-left"
-      }`}
+      } ${className}`}
     >
       {children}
     </th>
@@ -294,14 +350,21 @@ function TableCell({
   children,
   align = "center",
   className = "",
+  size = "default",
 }: {
   children: React.ReactNode;
   align?: "left" | "center";
   className?: string;
+  size?: "default" | "compact";
 }) {
+  const sizeClass =
+    size === "compact"
+      ? "px-2 py-[13px] text-[11px] leading-[18px] text-[#707070]"
+      : "px-4 py-4 text-sm text-[#707070]";
+
   return (
     <td
-      className={`px-4 py-4 text-sm text-[#707070] ${
+      className={`${sizeClass} ${
         align === "center" ? "text-center" : "text-left"
       } ${className}`}
     >
