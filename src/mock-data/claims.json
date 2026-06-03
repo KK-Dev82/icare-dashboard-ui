@@ -1,38 +1,72 @@
 [
   {
-    "id": 1,
-    "name": "สมชาย ย้อมหวัง",
-    "policyNo": "POL-2568-001234",
-    "status": "new"
+    "id": "1",
+    "requestNo": "CASE-000129",
+    "phone": "66854404013",
+    "category": "QUESTION",
+    "title": "สอบถามรายละเอียดความคุ้มครองกรมธรรม์",
+    "submittedAt": "2570-01-12",
+    "status": "READ",
+    "isToday": true
   },
   {
-    "id": 2,
-    "name": "กรณี ศรีสร้อย",
-    "policyNo": "POL-2568-001235",
-    "status": "new"
+    "id": "2",
+    "requestNo": "CASE-000128",
+    "phone": "66846562550",
+    "category": "USAGE_PROBLEM",
+    "title": "ไม่ได้รับรหัส OTP สำหรับเข้าสู่ระบบ",
+    "submittedAt": "2570-01-12",
+    "status": "UNREAD",
+    "isToday": true
   },
   {
-    "id": 3,
-    "name": "วิราย สุวรรณวงค์",
-    "policyNo": "POL-2568-001236",
-    "status": "new"
+    "id": "3",
+    "requestNo": "CASE-000127",
+    "phone": "66812345678",
+    "category": "SUGGESTION",
+    "title": "ข้อเสนอแนะเกี่ยวกับการแสดงข้อมูลกรมธรรม์",
+    "submittedAt": "2570-01-12",
+    "status": "READ",
+    "isToday": true
   },
   {
-    "id": 4,
-    "name": "เรวัต สุวรรณวงค์",
-    "policyNo": "POL-2568-001237",
-    "status": "new"
+    "id": "4",
+    "requestNo": "CASE-000126",
+    "phone": "66812345685",
+    "category": "QUESTION",
+    "title": "ต้องการขอสำเนากรมธรรม์",
+    "submittedAt": "2570-01-12",
+    "status": "UNREAD",
+    "isToday": true
   },
   {
-    "id": 5,
-    "name": "สุทธิพงษ์ วิริยมากศักดิ์",
-    "policyNo": "POL-2568-001238",
-    "status": "pending"
+    "id": "5",
+    "requestNo": "CASE-000125",
+    "phone": "66812345677",
+    "category": "SERVICE_COMPLAINT",
+    "title": "ข้อมูลกรมธรรม์ไม่แสดงในแอป",
+    "submittedAt": "2570-01-12",
+    "status": "UNREAD",
+    "isToday": true
   },
   {
-    "id": 6,
-    "name": "ยศกร พงศ์ไพศาล",
-    "policyNo": "POL-2568-001239",
-    "status": "pending"
+    "id": "6",
+    "requestNo": "CASE-000124",
+    "phone": "66812345752",
+    "category": "SUGGESTION",
+    "title": "แนะนำให้เพิ่มการแจ้งเตือนสถานะเคลม",
+    "submittedAt": "2570-01-12",
+    "status": "UNREAD",
+    "isToday": true
+  },
+  {
+    "id": "7",
+    "requestNo": "CASE-000123",
+    "phone": "66812345255",
+    "category": "SERVICE_COMPLAINT",
+    "title": "แจ้งปัญหาการใช้งานแอปพลิเคชัน",
+    "submittedAt": "2570-01-12",
+    "status": "READ",
+    "isToday": true
   }
 ]
