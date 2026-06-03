@@ -57,7 +57,7 @@ const defaultSummaryItems: Array<{
     id: "visitors",
     value: "820",
     unit: "คนดู",
-    label: "จำนวนผู้เข้าชม",
+    label: "จำนวนคำร้อง",
     color: "#2D7CA4",
     icon: HeartHandshake,
   },

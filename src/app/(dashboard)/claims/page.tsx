@@ -5,6 +5,7 @@ import { CalendarDays, Search } from "lucide-react";
 import { claimApi } from "@/api/claim";
 import { ActionIconButton } from "@/components/ui/action-button";
 import { Input } from "@/components/ui/input";
+import { ClaimDetailModal } from "@/components/ui/modal";
 import { Select } from "@/components/ui/select";
 import { TablePagination } from "@/components/ui/table-pagination";
 import type {
@@ -54,6 +55,7 @@ export default function ClaimsPage() {
   const [appliedSearch, setAppliedSearch] = useState("");
   const [appliedCategory, setAppliedCategory] = useState("");
   const [appliedStatus, setAppliedStatus] = useState("");
+  const [selectedClaim, setSelectedClaim] = useState<ClaimRequest | null>(null);
   const [page, setPage] = useState(1);
 
   useEffect(() => {
@@ -248,6 +250,7 @@ export default function ClaimsPage() {
                         iconSize={16}
                         iconStrokeWidth={3}
                         className="mx-auto rounded-[6px]"
+                        onClick={() => setSelectedClaim(item)}
                       />
                     </TableCell>
                   </tr>
@@ -264,6 +267,12 @@ export default function ClaimsPage() {
         page={meta.page}
         totalPages={meta.totalPages}
         onPageChange={handlePageChange}
+      />
+
+      <ClaimDetailModal
+        open={Boolean(selectedClaim)}
+        claim={selectedClaim}
+        onClose={() => setSelectedClaim(null)}
       />
     </div>
   );

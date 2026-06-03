@@ -12,7 +12,7 @@ const USE_MOCK = true;
 const MOCK_DELAY_MS = 120;
 
 const waitForMock = () =>
-  new Promise((resolve) => {
+  new Promise<void>((resolve) => {
     setTimeout(resolve, MOCK_DELAY_MS);
   });
 
@@ -43,11 +43,10 @@ export const claimApi = {
       const limit = params?.limit ?? 10;
       const filtered = filterMockClaims(getMockClaims(), params);
       const pageStart = (page - 1) * limit;
-      const data = filtered.slice(pageStart, pageStart + limit);
 
       return {
         success: true,
-        data,
+        data: filtered.slice(pageStart, pageStart + limit),
         meta: {
           page,
           limit,
