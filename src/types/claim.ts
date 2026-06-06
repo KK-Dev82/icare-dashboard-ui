@@ -1,35 +1,50 @@
 import type { PaginationMeta } from "@/types/member";
 
 export type ClaimRequestStatus = "READ" | "UNREAD";
+export type ClaimCaseStatus = "NEW" | "IN_PROGRESS" | "CLOSED";
 
-export type ClaimRequestCategory =
-  | "QUESTION"
-  | "USAGE_PROBLEM"
-  | "SUGGESTION"
-  | "SERVICE_COMPLAINT";
+export interface ContactCategory {
+  id: string;
+  name: string;
+  isActive?: boolean;
+  sortOrder?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
 
 export interface ClaimRequest {
   id: string;
-  requestNo: string;
-  phone: string;
-  category: ClaimRequestCategory;
-  title: string;
+  caseNo: string;
+  userId: string;
+  contactPhone: string;
+  contactName: string | null;
+  contactEmail: string | null;
+  categoryId: string | null;
+  category: Pick<ContactCategory, "id" | "name"> | null;
+  subject: string;
+  message: string | null;
+  readStatus: ClaimRequestStatus;
+  caseStatus: ClaimCaseStatus;
   submittedAt: string;
-  status: ClaimRequestStatus;
-  isToday: boolean;
+  readAt: string | null;
+  closedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string | null;
 }
 
 export interface ClaimListParams {
   keyword?: string;
-  category?: string;
-  status?: string;
-  dateRange?: string;
+  categoryId?: string;
+  readStatus?: string;
+  caseStatus?: string;
+  submittedFrom?: string;
+  submittedTo?: string;
   page?: number;
   limit?: number;
 }
 
 export interface ClaimListResponse {
-  success: boolean;
   data: ClaimRequest[];
   meta: PaginationMeta;
 }
