@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Plus, X } from "lucide-react";
 import { PageBackHeader } from "@/components/layout/PageBackHeader";
+import { ChangeHistory } from "@/components/ui/change-history";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { ImageUpload } from "@/components/ui/upload";
@@ -245,6 +246,8 @@ export default function EditProductPage() {
                 </div>
               </div>
             </div>
+
+            <ChangeHistory entityType="PRODUCT" entityId={id} />
 
             <div className="flex flex-col gap-3">
               <button type="submit" disabled={loading || !isValid()} className="w-full h-[44px] rounded-[10px] bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-all disabled:opacity-60 disabled:cursor-not-allowed">
