@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { CalendarDays, Search } from "lucide-react";
 import { claimApi } from "@/api/claim";
 import { ActionIconButton } from "@/components/ui/action-button";
@@ -10,20 +10,13 @@ import { Select } from "@/components/ui/select";
 import { TablePagination } from "@/components/ui/table-pagination";
 import type {
   ClaimRequest,
-  ClaimRequestCategory,
   ClaimRequestStatus,
   ClaimStats,
+  ContactCategory,
 } from "@/types/claim";
 import type { PaginationMeta } from "@/types/member";
 
 const PAGE_SIZE = 10;
-
-const categoryLabel: Record<ClaimRequestCategory, string> = {
-  QUESTION: "สอบถาม",
-  USAGE_PROBLEM: "ปัญหาใช้งาน",
-  SUGGESTION: "ข้อเสนอแนะ",
-  SERVICE_COMPLAINT: "ร้องเรียนบริการ",
-};
 
 const statusConfig: Record<ClaimRequestStatus, { label: string; color: string }> = {
   READ: { label: "อ่านแล้ว", color: "#2D7CA4" },
@@ -47,65 +40,162 @@ const defaultStats: ClaimStats = {
 export default function ClaimsPage() {
   const [items, setItems] = useState<ClaimRequest[]>([]);
   const [stats, setStats] = useState<ClaimStats>(defaultStats);
+  const [categories, setCategories] = useState<ContactCategory[]>([]);
   const [meta, setMeta] = useState<PaginationMeta>(defaultMeta);
   const [loading, setLoading] = useState(true);
+  const [detailLoadingId, setDetailLoadingId] = useState<string | null>(null);
+  const [error, setError] = useState("");
   const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("");
-  const [status, setStatus] = useState("");
+  const [categoryId, setCategoryId] = useState("");
+  const [readStatus, setReadStatus] = useState("");
+  const [submittedDate, setSubmittedDate] = useState("");
   const [appliedSearch, setAppliedSearch] = useState("");
-  const [appliedCategory, setAppliedCategory] = useState("");
-  const [appliedStatus, setAppliedStatus] = useState("");
+  const [appliedCategoryId, setAppliedCategoryId] = useState("");
+  const [appliedReadStatus, setAppliedReadStatus] = useState("");
+  const [appliedSubmittedDate, setAppliedSubmittedDate] = useState("");
   const [selectedClaim, setSelectedClaim] = useState<ClaimRequest | null>(null);
   const [page, setPage] = useState(1);
+  const readTimerRef = useRef<number | null>(null);
 
-  useEffect(() => {
-    let active = true;
-
-    claimApi.getStats().then((nextStats) => {
-      if (active) setStats(nextStats);
-    });
-
-    return () => {
-      active = false;
-    };
+  const fetchStats = useCallback(async () => {
+    const nextStats = await claimApi.getStats();
+    setStats(nextStats);
   }, []);
 
-  useEffect(() => {
-    let active = true;
+  const fetchList = useCallback(async () => {
+    setLoading(true);
+    setError("");
 
-    claimApi
-      .getAll({
+    try {
+      const res = await claimApi.getAll({
         page,
         limit: PAGE_SIZE,
-        keyword: appliedSearch,
-        category: appliedCategory,
-        status: appliedStatus,
-        dateRange: "11 - 05 - 2026",
-      })
-      .then((res) => {
-        if (!active) return;
-        setItems(res.data);
-        setMeta(res.meta);
-        setLoading(false);
+        keyword: appliedSearch || undefined,
+        categoryId: appliedCategoryId || undefined,
+        readStatus: appliedReadStatus || undefined,
+        submittedFrom: appliedSubmittedDate || undefined,
+        submittedTo: appliedSubmittedDate || undefined,
       });
+      setItems(res.data);
+      setMeta({
+        ...res.meta,
+        totalPages: Math.max(1, res.meta.totalPages),
+      });
+    } catch (err) {
+      console.error("[claims] fetch failed", err);
+      setError("ไม่สามารถโหลดรายการคำร้องได้");
+      setItems([]);
+      setMeta(defaultMeta);
+    } finally {
+      setLoading(false);
+    }
+  }, [appliedCategoryId, appliedReadStatus, appliedSearch, appliedSubmittedDate, page]);
+
+  useEffect(() => {
+    let active = true;
+    const timer = window.setTimeout(() => {
+      fetchStats().catch((err) => console.error("[claims] summary failed", err));
+      claimApi
+        .getCategories()
+        .then((res) => {
+          if (active) {
+            setCategories(res.filter((item) => item.isActive !== false));
+          }
+        })
+        .catch((err) => console.error("[claims] categories failed", err));
+    }, 0);
 
     return () => {
       active = false;
+      window.clearTimeout(timer);
     };
-  }, [appliedCategory, appliedSearch, appliedStatus, page]);
+  }, [fetchStats]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      fetchList();
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [fetchList]);
+
+  const refreshData = useCallback(async () => {
+    await Promise.all([fetchList(), fetchStats()]);
+  }, [fetchList, fetchStats]);
+
+  const clearReadTimer = useCallback(() => {
+    if (readTimerRef.current) {
+      window.clearTimeout(readTimerRef.current);
+      readTimerRef.current = null;
+    }
+  }, []);
+
+  const scheduleMarkRead = useCallback(
+    (claim: ClaimRequest) => {
+      clearReadTimer();
+
+      if (claim.readStatus !== "UNREAD") return;
+
+      readTimerRef.current = window.setTimeout(async () => {
+        try {
+          const nextClaim = await claimApi.markRead(claim.id);
+          setSelectedClaim((current) =>
+            current?.id === claim.id
+              ? { ...current, ...nextClaim, category: current.category ?? nextClaim.category }
+              : current
+          );
+          await refreshData();
+        } catch (err) {
+          console.error("[claims] mark read failed", err);
+        } finally {
+          readTimerRef.current = null;
+        }
+      }, 3000);
+    },
+    [clearReadTimer, refreshData]
+  );
+
+  useEffect(() => clearReadTimer, [clearReadTimer]);
 
   const handleSearch = () => {
-    setLoading(true);
     setPage(1);
-    setAppliedSearch(search);
-    setAppliedCategory(category);
-    setAppliedStatus(status);
+    setAppliedSearch(search.trim());
+    setAppliedCategoryId(categoryId);
+    setAppliedReadStatus(readStatus);
+    setAppliedSubmittedDate(submittedDate);
   };
 
   const handlePageChange = (nextPage: number) => {
-    setLoading(true);
     setPage(nextPage);
   };
+
+  const handleOpenDetail = async (item: ClaimRequest) => {
+    setDetailLoadingId(item.id);
+    setError("");
+
+    try {
+      const detail = await claimApi.getById(item.id);
+      setSelectedClaim(detail);
+      scheduleMarkRead(detail);
+    } catch (err) {
+      console.error("[claims] detail failed", err);
+      setError("ไม่สามารถโหลดรายละเอียดคำร้องได้");
+    } finally {
+      setDetailLoadingId(null);
+    }
+  };
+
+  const handleCloseDetail = () => {
+    clearReadTimer();
+    setSelectedClaim(null);
+  };
+
+  const categoryOptions = [
+    { label: "ทั้งหมด", value: "" },
+    ...categories.map((item) => ({ label: item.name, value: item.id })),
+  ];
 
   return (
     <div className="flex w-full flex-col rounded-[18px] bg-white p-8 shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
@@ -139,23 +229,19 @@ export default function ClaimsPage() {
           className="w-full"
           label="ประเภท"
           placeholder="เลือกประเภท"
-          value={category}
-          onChange={setCategory}
-          options={[
-            { label: "สอบถาม", value: "QUESTION" },
-            { label: "ปัญหาใช้งาน", value: "USAGE_PROBLEM" },
-            { label: "ข้อเสนอแนะ", value: "SUGGESTION" },
-            { label: "ร้องเรียนบริการ", value: "SERVICE_COMPLAINT" },
-          ]}
+          value={categoryId}
+          onChange={setCategoryId}
+          options={categoryOptions}
         />
         <Select
           size="md"
           className="w-full"
           label="สถานะการอ่าน"
-          placeholder="เลือกประเภท"
-          value={status}
-          onChange={setStatus}
+          placeholder="เลือกสถานะ"
+          value={readStatus}
+          onChange={setReadStatus}
           options={[
+            { label: "ทั้งหมด", value: "" },
             { label: "ยังไม่ได้อ่าน", value: "UNREAD" },
             { label: "อ่านแล้ว", value: "READ" },
           ]}
@@ -165,14 +251,14 @@ export default function ClaimsPage() {
             กำหนด วันที่
           </label>
           <input
-            type="text"
-            value="11 - 05 - 2026"
-            readOnly
-            className="h-[42px] w-full rounded-[10px] border border-[#DCDCDC] bg-white px-4 pr-11 text-[14px] text-[#9CA3AF] outline-none transition-all duration-200 hover:border-primary hover:shadow-[0_4px_12px_rgba(7,162,162,0.08)]"
+            type="date"
+            value={submittedDate}
+            onChange={(event) => setSubmittedDate(event.target.value)}
+            className="h-[42px] w-full rounded-[10px] border border-[#DCDCDC] bg-white px-4 pr-11 text-[14px] text-[#565656] outline-none transition-all duration-200 hover:border-primary hover:shadow-[0_4px_12px_rgba(7,162,162,0.08)] focus:border-primary"
           />
           <CalendarDays
             size={17}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-[#243333]"
+            className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[#243333]"
           />
         </div>
         <button
@@ -184,22 +270,28 @@ export default function ClaimsPage() {
         </button>
       </div>
 
+      {error && (
+        <div className="mt-4 rounded-[8px] border border-[#F44034]/20 bg-[#F44034]/5 px-4 py-3 text-sm text-[#F44034]">
+          {error}
+        </div>
+      )}
+
       <div className="mt-6 overflow-x-auto">
         <table className="w-full min-w-[1180px] table-fixed">
           <colgroup>
             <col className="w-[90px]" />
-            <col className="w-[170px]" />
             <col className="w-[190px]" />
-            <col className="w-[150px]" />
+            <col className="w-[190px]" />
+            <col className="w-[170px]" />
             <col />
-            <col className="w-[140px]" />
+            <col className="w-[150px]" />
             <col className="w-[150px]" />
             <col className="w-[100px]" />
           </colgroup>
           <thead>
             <tr>
               <TableHead>ลำดับ</TableHead>
-              <TableHead>เลขที่ร้อง</TableHead>
+              <TableHead>เลขที่เรื่อง</TableHead>
               <TableHead>ผู้ติดต่อ (เบอร์โทรศัพท์)</TableHead>
               <TableHead>ประเภท</TableHead>
               <TableHead>หัวข้อ</TableHead>
@@ -227,18 +319,22 @@ export default function ClaimsPage() {
               </tr>
             ) : (
               items.map((item, index) => {
-                const status = statusConfig[item.status];
+                const status = statusConfig[item.readStatus];
 
                 return (
                   <tr
                     key={item.id}
-                    className="border-b border-[#F5F5F5] transition-colors hover:bg-primary/[0.02]"
+                    className={`border-b border-[#F5F5F5] transition-colors ${
+                      item.readStatus === "READ"
+                        ? "bg-[#F2F7FF] hover:bg-[#EAF2FF]"
+                        : "hover:bg-primary/[0.02]"
+                    }`}
                   >
                     <TableCell>{(meta.page - 1) * meta.limit + index + 1}</TableCell>
-                    <TableCell>{item.requestNo}</TableCell>
-                    <TableCell>{item.phone}</TableCell>
-                    <TableCell>{categoryLabel[item.category]}</TableCell>
-                    <TableCell className="truncate">{item.title}</TableCell>
+                    <TableCell>{item.caseNo}</TableCell>
+                    <TableCell>{item.contactPhone}</TableCell>
+                    <TableCell>{item.category?.name ?? "-"}</TableCell>
+                    <TableCell className="truncate">{item.subject}</TableCell>
                     <TableCell>{formatThaiDate(item.submittedAt)}</TableCell>
                     <TableCell>
                       <span style={{ color: status.color }}>{status.label}</span>
@@ -250,7 +346,8 @@ export default function ClaimsPage() {
                         iconSize={16}
                         iconStrokeWidth={3}
                         className="mx-auto rounded-[6px]"
-                        onClick={() => setSelectedClaim(item)}
+                        disabled={detailLoadingId === item.id}
+                        onClick={() => handleOpenDetail(item)}
                       />
                     </TableCell>
                   </tr>
@@ -272,7 +369,7 @@ export default function ClaimsPage() {
       <ClaimDetailModal
         open={Boolean(selectedClaim)}
         claim={selectedClaim}
-        onClose={() => setSelectedClaim(null)}
+        onClose={handleCloseDetail}
       />
     </div>
   );
@@ -326,21 +423,9 @@ function TableCell({
 }
 
 function formatThaiDate(value: string) {
-  const [year, month, day] = value.split("-");
-  const monthNames: Record<string, string> = {
-    "01": "ม.ค.",
-    "02": "ก.พ.",
-    "03": "มี.ค.",
-    "04": "เม.ย.",
-    "05": "พ.ค.",
-    "06": "มิ.ย.",
-    "07": "ก.ค.",
-    "08": "ส.ค.",
-    "09": "ก.ย.",
-    "10": "ต.ค.",
-    "11": "พ.ย.",
-    "12": "ธ.ค.",
-  };
-
-  return `${Number(day)} ${monthNames[month] ?? month} ${year}`;
+  return new Intl.DateTimeFormat("th-TH", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(value));
 }

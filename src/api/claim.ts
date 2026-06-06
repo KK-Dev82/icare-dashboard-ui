@@ -1,84 +1,68 @@
 import { apiClient } from "@/lib/apiClient";
 import type {
+  ClaimCaseStatus,
   ClaimListParams,
   ClaimListResponse,
   ClaimRequest,
   ClaimStats,
+  ContactCategory,
 } from "@/types/claim";
 
-import claimsData from "@/mock-data/claims.json";
-
-const USE_MOCK = true;
-const MOCK_DELAY_MS = 120;
-
-const waitForMock = () =>
-  new Promise<void>((resolve) => {
-    setTimeout(resolve, MOCK_DELAY_MS);
-  });
-
-const getMockClaims = () => claimsData as ClaimRequest[];
-
-const filterMockClaims = (items: ClaimRequest[], params?: ClaimListParams) => {
-  const keyword = params?.keyword?.trim().toLowerCase();
-
-  return items.filter((item) => {
-    const matchesKeyword =
-      !keyword ||
-      [item.requestNo, item.phone, item.title].some((value) =>
-        value.toLowerCase().includes(keyword)
-      );
-    const matchesCategory = !params?.category || item.category === params.category;
-    const matchesStatus = !params?.status || item.status === params.status;
-
-    return matchesKeyword && matchesCategory && matchesStatus;
-  });
-};
+interface ApiResponse<T> {
+  data: T;
+}
 
 export const claimApi = {
   getAll: async (params?: ClaimListParams): Promise<ClaimListResponse> => {
-    if (USE_MOCK) {
-      await waitForMock();
-
-      const page = params?.page ?? 1;
-      const limit = params?.limit ?? 10;
-      const filtered = filterMockClaims(getMockClaims(), params);
-      const pageStart = (page - 1) * limit;
-
-      return {
-        success: true,
-        data: filtered.slice(pageStart, pageStart + limit),
-        meta: {
-          page,
-          limit,
-          total: filtered.length,
-          totalPages: Math.max(1, Math.ceil(filtered.length / limit)),
-        },
-      };
-    }
-
     const { data } = await apiClient.get<ClaimListResponse>(
-      "/api/v1/admin/claims",
+      "/api/v1/admin/contact-cases",
       { params }
     );
     return data;
   },
 
   getStats: async (): Promise<ClaimStats> => {
-    if (USE_MOCK) {
-      await waitForMock();
+    const { data } = await apiClient.get<ApiResponse<ClaimStats>>(
+      "/api/v1/admin/contact-cases/summary"
+    );
+    return data.data;
+  },
 
-      const items = getMockClaims();
+  getById: async (id: string): Promise<ClaimRequest> => {
+    const { data } = await apiClient.get<ApiResponse<ClaimRequest>>(
+      `/api/v1/admin/contact-cases/${id}`
+    );
+    return data.data;
+  },
 
-      return {
-        total: items.length,
-        unread: items.filter((item) => item.status === "UNREAD").length,
-        read: items.filter((item) => item.status === "READ").length,
-        today: items.filter((item) => item.isToday).length,
-      };
-    }
+  markRead: async (id: string): Promise<ClaimRequest> => {
+    const { data } = await apiClient.patch<ApiResponse<ClaimRequest>>(
+      `/api/v1/admin/contact-cases/${id}/read`
+    );
+    return data.data;
+  },
 
-    const { data } = await apiClient.get<{ data: ClaimStats }>(
-      "/api/v1/admin/claims/stats"
+  updateStatus: async (
+    id: string,
+    status: ClaimCaseStatus
+  ): Promise<ClaimRequest> => {
+    const { data } = await apiClient.patch<ApiResponse<ClaimRequest>>(
+      `/api/v1/admin/contact-cases/${id}/status`,
+      { status }
+    );
+    return data.data;
+  },
+
+  delete: async (id: string): Promise<ClaimRequest> => {
+    const { data } = await apiClient.delete<ApiResponse<ClaimRequest>>(
+      `/api/v1/admin/contact-cases/${id}`
+    );
+    return data.data;
+  },
+
+  getCategories: async (): Promise<ContactCategory[]> => {
+    const { data } = await apiClient.get<ApiResponse<ContactCategory[]>>(
+      "/api/v1/admin/contact-cases/categories/list"
     );
     return data.data;
   },
