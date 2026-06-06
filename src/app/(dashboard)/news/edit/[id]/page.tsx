@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Plus, X } from "lucide-react";
 import { PageBackHeader } from "@/components/layout/PageBackHeader";
+import { ChangeHistory } from "@/components/ui/change-history";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { ImageUpload } from "@/components/ui/upload";
@@ -319,6 +320,8 @@ export default function EditNewsPage() {
                 </div>
               </div>
             </div>
+
+            <ChangeHistory entityType="CONTENT" entityId={id} />
 
             {/* Action buttons */}
             <div className="flex flex-col gap-3">
