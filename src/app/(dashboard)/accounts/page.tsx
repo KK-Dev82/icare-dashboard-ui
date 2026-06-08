@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { ConfirmModal } from "@/components/ui/modal";
 import { adminUserApi } from "@/api/admin-user";
+import { ErrorState } from "@/components/ui/error-state";
+import { useAsyncData } from "@/hooks/useAsyncData";
 import type { AdminUser, AdminRole } from "@/types/admin-user";
 
 const roleLabel: Record<AdminRole, string> = {
@@ -21,10 +23,8 @@ const roleColor: Record<AdminRole, string> = {
 };
 
 export default function AccountsPage() {
-  const [items, setItems] = useState<AdminUser[]>([]);
   const [search, setSearch] = useState("");
   const [filterRole, setFilterRole] = useState("");
-  const [loading, setLoading] = useState(true);
   const [toggleItem, setToggleItem] = useState<AdminUser | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [editItem, setEditItem] = useState<AdminUser | null>(null);
@@ -37,22 +37,22 @@ export default function AccountsPage() {
   const [formRole, setFormRole] = useState<AdminRole>("ADMIN");
   const [saving, setSaving] = useState(false);
 
-  const fetchData = async () => {
-    setLoading(true);
+  const { data: items = [], loading, errorMessage, refetch } = useAsyncData(async () => {
     const res = await adminUserApi.getAll();
-    if (res.success) setItems(res.data);
-    setLoading(false);
-  };
+    if (!res.success) throw new Error(res.message || "โหลดข้อมูลไม่สำเร็จ");
+    return res.data;
+  });
 
   useEffect(() => {
-    fetchData();
+    refetch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleToggleStatus = async () => {
     if (!toggleItem) return;
     if (toggleItem.status === "ACTIVE") { await adminUserApi.delete(toggleItem.id); } else { await adminUserApi.update(toggleItem.id, { status: "ACTIVE" }); }
     setToggleItem(null);
-    fetchData();
+    refetch();
   };
 
   const handleSave = async () => {
@@ -75,7 +75,7 @@ export default function AccountsPage() {
     }
     setSaving(false);
     closeForm();
-    fetchData();
+    refetch();
   };
 
   const openCreate = () => {
@@ -145,6 +145,20 @@ export default function AccountsPage() {
           />
         </div>
 
+        {/* Stale data warning */}
+        {!loading && errorMessage && items.length > 0 && (
+          <div className="mb-4 flex items-center justify-between rounded-[8px] border border-[#FF944D]/30 bg-[#FF944D]/5 px-4 py-3 text-sm text-[#FF944D]">
+            <span>ไม่สามารถโหลดข้อมูลล่าสุดได้ กำลังแสดงข้อมูลเดิม</span>
+            <button
+              type="button"
+              onClick={() => refetch()}
+              className="ml-4 shrink-0 rounded-[6px] border border-[#FF944D]/30 px-3 py-1 text-xs font-medium hover:bg-[#FF944D]/10 transition-colors"
+            >
+              ลองใหม่
+            </button>
+          </div>
+        )}
+
         {/* Table */}
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -172,6 +186,10 @@ export default function AccountsPage() {
                     <td className="py-4 px-4"><div className="flex justify-end gap-2"><div className="w-8 h-8 bg-gray-100 rounded-lg" /><div className="w-8 h-8 bg-gray-100 rounded-lg" /></div></td>
                   </tr>
                 ))
+              ) : errorMessage && items.length === 0 ? (
+                <tr>
+                  <td colSpan={7}><ErrorState message={errorMessage} onRetry={() => refetch()} /></td>
+                </tr>
               ) : filtered.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-16 text-center text-sm text-[#9CA3AF]">ไม่พบข้อมูล</td>

@@ -32,6 +32,11 @@ apiClient.interceptors.response.use(
       localStorage.removeItem("role");
       window.location.href = "/login";
     }
+    if (!error.response) {
+      error.message = "ไม่สามารถเชื่อมต่อระบบได้ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต";
+    } else if (error.response.status >= 500) {
+      error.message = "ระบบขัดข้อง กรุณาลองใหม่อีกครั้ง";
+    }
     return Promise.reject(error);
   }
 );

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { settingsApi } from "@/api/settings";
+import { ErrorState } from "@/components/ui/error-state";
 import type { SettingItem } from "@/types/settings";
 
 const keyLabel: Record<string, string> = {
@@ -15,16 +16,27 @@ export function SystemSettingsPanel() {
   const [items, setItems] = useState<SettingItem[]>([]);
   const [formValues, setFormValues] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
+  const fetchData = () => {
+    setLoading(true);
+    setErrorMessage(null);
     settingsApi.getSettings().then((data) => {
       setItems(data);
       const values: Record<string, string> = {};
       data.forEach((item) => { values[item.key] = item.value; });
       setFormValues(values);
+    }).catch((err) => {
+      setErrorMessage(err instanceof Error ? err.message : "โหลดข้อมูลไม่สำเร็จ");
+    }).finally(() => {
       setLoading(false);
     });
+  };
+
+  useEffect(() => {
+    const timer = window.setTimeout(fetchData, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   const handleSave = async () => {
@@ -42,6 +54,14 @@ export function SystemSettingsPanel() {
             <div key={i} className="h-[56px] bg-gray-100 rounded-xl" />
           ))}
         </div>
+      </section>
+    );
+  }
+
+  if (errorMessage) {
+    return (
+      <section className="rounded-[18px] bg-white p-8 shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
+        <ErrorState message={errorMessage} onRetry={fetchData} />
       </section>
     );
   }

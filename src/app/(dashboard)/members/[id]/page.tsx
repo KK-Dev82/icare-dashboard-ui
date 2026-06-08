@@ -6,6 +6,7 @@ import { User } from "lucide-react";
 import { Select } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { memberApi } from "@/api/member";
+import { ErrorState } from "@/components/ui/error-state";
 import type { Member, MemberInsuranceItem } from "@/types/member";
 
 export default function MemberDetailPage() {
@@ -15,8 +16,11 @@ export default function MemberDetailPage() {
   const [insurance, setInsurance] = useState<MemberInsuranceItem[]>([]);
   const [insuranceTotal, setInsuranceTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  useEffect(() => {
+  const fetchData = () => {
+    setLoading(true);
+    setErrorMessage(null);
     Promise.all([
       memberApi.getById(id),
       memberApi.getInsurance(id).catch(() => null),
@@ -26,11 +30,30 @@ export default function MemberDetailPage() {
         setInsurance(insuranceRes.data.data);
         setInsuranceTotal(insuranceRes.data.total);
       }
+    }).catch((err) => {
+      setErrorMessage(err instanceof Error ? err.message : "โหลดข้อมูลไม่สำเร็จ");
+    }).finally(() => {
       setLoading(false);
     });
+  };
+
+  useEffect(() => {
+    const timer = window.setTimeout(fetchData, 0);
+    return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  if (loading || !member) return null;
+  if (loading) return null;
+
+  if (errorMessage) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <ErrorState message={errorMessage} onRetry={fetchData} />
+      </div>
+    );
+  }
+
+  if (!member) return null;
 
   const fullName = [member.firstName, member.lastName].filter(Boolean).join(" ") || "-";
   const activeCount = insurance.filter((i) => i.status === "A").length;
