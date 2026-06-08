@@ -1,7 +1,7 @@
 import type { PaginationMeta } from "@/types/member";
 
-export type ClaimRequestStatus = "READ" | "UNREAD";
-export type ClaimCaseStatus = "NEW" | "IN_PROGRESS" | "CLOSED";
+export type ContactCaseReadStatus = "READ" | "UNREAD";
+export type ContactCaseStatus = "NEW" | "IN_PROGRESS" | "CLOSED";
 
 export interface ContactCategory {
   id: string;
@@ -12,7 +12,7 @@ export interface ContactCategory {
   updatedAt?: string;
 }
 
-export interface ClaimRequest {
+export interface ContactCase {
   id: string;
   caseNo: string;
   userId: string;
@@ -23,8 +23,8 @@ export interface ClaimRequest {
   category: Pick<ContactCategory, "id" | "name"> | null;
   subject: string;
   message: string | null;
-  readStatus: ClaimRequestStatus;
-  caseStatus: ClaimCaseStatus;
+  readStatus: ContactCaseReadStatus;
+  caseStatus: ContactCaseStatus;
   submittedAt: string;
   readAt: string | null;
   closedAt: string | null;
@@ -33,7 +33,7 @@ export interface ClaimRequest {
   deletedAt?: string | null;
 }
 
-export interface ClaimListParams {
+export interface ContactCaseListParams {
   keyword?: string;
   categoryId?: string;
   readStatus?: string;
@@ -44,12 +44,12 @@ export interface ClaimListParams {
   limit?: number;
 }
 
-export interface ClaimListResponse {
-  data: ClaimRequest[];
+export interface ContactCaseListResponse {
+  data: ContactCase[];
   meta: PaginationMeta;
 }
 
-export interface ClaimStats {
+export interface ContactCaseStats {
   total: number;
   unread: number;
   read: number;

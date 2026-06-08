@@ -2,23 +2,23 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CalendarDays, Search } from "lucide-react";
-import { claimApi } from "@/api/claim";
+import { contactCaseApi } from "@/api/contact-case";
 import { ActionIconButton } from "@/components/ui/action-button";
 import { Input } from "@/components/ui/input";
-import { ClaimDetailModal } from "@/components/ui/modal";
+import { ContactCaseDetailModal } from "@/components/ui/modal";
 import { Select } from "@/components/ui/select";
 import { TablePagination } from "@/components/ui/table-pagination";
 import type {
-  ClaimRequest,
-  ClaimRequestStatus,
-  ClaimStats,
+  ContactCase,
+  ContactCaseReadStatus,
+  ContactCaseStats,
   ContactCategory,
-} from "@/types/claim";
+} from "@/types/contact-case";
 import type { PaginationMeta } from "@/types/member";
 
 const PAGE_SIZE = 10;
 
-const statusConfig: Record<ClaimRequestStatus, { label: string; color: string }> = {
+const statusConfig: Record<ContactCaseReadStatus, { label: string; color: string }> = {
   READ: { label: "อ่านแล้ว", color: "#2D7CA4" },
   UNREAD: { label: "ยังไม่ได้อ่าน", color: "#FF944D" },
 };
@@ -30,7 +30,7 @@ const defaultMeta: PaginationMeta = {
   totalPages: 1,
 };
 
-const defaultStats: ClaimStats = {
+const defaultStats: ContactCaseStats = {
   total: 0,
   unread: 0,
   read: 0,
@@ -38,8 +38,8 @@ const defaultStats: ClaimStats = {
 };
 
 export default function ClaimsPage() {
-  const [items, setItems] = useState<ClaimRequest[]>([]);
-  const [stats, setStats] = useState<ClaimStats>(defaultStats);
+  const [items, setItems] = useState<ContactCase[]>([]);
+  const [stats, setStats] = useState<ContactCaseStats>(defaultStats);
   const [categories, setCategories] = useState<ContactCategory[]>([]);
   const [meta, setMeta] = useState<PaginationMeta>(defaultMeta);
   const [loading, setLoading] = useState(true);
@@ -53,12 +53,12 @@ export default function ClaimsPage() {
   const [appliedCategoryId, setAppliedCategoryId] = useState("");
   const [appliedReadStatus, setAppliedReadStatus] = useState("");
   const [appliedSubmittedDate, setAppliedSubmittedDate] = useState("");
-  const [selectedClaim, setSelectedClaim] = useState<ClaimRequest | null>(null);
+  const [selectedClaim, setSelectedClaim] = useState<ContactCase | null>(null);
   const [page, setPage] = useState(1);
   const readTimerRef = useRef<number | null>(null);
 
   const fetchStats = useCallback(async () => {
-    const nextStats = await claimApi.getStats();
+    const nextStats = await contactCaseApi.getStats();
     setStats(nextStats);
   }, []);
 
@@ -67,7 +67,7 @@ export default function ClaimsPage() {
     setError("");
 
     try {
-      const res = await claimApi.getAll({
+      const res = await contactCaseApi.getAll({
         page,
         limit: PAGE_SIZE,
         keyword: appliedSearch || undefined,
@@ -95,7 +95,7 @@ export default function ClaimsPage() {
     let active = true;
     const timer = window.setTimeout(() => {
       fetchStats().catch((err) => console.error("[claims] summary failed", err));
-      claimApi
+      contactCaseApi
         .getCategories()
         .then((res) => {
           if (active) {
@@ -133,14 +133,14 @@ export default function ClaimsPage() {
   }, []);
 
   const scheduleMarkRead = useCallback(
-    (claim: ClaimRequest) => {
+    (claim: ContactCase) => {
       clearReadTimer();
 
       if (claim.readStatus !== "UNREAD") return;
 
       readTimerRef.current = window.setTimeout(async () => {
         try {
-          const nextClaim = await claimApi.markRead(claim.id);
+          const nextClaim = await contactCaseApi.markRead(claim.id);
           setSelectedClaim((current) =>
             current?.id === claim.id
               ? { ...current, ...nextClaim, category: current.category ?? nextClaim.category }
@@ -171,12 +171,12 @@ export default function ClaimsPage() {
     setPage(nextPage);
   };
 
-  const handleOpenDetail = async (item: ClaimRequest) => {
+  const handleOpenDetail = async (item: ContactCase) => {
     setDetailLoadingId(item.id);
     setError("");
 
     try {
-      const detail = await claimApi.getById(item.id);
+      const detail = await contactCaseApi.getById(item.id);
       setSelectedClaim(detail);
       scheduleMarkRead(detail);
     } catch (err) {
@@ -366,7 +366,7 @@ export default function ClaimsPage() {
         onPageChange={handlePageChange}
       />
 
-      <ClaimDetailModal
+      <ContactCaseDetailModal
         open={Boolean(selectedClaim)}
         claim={selectedClaim}
         onClose={handleCloseDetail}
