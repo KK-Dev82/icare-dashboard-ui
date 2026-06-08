@@ -26,7 +26,7 @@ export function ContactCasesWidget() {
   const [contactSearch, setContactSearch] = useState("");
   const [appliedContactSearch, setAppliedContactSearch] = useState("");
   const [contactPage, setContactPage] = useState(1);
-  const [selectedClaim, setSelectedClaim] = useState<ContactCase | null>(null);
+  const [selectedContactCase, setSelectedContactCase] = useState<ContactCase | null>(null);
   const [detailLoadingId, setDetailLoadingId] = useState<string | null>(null);
   const readTimerRef = useRef<number | null>(null);
 
@@ -76,17 +76,17 @@ export function ContactCasesWidget() {
   }, []);
 
   const scheduleMarkRead = useCallback(
-    (claim: ContactCase) => {
+    (contactCase: ContactCase) => {
       clearReadTimer();
 
-      if (claim.readStatus !== "UNREAD") return;
+      if (contactCase.readStatus !== "UNREAD") return;
 
       readTimerRef.current = window.setTimeout(async () => {
         try {
-          const nextClaim = await contactCaseApi.markRead(claim.id);
-          setSelectedClaim((current) =>
-            current?.id === claim.id
-              ? { ...current, ...nextClaim, category: current.category ?? nextClaim.category }
+          const nextContactCase = await contactCaseApi.markRead(contactCase.id);
+          setSelectedContactCase((current) =>
+            current?.id === contactCase.id
+              ? { ...current, ...nextContactCase, category: current.category ?? nextContactCase.category }
               : current
           );
           await fetchUnreadContactCases();
@@ -107,7 +107,7 @@ export function ContactCasesWidget() {
 
     try {
       const detail = await contactCaseApi.getById(item.id);
-      setSelectedClaim(detail);
+      setSelectedContactCase(detail);
       scheduleMarkRead(detail);
     } catch (err) {
       console.error("[dashboard] contact case detail failed", err);
@@ -118,7 +118,7 @@ export function ContactCasesWidget() {
 
   const handleCloseContactDetail = () => {
     clearReadTimer();
-    setSelectedClaim(null);
+    setSelectedContactCase(null);
   };
 
   return (
@@ -228,8 +228,8 @@ export function ContactCasesWidget() {
       </div>
 
       <ContactCaseDetailModal
-        open={Boolean(selectedClaim)}
-        claim={selectedClaim}
+        open={Boolean(selectedContactCase)}
+        contactCase={selectedContactCase}
         onClose={handleCloseContactDetail}
       />
     </section>

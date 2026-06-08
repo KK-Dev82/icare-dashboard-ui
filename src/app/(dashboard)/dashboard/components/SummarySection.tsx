@@ -12,7 +12,7 @@ import {
 import { policyApi } from "@/api/policy";
 import { productApi } from "@/api/product";
 
-type SummaryKey = "users" | "policies" | "products" | "claims";
+type SummaryKey = "users" | "policies" | "products" | "contact-case";
 
 const defaultSummaryItems: Array<{
   id: SummaryKey;
@@ -47,7 +47,7 @@ const defaultSummaryItems: Array<{
     icon: Box,
   },
   {
-    id: "claims",
+    id: "contact-case",
     value: "820",
     unit: "รายการ",
     label: "จำนวนคำร้อง",
@@ -64,11 +64,11 @@ export function SummarySection() {
     const timer = window.setTimeout(() => {
       policyApi.getAll({ page: 1, limit: 1 }).then((res) => {
         if (res.success && res.meta) setPolicyTotal(res.meta.total);
-      });
+      }).catch(() => {});
 
       productApi.getAll({ page: 1, limit: 1 }).then((res) => {
         if (res.success && res.meta) setProductTotal(res.meta.total);
-      });
+      }).catch(() => {});
     }, 0);
 
     return () => window.clearTimeout(timer);
