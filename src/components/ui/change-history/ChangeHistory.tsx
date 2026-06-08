@@ -70,7 +70,7 @@ export function ChangeHistory({ entityType, entityId }: ChangeHistoryProps) {
     }
 
     return (
-      <div className="space-y-3">
+      <div className="max-h-[368px] overflow-y-auto space-y-3 pr-1">
         {items.map((item) => (
           <div key={item.id} className="rounded-[10px] border border-[#EAEAEA] p-3">
             <div className="flex items-start justify-between gap-3">
