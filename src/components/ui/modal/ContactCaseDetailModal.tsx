@@ -2,33 +2,33 @@
 
 import { X } from "lucide-react";
 import type {
-  ClaimCaseStatus,
-  ClaimRequest,
-  ClaimRequestStatus,
-} from "@/types/claim";
+  ContactCaseStatus,
+  ContactCase,
+  ContactCaseReadStatus,
+} from "@/types/contact-case";
 
-interface ClaimDetailModalProps {
+interface ContactCaseDetailModalProps {
   open: boolean;
-  claim: ClaimRequest | null;
+  claim: ContactCase | null;
   onClose: () => void;
 }
 
-const readStatusConfig: Record<ClaimRequestStatus, { label: string; color: string }> = {
+const readStatusConfig: Record<ContactCaseReadStatus, { label: string; color: string }> = {
   READ: { label: "อ่านแล้ว", color: "#2D7CA4" },
   UNREAD: { label: "ยังไม่ได้อ่าน", color: "#FF944D" },
 };
 
-const caseStatusLabel: Record<ClaimCaseStatus, string> = {
+const caseStatusLabel: Record<ContactCaseStatus, string> = {
   NEW: "ใหม่",
   IN_PROGRESS: "กำลังดำเนินการ",
   CLOSED: "ปิดเคสแล้ว",
 };
 
-export function ClaimDetailModal({
+export function ContactCaseDetailModal({
   open,
   claim,
   onClose,
-}: ClaimDetailModalProps) {
+}: ContactCaseDetailModalProps) {
   if (!open || !claim) return null;
 
   const readStatus = readStatusConfig[claim.readStatus];
@@ -73,7 +73,7 @@ export function ClaimDetailModal({
         </div>
 
         <div className="mt-5 space-y-5">
-          <InfoItem label="วันที่ส่ง:" value={formatClaimDate(claim.submittedAt)} />
+          <InfoItem label="วันที่ส่ง:" value={formatDate(claim.submittedAt)} />
           <InfoItem label="ประเภท" value={claim.category?.name ?? "-"} />
           <InfoItem label="หัวข้อ" value={claim.subject} />
           <InfoItem label="รายละเอียด" value={claim.message || "-"} multiline />
@@ -114,7 +114,7 @@ function InfoItem({
   );
 }
 
-function formatClaimDate(value: string) {
+function formatDate(value: string) {
   return new Intl.DateTimeFormat("th-TH", {
     day: "numeric",
     month: "short",

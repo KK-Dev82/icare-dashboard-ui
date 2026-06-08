@@ -2,12 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Search } from "lucide-react";
-import { claimApi } from "@/api/claim";
+import { contactCaseApi } from "@/api/contact-case";
 import { ActionIconButton } from "@/components/ui/action-button";
 import { Input } from "@/components/ui/input";
-import { ClaimDetailModal } from "@/components/ui/modal";
+import { ContactCaseDetailModal } from "@/components/ui/modal";
 import { TablePagination } from "@/components/ui/table-pagination";
-import type { ClaimRequest } from "@/types/claim";
+import type { ContactCase } from "@/types/contact-case";
 import type { PaginationMeta } from "@/types/member";
 
 const CONTACT_PAGE_SIZE = 5;
@@ -20,13 +20,13 @@ const defaultContactMeta: PaginationMeta = {
 };
 
 export function ContactCasesWidget() {
-  const [contactCases, setContactCases] = useState<ClaimRequest[]>([]);
+  const [contactCases, setContactCases] = useState<ContactCase[]>([]);
   const [contactMeta, setContactMeta] = useState<PaginationMeta>(defaultContactMeta);
   const [contactLoading, setContactLoading] = useState(true);
   const [contactSearch, setContactSearch] = useState("");
   const [appliedContactSearch, setAppliedContactSearch] = useState("");
   const [contactPage, setContactPage] = useState(1);
-  const [selectedClaim, setSelectedClaim] = useState<ClaimRequest | null>(null);
+  const [selectedClaim, setSelectedClaim] = useState<ContactCase | null>(null);
   const [detailLoadingId, setDetailLoadingId] = useState<string | null>(null);
   const readTimerRef = useRef<number | null>(null);
 
@@ -34,7 +34,7 @@ export function ContactCasesWidget() {
     setContactLoading(true);
 
     try {
-      const res = await claimApi.getAll({
+      const res = await contactCaseApi.getAll({
         page: contactPage,
         limit: CONTACT_PAGE_SIZE,
         keyword: appliedContactSearch || undefined,
@@ -76,14 +76,14 @@ export function ContactCasesWidget() {
   }, []);
 
   const scheduleMarkRead = useCallback(
-    (claim: ClaimRequest) => {
+    (claim: ContactCase) => {
       clearReadTimer();
 
       if (claim.readStatus !== "UNREAD") return;
 
       readTimerRef.current = window.setTimeout(async () => {
         try {
-          const nextClaim = await claimApi.markRead(claim.id);
+          const nextClaim = await contactCaseApi.markRead(claim.id);
           setSelectedClaim((current) =>
             current?.id === claim.id
               ? { ...current, ...nextClaim, category: current.category ?? nextClaim.category }
@@ -102,11 +102,11 @@ export function ContactCasesWidget() {
 
   useEffect(() => clearReadTimer, [clearReadTimer]);
 
-  const handleOpenContactDetail = async (item: ClaimRequest) => {
+  const handleOpenContactDetail = async (item: ContactCase) => {
     setDetailLoadingId(item.id);
 
     try {
-      const detail = await claimApi.getById(item.id);
+      const detail = await contactCaseApi.getById(item.id);
       setSelectedClaim(detail);
       scheduleMarkRead(detail);
     } catch (err) {
@@ -165,7 +165,7 @@ export function ContactCasesWidget() {
                 <TableHead>เลขที่ร้อง</TableHead>
                 <TableHead>ประเภท</TableHead>
                 <TableHead>หัวข้อ</TableHead>
-                <TableHead>จัดการ</TableHead>
+                <TableHead className="sticky right-0 bg-white shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.06)]">จัดการ</TableHead>
               </tr>
             </thead>
             <tbody>
@@ -173,7 +173,10 @@ export function ContactCasesWidget() {
                 Array.from({ length: 3 }).map((_, index) => (
                   <tr key={index} className="animate-pulse border-b border-[#F5F5F5]">
                     {Array.from({ length: 5 }).map((__, cellIndex) => (
-                      <td key={cellIndex} className="px-2 py-[13px]">
+                      <td
+                        key={cellIndex}
+                        className={`px-2 py-[13px] ${cellIndex === 4 ? "sticky right-0 bg-white shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.06)]" : ""}`}
+                      >
                         <div className="mx-auto h-3 w-14 rounded bg-gray-100" />
                       </td>
                     ))}
@@ -197,7 +200,7 @@ export function ContactCasesWidget() {
                     <TableCell>{item.caseNo}</TableCell>
                     <TableCell>{item.category?.name ?? "-"}</TableCell>
                     <TableCell className="truncate">{item.subject}</TableCell>
-                    <TableCell>
+                    <TableCell className="sticky right-0 bg-white shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.06)]">
                       <ActionIconButton
                         icon={Search}
                         variant="primary"
@@ -224,7 +227,7 @@ export function ContactCasesWidget() {
         />
       </div>
 
-      <ClaimDetailModal
+      <ContactCaseDetailModal
         open={Boolean(selectedClaim)}
         claim={selectedClaim}
         onClose={handleCloseContactDetail}
@@ -248,9 +251,15 @@ function PanelHeader({
   );
 }
 
-function TableHead({ children }: { children: React.ReactNode }) {
+function TableHead({
+  children,
+  className = "",
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
-    <th className="px-2 py-3 text-center text-[11px] font-semibold text-[#707070]">
+    <th className={`px-2 py-3 text-center text-[11px] font-semibold text-[#707070] ${className}`}>
       {children}
     </th>
   );
