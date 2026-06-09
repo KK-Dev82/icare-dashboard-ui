@@ -9,7 +9,7 @@ const labelMap: Record<string, string> = {
   members: "สมาชิก",
   news: "ข่าวสาร / โปรโมชั่น",
   policies: "จัดการผลิตภัณฑ์",
-  claims: "คำร้อง / ติดต่อ",
+  "contact-case": "คำร้อง / ติดต่อ",
   "policy-categories": "หมวดหมู่ผลิตภัณฑ์",
   accounts: "ผู้ใช้งาน",
   settings: "การตั้งค่า",

@@ -4,10 +4,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { CalendarDays, Search } from "lucide-react";
 import { contactCaseApi } from "@/api/contact-case";
 import { ActionIconButton } from "@/components/ui/action-button";
+import { ErrorState } from "@/components/ui/error-state";
 import { Input } from "@/components/ui/input";
 import { ContactCaseDetailModal } from "@/components/ui/modal";
 import { Select } from "@/components/ui/select";
 import { TablePagination } from "@/components/ui/table-pagination";
+import { useAsyncData } from "@/hooks/useAsyncData";
 import type {
   ContactCase,
   ContactCaseReadStatus,
@@ -37,14 +39,11 @@ const defaultStats: ContactCaseStats = {
   today: 0,
 };
 
-export default function ClaimsPage() {
-  const [items, setItems] = useState<ContactCase[]>([]);
+export default function ContactCasePage() {
   const [stats, setStats] = useState<ContactCaseStats>(defaultStats);
   const [categories, setCategories] = useState<ContactCategory[]>([]);
-  const [meta, setMeta] = useState<PaginationMeta>(defaultMeta);
-  const [loading, setLoading] = useState(true);
   const [detailLoadingId, setDetailLoadingId] = useState<string | null>(null);
-  const [error, setError] = useState("");
+  const [detailErrorMessage, setDetailErrorMessage] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [readStatus, setReadStatus] = useState("");
@@ -53,48 +52,43 @@ export default function ClaimsPage() {
   const [appliedCategoryId, setAppliedCategoryId] = useState("");
   const [appliedReadStatus, setAppliedReadStatus] = useState("");
   const [appliedSubmittedDate, setAppliedSubmittedDate] = useState("");
-  const [selectedClaim, setSelectedClaim] = useState<ContactCase | null>(null);
+  const [selectedContactCase, setSelectedContactCase] = useState<ContactCase | null>(null);
   const [page, setPage] = useState(1);
   const readTimerRef = useRef<number | null>(null);
+
+  const {
+    data: listData,
+    loading,
+    errorMessage: error,
+    refetch: fetchList,
+  } = useAsyncData(async () => {
+    const res = await contactCaseApi.getAll({
+      page,
+      limit: PAGE_SIZE,
+      keyword: appliedSearch || undefined,
+      categoryId: appliedCategoryId || undefined,
+      readStatus: appliedReadStatus || undefined,
+      submittedFrom: appliedSubmittedDate || undefined,
+      submittedTo: appliedSubmittedDate || undefined,
+    });
+    return {
+      items: res.data,
+      meta: { ...res.meta, totalPages: Math.max(1, res.meta.totalPages) },
+    };
+  });
+
+  const items = listData?.items ?? [];
+  const meta = listData?.meta ?? defaultMeta;
 
   const fetchStats = useCallback(async () => {
     const nextStats = await contactCaseApi.getStats();
     setStats(nextStats);
   }, []);
 
-  const fetchList = useCallback(async () => {
-    setLoading(true);
-    setError("");
-
-    try {
-      const res = await contactCaseApi.getAll({
-        page,
-        limit: PAGE_SIZE,
-        keyword: appliedSearch || undefined,
-        categoryId: appliedCategoryId || undefined,
-        readStatus: appliedReadStatus || undefined,
-        submittedFrom: appliedSubmittedDate || undefined,
-        submittedTo: appliedSubmittedDate || undefined,
-      });
-      setItems(res.data);
-      setMeta({
-        ...res.meta,
-        totalPages: Math.max(1, res.meta.totalPages),
-      });
-    } catch (err) {
-      console.error("[claims] fetch failed", err);
-      setError("ไม่สามารถโหลดรายการคำร้องได้");
-      setItems([]);
-      setMeta(defaultMeta);
-    } finally {
-      setLoading(false);
-    }
-  }, [appliedCategoryId, appliedReadStatus, appliedSearch, appliedSubmittedDate, page]);
-
   useEffect(() => {
     let active = true;
     const timer = window.setTimeout(() => {
-      fetchStats().catch((err) => console.error("[claims] summary failed", err));
+      fetchStats().catch((err) => console.error("[contact-case] summary failed", err));
       contactCaseApi
         .getCategories()
         .then((res) => {
@@ -102,7 +96,7 @@ export default function ClaimsPage() {
             setCategories(res.filter((item) => item.isActive !== false));
           }
         })
-        .catch((err) => console.error("[claims] categories failed", err));
+        .catch((err) => console.error("[contact-case] categories failed", err));
     }, 0);
 
     return () => {
@@ -112,14 +106,9 @@ export default function ClaimsPage() {
   }, [fetchStats]);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => {
-      fetchList();
-    }, 0);
-
-    return () => {
-      window.clearTimeout(timer);
-    };
-  }, [fetchList]);
+    const timer = window.setTimeout(fetchList, 0);
+    return () => window.clearTimeout(timer);
+  }, [appliedCategoryId, appliedReadStatus, appliedSearch, appliedSubmittedDate, page, fetchList]);
 
   const refreshData = useCallback(async () => {
     await Promise.all([fetchList(), fetchStats()]);
@@ -133,22 +122,22 @@ export default function ClaimsPage() {
   }, []);
 
   const scheduleMarkRead = useCallback(
-    (claim: ContactCase) => {
+    (contactCase: ContactCase) => {
       clearReadTimer();
 
-      if (claim.readStatus !== "UNREAD") return;
+      if (contactCase.readStatus !== "UNREAD") return;
 
       readTimerRef.current = window.setTimeout(async () => {
         try {
-          const nextClaim = await contactCaseApi.markRead(claim.id);
-          setSelectedClaim((current) =>
-            current?.id === claim.id
-              ? { ...current, ...nextClaim, category: current.category ?? nextClaim.category }
+          const nextContactCase = await contactCaseApi.markRead(contactCase.id);
+          setSelectedContactCase((current) =>
+            current?.id === contactCase.id
+              ? { ...current, ...nextContactCase, category: current.category ?? nextContactCase.category }
               : current
           );
           await refreshData();
         } catch (err) {
-          console.error("[claims] mark read failed", err);
+          console.error("[contact-case] mark read failed", err);
         } finally {
           readTimerRef.current = null;
         }
@@ -173,15 +162,15 @@ export default function ClaimsPage() {
 
   const handleOpenDetail = async (item: ContactCase) => {
     setDetailLoadingId(item.id);
-    setError("");
+    setDetailErrorMessage(null);
 
     try {
       const detail = await contactCaseApi.getById(item.id);
-      setSelectedClaim(detail);
+      setSelectedContactCase(detail);
       scheduleMarkRead(detail);
     } catch (err) {
-      console.error("[claims] detail failed", err);
-      setError("ไม่สามารถโหลดรายละเอียดคำร้องได้");
+      console.error("[contact-case] detail failed", err);
+      setDetailErrorMessage("ไม่สามารถโหลดรายละเอียดคำร้องได้");
     } finally {
       setDetailLoadingId(null);
     }
@@ -189,7 +178,7 @@ export default function ClaimsPage() {
 
   const handleCloseDetail = () => {
     clearReadTimer();
-    setSelectedClaim(null);
+    setSelectedContactCase(null);
   };
 
   const categoryOptions = [
@@ -254,7 +243,7 @@ export default function ClaimsPage() {
             type="date"
             value={submittedDate}
             onChange={(event) => setSubmittedDate(event.target.value)}
-            className="h-[42px] w-full rounded-[10px] border border-[#DCDCDC] bg-white px-4 pr-11 text-[14px] text-[#565656] outline-none transition-all duration-200 hover:border-primary hover:shadow-[0_4px_12px_rgba(7,162,162,0.08)] focus:border-primary"
+            className="h-[42px] w-full rounded-[10px] border border-[#DCDCDC] bg-white px-4 pr-11 text-[14px] text-[#565656] outline-none transition-all duration-200 hover:border-primary hover:shadow-[0_4px_12px_rgba(7,162,162,0.08)] focus:border-primary [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-4 [&::-webkit-calendar-picker-indicator]:h-5 [&::-webkit-calendar-picker-indicator]:w-5 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0"
           />
           <CalendarDays
             size={17}
@@ -270,9 +259,29 @@ export default function ClaimsPage() {
         </button>
       </div>
 
-      {error && (
-        <div className="mt-4 rounded-[8px] border border-[#F44034]/20 bg-[#F44034]/5 px-4 py-3 text-sm text-[#F44034]">
-          {error}
+      {!loading && error && items.length > 0 && (
+        <div className="mt-4 flex items-center justify-between rounded-[8px] border border-[#FF944D]/30 bg-[#FF944D]/5 px-4 py-3 text-sm text-[#FF944D]">
+          <span>ไม่สามารถโหลดข้อมูลล่าสุดได้ กำลังแสดงข้อมูลเดิม</span>
+          <button
+            type="button"
+            onClick={fetchList}
+            className="ml-4 shrink-0 rounded-[6px] border border-[#FF944D]/30 px-3 py-1 text-xs font-medium hover:bg-[#FF944D]/10 transition-colors"
+          >
+            ลองใหม่
+          </button>
+        </div>
+      )}
+
+      {detailErrorMessage && (
+        <div className="mt-4 flex items-center justify-between rounded-[8px] border border-[#F44034]/30 bg-[#F44034]/5 px-4 py-3 text-sm text-[#F44034]">
+          <span>{detailErrorMessage}</span>
+          <button
+            type="button"
+            onClick={() => setDetailErrorMessage(null)}
+            className="ml-4 shrink-0 rounded-[6px] border border-[#F44034]/30 px-3 py-1 text-xs font-medium hover:bg-[#F44034]/10 transition-colors"
+          >
+            ปิด
+          </button>
         </div>
       )}
 
@@ -311,6 +320,10 @@ export default function ClaimsPage() {
                   ))}
                 </tr>
               ))
+            ) : error && items.length === 0 ? (
+              <tr>
+                <td colSpan={8}><ErrorState message={error} onRetry={fetchList} /></td>
+              </tr>
             ) : items.length === 0 ? (
               <tr>
                 <td colSpan={8} className="py-16 text-center text-sm text-[#9CA3AF]">
@@ -367,8 +380,8 @@ export default function ClaimsPage() {
       />
 
       <ContactCaseDetailModal
-        open={Boolean(selectedClaim)}
-        claim={selectedClaim}
+        open={Boolean(selectedContactCase)}
+        contactCase={selectedContactCase}
         onClose={handleCloseDetail}
       />
     </div>

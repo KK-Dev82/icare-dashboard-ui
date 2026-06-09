@@ -10,9 +10,12 @@ import { Select } from "@/components/ui/select";
 import { ConfirmModal, ContentPreviewModal } from "@/components/ui/modal";
 import { productApi } from "@/api/product";
 import { policyCategoryApi } from "@/api/policy-category";
+import { ErrorState } from "@/components/ui/error-state";
+import { useAsyncData } from "@/hooks/useAsyncData";
 import type { Product } from "@/types/product";
 import type { PolicyCategory } from "@/types/policy-category";
-import type { ContentStatus } from "@/types/content";
+
+const defaultMeta = { page: 1, limit: 10, total: 0, totalPages: 1 };
 
 const statusConfig: Record<string, { label: string; color: string }> = {
   PUBLISHED: { label: "เผยแพร่", color: "#24A148" },
@@ -20,56 +23,66 @@ const statusConfig: Record<string, { label: string; color: string }> = {
   UNPUBLISHED: { label: "ปิดการใช้งาน", color: "#F44034" },
 };
 
+interface AppliedParams {
+  search: string;
+  filterCategory: string;
+  filterStatus: string;
+  page: number;
+}
+
 export default function ProductsPage() {
-  const [items, setItems] = useState<Product[]>([]);
   const [categories, setCategories] = useState<PolicyCategory[]>([]);
   const [search, setSearch] = useState("");
   const [filterCategory, setFilterCategory] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
   const [confirmItem, setConfirmItem] = useState<Product | null>(null);
   const [previewItem, setPreviewItem] = useState<Product | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1);
-  const [meta, setMeta] = useState({ page: 1, limit: 10, total: 0, totalPages: 1 });
+  const [appliedParams, setAppliedParams] = useState<AppliedParams>({
+    search: "",
+    filterCategory: "",
+    filterStatus: "",
+    page: 1,
+  });
   const router = useRouter();
 
-  const fetchData = async (p?: number) => {
-    setLoading(true);
-    const params: Record<string, string | number> = { page: p || page, limit: 10 };
-    if (search) params.keyword = search;
-    if (filterCategory) params.categoryId = filterCategory;
-    if (filterStatus) params.status = filterStatus;
+  const { data: listData, loading, errorMessage, refetch } = useAsyncData(async () => {
+    const { search: kw, filterCategory: cat, filterStatus: status, page } = appliedParams;
+    const params: Record<string, string | number> = { page, limit: 10 };
+    if (kw) params.keyword = kw;
+    if (cat) params.categoryId = cat;
+    if (status) params.status = status;
     const res = await productApi.getAll(params);
-    if (res.success) {
-      setItems(res.data);
-      if (res.meta) setMeta(res.meta);
-    }
-    setLoading(false);
-  };
+    if (!res.success) throw new Error("โหลดข้อมูลไม่สำเร็จ");
+    return { items: res.data, meta: res.meta ?? defaultMeta };
+  });
+
+  const items = listData?.items ?? [];
+  const meta = listData?.meta ?? defaultMeta;
 
   useEffect(() => {
-    fetchData();
+    refetch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appliedParams]);
+
+  useEffect(() => {
     policyCategoryApi.getAll().then((res) => {
       if (res.success) setCategories(res.data);
     });
   }, []);
 
   const handleSearch = () => {
-    setPage(1);
-    fetchData(1);
+    setAppliedParams({ search: search.trim(), filterCategory, filterStatus, page: 1 });
   };
 
   const handleClear = () => {
     setSearch("");
     setFilterCategory("");
     setFilterStatus("");
-    setPage(1);
-    fetchData(1);
+    setAppliedParams({ search: "", filterCategory: "", filterStatus: "", page: 1 });
   };
 
   const handlePageChange = (newPage: number) => {
-    setPage(newPage);
-    fetchData(newPage);
+    setAppliedParams((prev) => ({ ...prev, page: newPage }));
   };
 
   const handleTogglePublish = (item: Product) => {
@@ -84,7 +97,7 @@ export default function ProductsPage() {
       await productApi.publish(confirmItem.id);
     }
     setConfirmItem(null);
-    fetchData();
+    refetch();
   };
 
   return (
@@ -156,6 +169,20 @@ export default function ProductsPage() {
           </button>
         </div>
 
+        {/* Stale data warning */}
+        {!loading && errorMessage && items.length > 0 && (
+          <div className="mb-4 flex items-center justify-between rounded-[8px] border border-[#FF944D]/30 bg-[#FF944D]/5 px-4 py-3 text-sm text-[#FF944D]">
+            <span>ไม่สามารถโหลดข้อมูลล่าสุดได้ กำลังแสดงข้อมูลเดิม</span>
+            <button
+              type="button"
+              onClick={() => refetch()}
+              className="ml-4 shrink-0 rounded-[6px] border border-[#FF944D]/30 px-3 py-1 text-xs font-medium hover:bg-[#FF944D]/10 transition-colors"
+            >
+              ลองใหม่
+            </button>
+          </div>
+        )}
+
         {/* Table */}
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -183,6 +210,10 @@ export default function ProductsPage() {
                     <td className="py-4 px-4"><div className="flex justify-end gap-2"><div className="w-8 h-8 bg-gray-100 rounded-lg" /><div className="w-8 h-8 bg-gray-100 rounded-lg" /><div className="w-8 h-8 bg-gray-100 rounded-lg" /></div></td>
                   </tr>
                 ))
+              ) : errorMessage && items.length === 0 ? (
+                <tr>
+                  <td colSpan={7}><ErrorState message={errorMessage} onRetry={() => refetch()} /></td>
+                </tr>
               ) : items.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-16 text-center text-sm text-[#9CA3AF]">

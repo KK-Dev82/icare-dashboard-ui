@@ -184,8 +184,15 @@ export default function PolicyCategoriesPage() {
         </div>
 
         {error && (
-          <div className="mb-4 rounded-lg bg-[#FDECEC] px-4 py-3 text-sm text-[#F44034]">
-            {error}
+          <div className="mb-4 flex items-center justify-between rounded-lg bg-[#FDECEC] px-4 py-3 text-sm text-[#F44034]">
+            <span>{error}</span>
+            <button
+              type="button"
+              onClick={fetchUsers}
+              className="ml-4 shrink-0 rounded-[6px] border border-[#F44034]/30 px-3 py-1 text-xs font-medium hover:bg-[#F44034]/20 transition-colors"
+            >
+              ลองใหม่
+            </button>
           </div>
         )}
 

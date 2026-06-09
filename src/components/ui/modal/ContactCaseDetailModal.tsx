@@ -9,7 +9,7 @@ import type {
 
 interface ContactCaseDetailModalProps {
   open: boolean;
-  claim: ContactCase | null;
+  contactCase: ContactCase | null;
   onClose: () => void;
 }
 
@@ -26,12 +26,12 @@ const caseStatusLabel: Record<ContactCaseStatus, string> = {
 
 export function ContactCaseDetailModal({
   open,
-  claim,
+  contactCase,
   onClose,
 }: ContactCaseDetailModalProps) {
-  if (!open || !claim) return null;
+  if (!open || !contactCase) return null;
 
-  const readStatus = readStatusConfig[claim.readStatus];
+  const readStatus = readStatusConfig[contactCase.readStatus];
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
@@ -49,12 +49,12 @@ export function ContactCaseDetailModal({
         <h2 className="text-lg font-bold leading-6 text-[#243333]">
           ข้อมูลคำร้อง
         </h2>
-        <p className="mt-1 text-sm leading-5 text-[#9CA3AF]">{claim.caseNo}</p>
+        <p className="mt-1 text-sm leading-5 text-[#9CA3AF]">{contactCase.caseNo}</p>
 
         <div className="mt-6 grid grid-cols-2 gap-x-8 gap-y-5">
           <InfoItem
             label="ผู้ติดต่อ (เบอร์โทรศัพท์)"
-            value={claim.contactPhone}
+            value={contactCase.contactPhone}
           />
           <InfoItem
             label="สถานะการอ่าน"
@@ -64,21 +64,21 @@ export function ContactCaseDetailModal({
           />
           <InfoItem
             label="ชื่อผู้ติดต่อ"
-            value={claim.contactName || "-"}
+            value={contactCase.contactName || "-"}
           />
           <InfoItem
             label="สถานะเคส"
-            value={caseStatusLabel[claim.caseStatus]}
+            value={caseStatusLabel[contactCase.caseStatus]}
           />
         </div>
 
         <div className="mt-5 space-y-5">
-          <InfoItem label="วันที่ส่ง:" value={formatDate(claim.submittedAt)} />
-          <InfoItem label="ประเภท" value={claim.category?.name ?? "-"} />
-          <InfoItem label="หัวข้อ" value={claim.subject} />
-          <InfoItem label="รายละเอียด" value={claim.message || "-"} multiline />
-          {claim.contactEmail && (
-            <InfoItem label="อีเมล" value={claim.contactEmail} />
+          <InfoItem label="วันที่ส่ง:" value={formatDate(contactCase.submittedAt)} />
+          <InfoItem label="ประเภท" value={contactCase.category?.name ?? "-"} />
+          <InfoItem label="หัวข้อ" value={contactCase.subject} />
+          <InfoItem label="รายละเอียด" value={contactCase.message || "-"} multiline />
+          {contactCase.contactEmail && (
+            <InfoItem label="อีเมล" value={contactCase.contactEmail} />
           )}
         </div>
       </div>

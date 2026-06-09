@@ -25,7 +25,7 @@ const menuItems = [
   { label: "สมาชิก", href: "/members", icon: Users },
   { label: "ข่าวสาร / โปรโมชั่น", href: "/news", icon: Newspaper },
   { label: "จัดการผลิตภัณฑ์", href: "/policies", icon: Package },
-  { label: "คำร้อง / ติดต่อ", href: "/claims", icon: MapPin },
+  { label: "คำร้อง / ติดต่อ", href: "/contact-case", icon: MapPin },
   { label: "ผู้ใช้งาน", href: "/accounts", icon: UserCog },
   { label: "การตั้งค่า", href: "/settings", icon: Settings },
 ];

@@ -5,11 +5,13 @@ import { CirclePlus, Pencil, Power, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { ImageUpload } from "@/components/ui/upload";
 import { contentCategoryApi } from "@/api/content-category";
+import { ErrorState } from "@/components/ui/error-state";
 import type { ContentCategory } from "@/types/content-category";
 
 export function NewsPromotionSettingsPanel() {
   const [items, setItems] = useState<ContentCategory[]>([]);
   const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [editItem, setEditItem] = useState<ContentCategory | null>(null);
   const [showForm, setShowForm] = useState(false);
 
@@ -21,13 +23,20 @@ export function NewsPromotionSettingsPanel() {
 
   const fetchData = async () => {
     setLoading(true);
-    const res = await contentCategoryApi.getAll();
-    if (res.success) setItems(res.data);
-    setLoading(false);
+    setErrorMessage(null);
+    try {
+      const res = await contentCategoryApi.getAll();
+      if (res.success) setItems(res.data);
+    } catch (err) {
+      setErrorMessage(err instanceof Error ? err.message : "โหลดข้อมูลไม่สำเร็จ");
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    fetchData();
+    const timer = window.setTimeout(fetchData, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   const openCreate = () => {
@@ -86,6 +95,10 @@ export function NewsPromotionSettingsPanel() {
             <div key={i} className="h-[52px] bg-gray-100 rounded-lg" />
           ))}
         </div>
+      ) : errorMessage ? (
+        <ErrorState message={errorMessage} onRetry={fetchData} />
+      ) : items.length === 0 ? (
+        <p className="py-8 text-center text-sm text-[#9CA3AF]">ยังไม่มีหมวดหมู่ข่าวสาร</p>
       ) : (
         <div className="space-y-3">
           {items.map((item, index) => (
