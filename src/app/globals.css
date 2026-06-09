@@ -18,3 +18,42 @@ body {
   background: var(--color-background);
   color: var(--color-foreground);
 }
+
+@keyframes slide-in-from-right {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes expand {
+  from {
+    opacity: 0;
+    max-width: 0;
+    transform: translateX(-12px);
+  }
+  to {
+    opacity: 1;
+    max-width: 400px;
+    transform: translateX(0);
+  }
+}
+
+.animate-in.slide-in-from-right-4.fade-in {
+  animation: slide-in-from-right 0.3s ease-out;
+}
