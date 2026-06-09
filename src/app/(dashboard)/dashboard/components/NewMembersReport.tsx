@@ -192,7 +192,7 @@ export function NewMembersReport() {
       </div>
 
       {memberQuickFilter === "CUSTOM" && (
-        <div className="mt-3 grid gap-3 border-t border-[#EAEAEA] pt-4 sm:grid-cols-2 lg:max-w-[520px]">
+        <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:max-w-[520px] animate-[fade-up_0.3s_ease-out]">
           <div>
             <label className="mb-1.5 block text-xs font-medium text-[#565656]">
               วันที่เริ่มต้น
