@@ -9,6 +9,14 @@ import { Select } from "@/components/ui/select";
 import { TablePagination } from "@/components/ui/table-pagination";
 import { activityLogApi } from "@/api/activity-log";
 import { useAsyncData } from "@/hooks/useAsyncData";
+import {
+  ACTIVITY_ACTION_OPTIONS,
+  ACTIVITY_ENTITY_TYPE_OPTIONS,
+  formatActivityActionLabel,
+  formatActivityEntityTypeLabel,
+  formatActivityFieldLabel,
+  formatActivityValueLabel,
+} from "@/lib/activityLogLabels";
 import type {
   ActivityAction,
   ActivityEntityType,
@@ -18,37 +26,88 @@ import type {
 
 const defaultMeta = { page: 1, limit: 10, total: 0, totalPages: 1 };
 
-const ENTITY_TYPE_LABEL: Record<ActivityEntityType, string> = {
-  PRODUCT: "ผลิตภัณฑ์",
-  MEMBER: "สมาชิก",
-  CONTENT: "ข่าวสาร / โปรโมชั่น",
-  USER: "ผู้ใช้งาน",
-  SYSTEM: "ระบบ",
+const entityTypeOptions = ACTIVITY_ENTITY_TYPE_OPTIONS;
+const actionOptions = ACTIVITY_ACTION_OPTIONS;
+
+const DETAIL_FIELD_ORDER: Record<string, string[]> = {
+  CONTENT: [
+    "title",
+    "categoryId",
+    "summary",
+    "content",
+    "mainImage",
+    "bannerImage",
+    "album",
+    "sortOrder",
+    "isPinned",
+    "isPublish",
+    "status",
+    "publishedAt",
+    "expiredAt",
+  ],
+  PRODUCT: [
+    "title",
+    "categoryId",
+    "summary",
+    "content",
+    "mainImage",
+    "bannerImage",
+    "album",
+    "coverages",
+    "isPinned",
+    "isPublish",
+    "status",
+    "publishedAt",
+    "expiredAt",
+  ],
+  CONTENT_CATEGORY: [
+    "name",
+    "description",
+    "bannerImage",
+    "icon",
+    "tagColor",
+    "isActive",
+    "sortOrder",
+  ],
+  PRODUCT_CATEGORY: [
+    "name",
+    "description",
+    "bannerImage",
+    "icon",
+    "tagColor",
+    "isActive",
+    "sortOrder",
+  ],
+  CONTACT_CATEGORY: ["name", "isActive", "sortOrder"],
+  CONTACT_CASE: [
+    "caseNo",
+    "contactName",
+    "contactPhone",
+    "contactEmail",
+    "categoryId",
+    "subject",
+    "message",
+    "readStatus",
+    "caseStatus",
+    "submittedAt",
+    "readAt",
+    "contactedAt",
+    "closedAt",
+  ],
+  LEAD: [
+    "fullName",
+    "phone",
+    "email",
+    "note",
+    "status",
+    "contactedAt",
+    "closedAt",
+  ],
+  ADMIN_USER: ["username", "role", "fullName", "email", "status"],
+  USER: ["username", "role", "fullName", "firstName", "lastName", "email", "phone", "status"],
+  AUTH: ["username"],
+  SETTING: ["key", "value", "description"],
 };
-
-const ACTION_LABEL: Record<ActivityAction, string> = {
-  CREATE: "เพิ่มข้อมูล",
-  UPDATE: "แก้ไขข้อมูล",
-  DELETE: "ลบข้อมูล",
-  PUBLISH: "เผยแพร่",
-  UNPUBLISH: "ยกเลิกเผยแพร่",
-};
-
-const entityTypeOptions = [
-  { label: "ผลิตภัณฑ์", value: "PRODUCT" },
-  { label: "สมาชิก", value: "MEMBER" },
-  { label: "ข่าวสาร / โปรโมชั่น", value: "CONTENT" },
-  { label: "ผู้ใช้งาน", value: "USER" },
-  { label: "ระบบ", value: "SYSTEM" },
-];
-
-const actionOptions = [
-  { label: "เพิ่มข้อมูล", value: "CREATE" },
-  { label: "แก้ไขข้อมูล", value: "UPDATE" },
-  { label: "ลบข้อมูล", value: "DELETE" },
-  { label: "เผยแพร่", value: "PUBLISH" },
-  { label: "ยกเลิกเผยแพร่", value: "UNPUBLISH" },
-];
 
 const initialFilter: ActivityLogFilter = {
   search: "",
@@ -285,9 +344,9 @@ function ActivityLogDetailModal({
   const changedFields = getChangedFields(log);
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/20">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/20 px-4 py-6">
       <button className="absolute inset-0 cursor-default" type="button" onClick={onClose} aria-label="ปิด" />
-      <div className="relative w-[362px] max-w-[calc(100vw-32px)] rounded-[24px] bg-white px-7 py-6 shadow-[0_8px_32px_rgba(0,0,0,0.12)]">
+      <div className="relative max-h-[calc(100vh-48px)] w-[542px] max-w-full overflow-y-auto rounded-[24px] bg-white px-7 py-6 shadow-[0_8px_32px_rgba(0,0,0,0.12)]">
         <button
           type="button"
           onClick={onClose}
@@ -407,15 +466,23 @@ function getChangedFields(log: ActivityLog) {
 
   return Object.keys(after)
     .filter((key) => !isHiddenDetailField(key))
-    .map((key) => ({
+    .map((key, index) => ({
       field: key,
       before: before[key],
       after: after[key],
-    }));
+      index,
+    }))
+    .sort((a, b) => getFieldOrder(log.entityType, a.field, a.index) - getFieldOrder(log.entityType, b.field, b.index));
+}
+
+function getFieldOrder(entityType: string, field: string, fallbackIndex: number) {
+  const order = DETAIL_FIELD_ORDER[entityType] ?? [];
+  const index = order.indexOf(field);
+  return index >= 0 ? index : order.length + fallbackIndex;
 }
 
 function getAdminName(log: ActivityLog) {
-  return (
+  const value =
     log.adminName ||
     log.adminId ||
     log.actorName ||
@@ -427,16 +494,17 @@ function getAdminName(log: ActivityLog) {
     log.actor?.name ||
     log.actor?.username ||
     log.createdBy ||
-    "-"
-  );
+    "-";
+
+  return formatActivityValueLabel(value);
 }
 
 function getActionLabel(action: string) {
-  return ACTION_LABEL[action as ActivityAction] ?? action ?? "-";
+  return formatActivityActionLabel(action);
 }
 
 function getEntityLabel(entityType: string) {
-  return ENTITY_TYPE_LABEL[entityType as ActivityEntityType] ?? entityType ?? "-";
+  return formatActivityEntityTypeLabel(entityType);
 }
 
 function getFieldLabel(entityType: string, field: string) {
@@ -480,7 +548,7 @@ function getFieldLabel(entityType: string, field: string) {
     },
   };
 
-  return labelByType[entityType as ActivityEntityType]?.[field] ?? field;
+  return labelByType[entityType as ActivityEntityType]?.[field] ?? formatActivityFieldLabel(field);
 }
 
 function getLogDetail(log: ActivityLog) {
@@ -515,11 +583,16 @@ function formatDateTime(value: string) {
   return `${day}/${month}/${year} ${hour}:${minute}`;
 }
 
-function formatValue(value: unknown) {
+function formatValue(value: unknown): string {
   if (value === null || value === undefined || value === "") return "-";
   if (typeof value === "boolean") return value ? "ใช่" : "ไม่ใช่";
   if (typeof value === "string" || typeof value === "number") {
-    return String(value);
+    return typeof value === "string" ? formatActivityValueLabel(value) : String(value);
+  }
+
+  if (Array.isArray(value)) {
+    if (value.length === 0) return "-";
+    return value.map((item) => formatValue(item)).join(", ");
   }
 
   try {
@@ -529,13 +602,25 @@ function formatValue(value: unknown) {
   }
 }
 
-function formatFieldValue(field: string, value: unknown) {
+function formatFieldValue(field: string, value: unknown): string {
   if (field === "isPublish" && typeof value === "boolean") {
     return value ? "เผยแพร่" : "ไม่เผยแพร่";
   }
 
+  if (field === "isActive" && typeof value === "boolean") {
+    return value ? "ใช้งาน" : "ไม่ใช้งาน";
+  }
+
+  if (field === "isPinned" && typeof value === "boolean") {
+    return value ? "ปักหมุด" : "ไม่ปักหมุด";
+  }
+
   if (field === "content" && typeof value === "string") {
     return stripHtml(value);
+  }
+
+  if (isDateField(field) && typeof value === "string") {
+    return formatDateValue(value);
   }
 
   if (isImageField(field)) {
@@ -549,6 +634,17 @@ function formatFieldValue(field: string, value: unknown) {
   return formatValue(value);
 }
 
+function formatDateValue(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+
+  return `${day}/${month}/${year}`;
+}
+
 function stripHtml(value: string) {
   return value
     .replace(/<[^>]*>/g, "")
@@ -558,7 +654,18 @@ function stripHtml(value: string) {
 
 function isImageField(field: string) {
   const normalized = field.toLowerCase();
-  return normalized === "image" || normalized.endsWith("image") || normalized.includes("imageurl");
+  return (
+    normalized === "icon" ||
+    normalized === "image" ||
+    normalized === "thumbnail" ||
+    normalized.endsWith("image") ||
+    normalized.includes("imageurl")
+  );
+}
+
+function isDateField(field: string) {
+  const normalized = field.toLowerCase();
+  return normalized.endsWith("at") || normalized.endsWith("date");
 }
 
 function isHiddenDetailField(field: string) {

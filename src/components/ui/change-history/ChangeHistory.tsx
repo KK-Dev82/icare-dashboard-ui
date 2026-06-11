@@ -3,6 +3,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { Clock3 } from "lucide-react";
 import { activityLogApi } from "@/api/activity-log";
+import {
+  formatActivityActionLabel,
+  formatActivityEntityTypeLabel,
+} from "@/lib/activityLogLabels";
 import type {
   ActivityLog,
   ActivityLogEntityType,
@@ -111,6 +115,8 @@ function getActorName(item: ActivityLog) {
     item.admin?.fullName ||
     item.admin?.name ||
     item.admin?.username ||
+    item.adminName ||
+    item.adminId ||
     item.user?.fullName ||
     item.user?.name ||
     item.user?.username ||
@@ -122,9 +128,11 @@ function getActorName(item: ActivityLog) {
 function getLogMessage(item: ActivityLog) {
   if (item.description) return item.description;
   if (item.message) return item.message;
-  if (item.fieldName) return `แก้ไข ${item.fieldName}`;
-  if (item.action) return item.action;
-  if (item.event) return item.event;
+  if (item.fieldName) return `${formatActivityActionLabel(item.action)} ${item.fieldName}`;
+  if (item.action) {
+    return `${formatActivityActionLabel(item.action)} ${formatActivityEntityTypeLabel(item.entityType)}`;
+  }
+  if (item.event) return formatActivityActionLabel(item.event);
   return "มีการเปลี่ยนแปลงข้อมูล";
 }
 

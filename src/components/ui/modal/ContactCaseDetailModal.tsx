@@ -2,7 +2,6 @@
 
 import { X } from "lucide-react";
 import type {
-  ContactCaseStatus,
   ContactCase,
   ContactCaseReadStatus,
 } from "@/types/contact-case";
@@ -16,12 +15,6 @@ interface ContactCaseDetailModalProps {
 const readStatusConfig: Record<ContactCaseReadStatus, { label: string; color: string }> = {
   READ: { label: "อ่านแล้ว", color: "#2D7CA4" },
   UNREAD: { label: "ยังไม่ได้อ่าน", color: "#FF944D" },
-};
-
-const caseStatusLabel: Record<ContactCaseStatus, string> = {
-  NEW: "ใหม่",
-  IN_PROGRESS: "กำลังดำเนินการ",
-  CLOSED: "ปิดเคสแล้ว",
 };
 
 export function ContactCaseDetailModal({
@@ -65,10 +58,6 @@ export function ContactCaseDetailModal({
           <InfoItem
             label="ชื่อผู้ติดต่อ"
             value={contactCase.contactName || "-"}
-          />
-          <InfoItem
-            label="สถานะเคส"
-            value={caseStatusLabel[contactCase.caseStatus]}
           />
         </div>
 

@@ -2,9 +2,18 @@ import type { PaginationMeta } from "@/types/member";
 
 export type ActivityEntityType =
   | "PRODUCT"
+  | "PRODUCT_CATEGORY"
+  | "POLICY"
   | "MEMBER"
   | "CONTENT"
+  | "CONTENT_CATEGORY"
+  | "CONTACT_CASE"
+  | "CONTACT_CATEGORY"
+  | "LEAD"
   | "USER"
+  | "ADMIN_USER"
+  | "AUTH"
+  | "SETTING"
   | "SYSTEM";
 
 export type ActivityAction =
@@ -12,7 +21,13 @@ export type ActivityAction =
   | "UPDATE"
   | "DELETE"
   | "PUBLISH"
-  | "UNPUBLISH";
+  | "UNPUBLISH"
+  | "STATUS_CHANGE"
+  | "LOGIN"
+  | "LOGIN_FAILED"
+  | "LOGOUT"
+  | "READ"
+  | "MARK_READ";
 
 export type ActivityLogEntityType = ActivityEntityType;
 

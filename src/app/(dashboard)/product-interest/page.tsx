@@ -23,8 +23,13 @@ const PAGE_SIZE = 10;
 const statusConfig: Record<ProductInterestStatus, { label: string; color: string }> = {
   PENDING: { label: "รอการติดต่อกลับ", color: "#FF944D" },
   CONTACTED: { label: "ติดต่อแล้ว", color: "#2D7CA4" },
-  CLOSED: { label: "ปิดรายการ", color: "#707070" },
+  CLOSED: { label: "ติดต่อแล้ว", color: "#2D7CA4" },
 };
+
+const statusOptions = [
+  { label: "รอการติดต่อกลับ", value: "PENDING" },
+  { label: "ติดต่อแล้ว", value: "CONTACTED" },
+];
 
 const defaultMeta: PaginationMeta = {
   page: 1,
@@ -187,9 +192,7 @@ export default function ProductInterestPage() {
           onChange={setStatus}
           options={[
             { label: "ทั้งหมด", value: "" },
-            { label: "รอการติดต่อกลับ", value: "PENDING" },
-            { label: "ติดต่อแล้ว", value: "CONTACTED" },
-            { label: "ปิดรายการ", value: "CLOSED" },
+            ...statusOptions,
           ]}
         />
         <div className="relative w-full">
@@ -296,7 +299,11 @@ export default function ProductInterestPage() {
                 return (
                   <tr
                     key={item.id}
-                    className="border-b border-[#F5F5F5] transition-colors hover:bg-primary/[0.02]"
+                    className={`border-b border-[#F5F5F5] transition-colors ${
+                      item.status === "PENDING"
+                        ? "bg-[#FFF7ED] hover:bg-[#FFF1E2]"
+                        : "hover:bg-primary/[0.02]"
+                    }`}
                   >
                     <TableCell>{(meta.page - 1) * meta.limit + index + 1}</TableCell>
                     <TableCell>{getLeadNo(item)}</TableCell>
@@ -373,7 +380,7 @@ function ProductInterestDetailModal({
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      if (item) setFormStatus(item.status);
+      if (item) setFormStatus(item.status === "CLOSED" ? "CONTACTED" : item.status);
     }, 0);
 
     return () => window.clearTimeout(timer);
@@ -415,11 +422,7 @@ function ProductInterestDetailModal({
               className="mt-1 w-full"
               value={formStatus}
               onChange={(value) => setFormStatus(value as ProductInterestStatus)}
-              options={[
-                { label: "รอการติดต่อกลับ", value: "PENDING" },
-                { label: "ติดต่อแล้ว", value: "CONTACTED" },
-                { label: "ปิดรายการ", value: "CLOSED" },
-              ]}
+              options={statusOptions}
             />
           </div>
         </div>
