@@ -3,7 +3,7 @@ import type { PaginationMeta } from "@/types/member";
 export type ActivityEntityType =
   | "PRODUCT"
   | "MEMBER"
-  | "NEWS"
+  | "CONTENT"
   | "USER"
   | "SYSTEM";
 
@@ -11,10 +11,10 @@ export type ActivityAction =
   | "CREATE"
   | "UPDATE"
   | "DELETE"
-  | "LOGIN"
-  | "SEND_NOTIFICATION";
+  | "PUBLISH"
+  | "UNPUBLISH";
 
-export type ActivityLogEntityType = ActivityEntityType | "CONTENT";
+export type ActivityLogEntityType = ActivityEntityType;
 
 export interface ActivityLogActor {
   id?: string;
