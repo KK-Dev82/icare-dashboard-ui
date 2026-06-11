@@ -18,10 +18,9 @@ import type {
 
 const defaultMeta = { page: 1, limit: 10, total: 0, totalPages: 1 };
 
-const ENTITY_TYPE_LABEL: Record<ActivityEntityType | "CONTENT", string> = {
+const ENTITY_TYPE_LABEL: Record<ActivityEntityType, string> = {
   PRODUCT: "ผลิตภัณฑ์",
   MEMBER: "สมาชิก",
-  NEWS: "ข่าวสาร / โปรโมชั่น",
   CONTENT: "ข่าวสาร / โปรโมชั่น",
   USER: "ผู้ใช้งาน",
   SYSTEM: "ระบบ",
@@ -31,14 +30,14 @@ const ACTION_LABEL: Record<ActivityAction, string> = {
   CREATE: "เพิ่มข้อมูล",
   UPDATE: "แก้ไขข้อมูล",
   DELETE: "ลบข้อมูล",
-  LOGIN: "เข้าสู่ระบบ",
-  SEND_NOTIFICATION: "ส่งแจ้งเตือน",
+  PUBLISH: "เผยแพร่",
+  UNPUBLISH: "ยกเลิกเผยแพร่",
 };
 
 const entityTypeOptions = [
   { label: "ผลิตภัณฑ์", value: "PRODUCT" },
   { label: "สมาชิก", value: "MEMBER" },
-  { label: "ข่าวสาร / โปรโมชั่น", value: "NEWS" },
+  { label: "ข่าวสาร / โปรโมชั่น", value: "CONTENT" },
   { label: "ผู้ใช้งาน", value: "USER" },
   { label: "ระบบ", value: "SYSTEM" },
 ];
@@ -47,8 +46,8 @@ const actionOptions = [
   { label: "เพิ่มข้อมูล", value: "CREATE" },
   { label: "แก้ไขข้อมูล", value: "UPDATE" },
   { label: "ลบข้อมูล", value: "DELETE" },
-  { label: "เข้าสู่ระบบ", value: "LOGIN" },
-  { label: "ส่งแจ้งเตือน", value: "SEND_NOTIFICATION" },
+  { label: "เผยแพร่", value: "PUBLISH" },
+  { label: "ยกเลิกเผยแพร่", value: "UNPUBLISH" },
 ];
 
 const initialFilter: ActivityLogFilter = {
@@ -437,11 +436,11 @@ function getActionLabel(action: string) {
 }
 
 function getEntityLabel(entityType: string) {
-  return ENTITY_TYPE_LABEL[entityType as ActivityEntityType | "CONTENT"] ?? entityType ?? "-";
+  return ENTITY_TYPE_LABEL[entityType as ActivityEntityType] ?? entityType ?? "-";
 }
 
 function getFieldLabel(entityType: string, field: string) {
-  const labelByType: Partial<Record<ActivityEntityType | "CONTENT", Record<string, string>>> = {
+  const labelByType: Partial<Record<ActivityEntityType, Record<string, string>>> = {
     PRODUCT: {
       name: "ชื่อผลิตภัณฑ์",
       title: "ชื่อผลิตภัณฑ์",
@@ -460,17 +459,6 @@ function getFieldLabel(entityType: string, field: string) {
       phone: "เบอร์โทรศัพท์",
       email: "อีเมล",
       status: "สถานะ",
-    },
-    NEWS: {
-      title: "หัวข้อ",
-      summary: "สรุป",
-      content: "รายละเอียด",
-      mainImage: "รูปภาพหลัก",
-      bannerImage: "รูปภาพแบนเนอร์",
-      album: "อัลบั้ม",
-      isPublish: "สถานะเผยแพร่",
-      status: "สถานะ",
-      publishedAt: "วันที่เผยแพร่",
     },
     CONTENT: {
       title: "หัวข้อ",
@@ -492,7 +480,7 @@ function getFieldLabel(entityType: string, field: string) {
     },
   };
 
-  return labelByType[entityType as ActivityEntityType | "CONTENT"]?.[field] ?? field;
+  return labelByType[entityType as ActivityEntityType]?.[field] ?? field;
 }
 
 function getLogDetail(log: ActivityLog) {
