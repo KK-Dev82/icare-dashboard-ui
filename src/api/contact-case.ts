@@ -77,7 +77,7 @@ export const contactCaseApi = {
 
   updateCategory: async (
     id: string,
-    payload: { name?: string; sortOrder?: number }
+    payload: { name?: string; sortOrder?: number; isActive?: boolean }
   ): Promise<ContactCategory> => {
     const { data } = await apiClient.patch<ApiResponse<ContactCategory>>(
       `/api/v1/admin/contact-cases/categories/${id}`,
