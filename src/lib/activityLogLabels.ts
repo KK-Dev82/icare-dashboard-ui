@@ -2,7 +2,6 @@ export const ACTIVITY_ENTITY_TYPE_LABEL: Record<string, string> = {
   PRODUCT: "ผลิตภัณฑ์",
   PRODUCT_CATEGORY: "หมวดหมู่ผลิตภัณฑ์",
   POLICY: "กรมธรรม์",
-  MEMBER: "สมาชิก",
   CONTENT: "ข่าวสาร / โปรโมชัน",
   CONTENT_CATEGORY: "หมวดหมู่ข่าวสาร",
   CONTACT_CASE: "คำขอติดต่อ",
@@ -12,7 +11,6 @@ export const ACTIVITY_ENTITY_TYPE_LABEL: Record<string, string> = {
   ADMIN_USER: "บัญชีผู้ดูแลระบบ",
   AUTH: "การเข้าสู่ระบบ",
   SETTING: "ตั้งค่าระบบ",
-  SYSTEM: "ระบบ",
 };
 
 export const ACTIVITY_ACTION_LABEL: Record<string, string> = {
@@ -24,9 +22,7 @@ export const ACTIVITY_ACTION_LABEL: Record<string, string> = {
   STATUS_CHANGE: "เปลี่ยนสถานะ",
   LOGIN: "เข้าสู่ระบบ",
   LOGIN_FAILED: "เข้าสู่ระบบไม่สำเร็จ",
-  LOGOUT: "ออกจากระบบ",
   READ: "อ่านรายการ",
-  MARK_READ: "อ่านรายการ",
 };
 
 export const ACTIVITY_FIELD_LABEL: Record<string, string> = {
