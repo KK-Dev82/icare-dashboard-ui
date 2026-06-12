@@ -111,14 +111,14 @@ const DETAIL_FIELD_ORDER: Record<string, string[]> = {
 
 const initialFilter: ActivityLogFilter = {
   search: "",
-  adminId: "",
+  adminSearch: "",
   page: 1,
   limit: 10,
 };
 
 export default function ActivityLogPage() {
   const [search, setSearch] = useState("");
-  const [adminId, setAdminId] = useState("");
+  const [adminSearch, setAdminSearch] = useState("");
   const [entityType, setEntityType] = useState("");
   const [action, setAction] = useState("");
   const [currentRole, setCurrentRole] = useState<string | null>(null);
@@ -153,12 +153,20 @@ export default function ActivityLogPage() {
   const handleSearch = () => {
     setAppliedFilter({
       search: search.trim(),
-      adminId: adminId.trim() || undefined,
+      adminSearch: adminSearch.trim() || undefined,
       entityType: (entityType || undefined) as ActivityEntityType | undefined,
       action: (action || undefined) as ActivityAction | undefined,
       page: 1,
       limit: 10,
     });
+  };
+
+  const handleClear = () => {
+    setSearch("");
+    setAdminSearch("");
+    setEntityType("");
+    setAction("");
+    setAppliedFilter(initialFilter);
   };
 
   const handlePageChange = (page: number) => {
@@ -198,9 +206,9 @@ export default function ActivityLogPage() {
             size="md"
             className="w-[230px]"
             label="ผู้ใช้งาน"
-            placeholder="ระบุ Admin ID"
-            value={adminId}
-            onChange={(e) => setAdminId(e.target.value)}
+            placeholder="ชื่อผู้ใช้งาน หรือ Admin ID"
+            value={adminSearch}
+            onChange={(e) => setAdminSearch(e.target.value)}
           />
           <Select
             size="md"
@@ -226,6 +234,13 @@ export default function ActivityLogPage() {
             className="h-[42px] rounded-[8px] bg-[#FF944D] px-8 text-[14px] font-medium text-white transition hover:bg-[#f28338]"
           >
             ค้นหา
+          </button>
+          <button
+            type="button"
+            onClick={handleClear}
+            className="h-[42px] rounded-[8px] border border-[#DCDCDC] px-8 text-[14px] font-medium text-[#565656] transition hover:bg-gray-50"
+          >
+            ล้าง
           </button>
         </div>
 
@@ -520,13 +535,6 @@ function getFieldLabel(entityType: string, field: string) {
       mainImage: "รูปภาพหลัก",
       bannerImage: "รูปภาพแบนเนอร์",
       album: "อัลบั้ม",
-    },
-    MEMBER: {
-      firstName: "ชื่อ",
-      lastName: "นามสกุล",
-      phone: "เบอร์โทรศัพท์",
-      email: "อีเมล",
-      status: "สถานะ",
     },
     CONTENT: {
       title: "หัวข้อ",

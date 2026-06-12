@@ -4,7 +4,6 @@ export type ActivityEntityType =
   | "PRODUCT"
   | "PRODUCT_CATEGORY"
   | "POLICY"
-  | "MEMBER"
   | "CONTENT"
   | "CONTENT_CATEGORY"
   | "CONTACT_CASE"
@@ -13,8 +12,7 @@ export type ActivityEntityType =
   | "USER"
   | "ADMIN_USER"
   | "AUTH"
-  | "SETTING"
-  | "SYSTEM";
+  | "SETTING";
 
 export type ActivityAction =
   | "CREATE"
@@ -25,9 +23,7 @@ export type ActivityAction =
   | "STATUS_CHANGE"
   | "LOGIN"
   | "LOGIN_FAILED"
-  | "LOGOUT"
-  | "READ"
-  | "MARK_READ";
+  | "READ";
 
 export type ActivityLogEntityType = ActivityEntityType;
 
@@ -69,6 +65,7 @@ export interface ActivityLog {
 export interface ActivityLogFilter {
   search?: string;
   adminId?: string;
+  adminSearch?: string;
   entityId?: string;
   entityType?: ActivityEntityType;
   action?: ActivityAction;
@@ -81,6 +78,7 @@ export interface ActivityLogFilter {
 export interface ActivityLogListParams {
   search?: string;
   adminId?: string;
+  adminSearch?: string;
   entityType?: ActivityLogEntityType;
   action?: ActivityAction;
   startDate?: string;
