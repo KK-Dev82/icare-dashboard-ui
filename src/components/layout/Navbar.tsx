@@ -13,6 +13,7 @@ import {
   Package,
   UserCog,
   Settings,
+  History,
   ChevronDown,
   KeyRound,
   LogOut,
@@ -25,8 +26,17 @@ const menuItems = [
   { label: "สมาชิก", href: "/members", icon: Users },
   { label: "ข่าวสาร / โปรโมชั่น", href: "/news", icon: Newspaper },
   { label: "จัดการผลิตภัณฑ์", href: "/policies", icon: Package },
-  { label: "คำร้อง / ติดต่อ", href: "/contact-case", icon: MapPin },
+  {
+    label: "คำร้อง / ติดต่อ",
+    href: "/contact-case",
+    icon: MapPin,
+    children: [
+      { label: "คำร้องขอติดต่อ", href: "/contact-case" },
+      { label: "ความสนใจผลิตภัณฑ์", href: "/product-interest" },
+    ],
+  },
   { label: "ผู้ใช้งาน", href: "/accounts", icon: UserCog },
+  { label: "ประวัติการใช้งาน", href: "/activity-log", icon: History, superAdminOnly: true },
   { label: "การตั้งค่า", href: "/settings", icon: Settings },
 ];
 
@@ -35,6 +45,7 @@ export default function Navbar() {
   const router = useRouter();
   const [fullName, setFullName] = useState("Admin");
   const [role, setRole] = useState("");
+  const [navDropdownOpen, setNavDropdownOpen] = useState<string | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [oldPassword, setOldPassword] = useState("");
@@ -102,8 +113,65 @@ export default function Navbar() {
 
           {/* Center - Navigation */}
           <nav className="flex h-full items-center gap-1">
-            {menuItems.map((item) => {
-              const isActive = pathname.startsWith(item.href);
+            {menuItems
+              .filter((item) => !item.superAdminOnly || role === "SUPER_ADMIN")
+              .map((item) => {
+              const childActive = item.children?.some((child) => pathname.startsWith(child.href));
+              const isActive = childActive || pathname.startsWith(item.href);
+              const hasChildren = Boolean(item.children?.length);
+
+              if (hasChildren) {
+                return (
+                  <div key={item.href} className="relative h-full">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setNavDropdownOpen((current) => (current === item.href ? null : item.href))
+                      }
+                      className={`relative flex h-full items-center gap-2 px-4 text-[13px] font-medium transition-all ${
+                        isActive
+                          ? "text-primary"
+                          : "text-gray-500 hover:bg-primary/5 hover:text-primary"
+                      }`}
+                    >
+                      <item.icon size={18} strokeWidth={1.8} />
+                      {item.label}
+                      <ChevronDown
+                        size={14}
+                        className={`transition-transform ${
+                          navDropdownOpen === item.href ? "rotate-180" : ""
+                        }`}
+                      />
+                      {isActive && (
+                        <span className="absolute bottom-0 left-0 right-0 h-[3px] rounded-full bg-primary" />
+                      )}
+                    </button>
+
+                    {navDropdownOpen === item.href && (
+                      <div className="absolute left-0 top-full z-50 mt-2 w-[210px] rounded-[12px] border border-[#EAEAEA] bg-white py-2 shadow-[0_8px_24px_rgba(0,0,0,0.08)]">
+                        {item.children?.map((child) => {
+                          const isChildActive = pathname.startsWith(child.href);
+                          return (
+                            <Link
+                              key={child.href}
+                              href={child.href}
+                              onClick={() => setNavDropdownOpen(null)}
+                              className={`block px-4 py-2.5 text-[13px] font-semibold transition-colors ${
+                                isChildActive
+                                  ? "text-primary"
+                                  : "text-[#243333] hover:bg-[#EDF9F9] hover:text-primary"
+                              }`}
+                            >
+                              {child.label}
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
               return (
                 <Link
                   key={item.href}

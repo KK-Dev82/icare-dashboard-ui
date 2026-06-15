@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ContactCategorySettingsPanel } from "./components/ContactCategorySettingsPanel";
 import { NewsPromotionSettingsPanel } from "./components/NewsPromotionSettingsPanel";
 import { PolicyTypeSettingsPanel } from "./components/PolicyTypeSettingsPanel";
 import { SettingsTabs, type SettingTab } from "./components/SettingsTabs";
@@ -23,6 +24,7 @@ export default function SettingsPage() {
       {activeTab === "system" && <SystemSettingsPanel />}
       {activeTab === "policy" && <PolicyTypeSettingsPanel />}
       {activeTab === "content" && <NewsPromotionSettingsPanel />}
+      {activeTab === "contact" && <ContactCategorySettingsPanel />}
     </div>
   );
 }

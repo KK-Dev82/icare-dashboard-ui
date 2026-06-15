@@ -1,6 +1,31 @@
 import type { PaginationMeta } from "@/types/member";
 
-export type ActivityLogEntityType = "CONTENT" | "PRODUCT";
+export type ActivityEntityType =
+  | "PRODUCT"
+  | "PRODUCT_CATEGORY"
+  | "POLICY"
+  | "CONTENT"
+  | "CONTENT_CATEGORY"
+  | "CONTACT_CASE"
+  | "CONTACT_CATEGORY"
+  | "LEAD"
+  | "USER"
+  | "ADMIN_USER"
+  | "AUTH"
+  | "SETTING";
+
+export type ActivityAction =
+  | "CREATE"
+  | "UPDATE"
+  | "DELETE"
+  | "PUBLISH"
+  | "UNPUBLISH"
+  | "STATUS_CHANGE"
+  | "LOGIN"
+  | "LOGIN_FAILED"
+  | "READ";
+
+export type ActivityLogEntityType = ActivityEntityType;
 
 export interface ActivityLogActor {
   id?: string;
@@ -14,7 +39,12 @@ export interface ActivityLog {
   id: string;
   entityType: ActivityLogEntityType | string;
   entityId: string;
-  action?: string | null;
+  action: ActivityAction | string;
+  previousData?: Record<string, unknown> | null;
+  changedData?: Record<string, unknown> | null;
+  adminId?: string | null;
+  adminName?: string | null;
+  role?: string | null;
   event?: string | null;
   description?: string | null;
   message?: string | null;
@@ -32,11 +62,30 @@ export interface ActivityLog {
   updatedAt?: string;
 }
 
+export interface ActivityLogFilter {
+  search?: string;
+  adminId?: string;
+  adminSearch?: string;
+  entityId?: string;
+  entityType?: ActivityEntityType;
+  action?: ActivityAction;
+  startDate?: string;
+  endDate?: string;
+  page: number;
+  limit: number;
+}
+
 export interface ActivityLogListParams {
-  entityType: ActivityLogEntityType;
-  entityId: string;
+  search?: string;
+  adminId?: string;
+  adminSearch?: string;
+  entityType?: ActivityLogEntityType;
+  action?: ActivityAction;
+  startDate?: string;
+  endDate?: string;
   page?: number;
   limit?: number;
+  entityId?: string;
 }
 
 export interface ActivityLogListResponse {
