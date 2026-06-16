@@ -23,19 +23,13 @@ export default function Breadcrumb() {
   const pathname = usePathname();
   const segments = pathname.split("/").filter(Boolean);
 
-  if (segments.length <= 1) return null;
+  if (segments.length === 0 || (segments.length === 1 && segments[0] === "dashboard")) return null;
 
-  // Filter out UUID/ID segments from breadcrumb display
-  const displaySegments = segments.filter(
-    (seg) => !(seg.length > 8 && /^[0-9a-f-]+$/.test(seg))
-  );
-
-  if (displaySegments.length <= 1) return null;
-
-  const crumbs = displaySegments.map((seg, idx) => {
-    const href = "/" + segments.slice(0, segments.indexOf(seg) + 1).join("/");
-    const isLast = idx === displaySegments.length - 1;
-    const label = labelMap[seg] || seg;
+  const crumbs = segments.map((seg, idx) => {
+    const href = "/" + segments.slice(0, idx + 1).join("/");
+    const isLast = idx === segments.length - 1;
+    const isUuid = seg.length > 8 && /^[0-9a-f-]+$/.test(seg);
+    const label = isUuid ? "รายละเอียด" : (labelMap[seg] || seg);
 
     return { label, href, isLast };
   });
