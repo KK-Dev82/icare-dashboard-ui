@@ -1,7 +1,7 @@
 export interface SettingItem {
   key: string;
   value: string;
-  description: string;
+  description: string | null;
   updatedAt: string;
 }
 

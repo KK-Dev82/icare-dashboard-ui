@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { User } from "lucide-react";
+import { User, ChevronLeft, ChevronRight } from "lucide-react";
 import { Select } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { memberApi } from "@/api/member";
+import { claimApi } from "@/api/claim";
 import { ErrorState } from "@/components/ui/error-state";
 import type { Member, MemberInsuranceItem } from "@/types/member";
+import type { Claim, ClaimStatus } from "@/types/claim";
 
 export default function MemberDetailPage() {
   const params = useParams();
@@ -15,6 +17,10 @@ export default function MemberDetailPage() {
   const [member, setMember] = useState<Member | null>(null);
   const [insurance, setInsurance] = useState<MemberInsuranceItem[]>([]);
   const [insuranceTotal, setInsuranceTotal] = useState(0);
+  const [claims, setClaims] = useState<Claim[]>([]);
+  const [claimPage, setClaimPage] = useState(1);
+  const [claimTotalPages, setClaimTotalPages] = useState(1);
+  const [memberPhone, setMemberPhone] = useState("");
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -24,8 +30,21 @@ export default function MemberDetailPage() {
     Promise.all([
       memberApi.getById(id),
       memberApi.getInsurance(id).catch(() => null),
-    ]).then(([memberRes, insuranceRes]) => {
-      if (memberRes.success) setMember(memberRes.data);
+    ]).then(async ([memberRes, insuranceRes]) => {
+      if (memberRes.success) {
+        setMember(memberRes.data);
+        if (memberRes.data.phone) {
+          const phone = memberRes.data.phone.startsWith("66")
+            ? "0" + memberRes.data.phone.slice(2)
+            : memberRes.data.phone;
+          setMemberPhone(phone);
+          const claimRes = await claimApi.getByPhone(phone, { page: 1, limit: 5 }).catch(() => null);
+          if (claimRes?.success) {
+            setClaims(claimRes.data);
+            setClaimTotalPages(claimRes.meta?.totalPages || 1);
+          }
+        }
+      }
       if (insuranceRes?.success) {
         setInsurance(insuranceRes.data.data);
         setInsuranceTotal(insuranceRes.data.total);
@@ -42,6 +61,16 @@ export default function MemberDetailPage() {
     return () => window.clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  const handleClaimPageChange = async (page: number) => {
+    setClaimPage(page);
+    setClaims([]);
+    const res = await claimApi.getByPhone(memberPhone, { page, limit: 5 }).catch(() => null);
+    if (res?.success) {
+      setClaims(res.data);
+      setClaimTotalPages(res.meta?.totalPages || 1);
+    }
+  };
 
   if (loading) return null;
 
@@ -148,15 +177,175 @@ export default function MemberDetailPage() {
         </section>
 
         {/* Right Panel */}
-        <aside className="rounded-[24px] bg-white p-6">
+        <aside className="rounded-[24px] bg-white p-6 self-start">
           <div className="border-b border-[#EAEAEA] pb-5">
             <h2 className="text-lg font-bold text-[#243333]">ข้อมูลการเคลม</h2>
           </div>
 
-          <div className="mt-5 flex flex-1 items-center justify-center py-12">
-            <p className="text-sm text-[#9CA3AF]">ยังไม่มีข้อมูลการเคลม</p>
-          </div>
+          {claims.length === 0 && claimTotalPages >= 1 && claimPage > 0 ? (
+            claimTotalPages === 1 && claimPage === 1 ? (
+              <div className="mt-5 flex flex-1 items-center justify-center py-12">
+                <p className="text-sm text-[#9CA3AF]">ยังไม่มีข้อมูลการเคลม</p>
+              </div>
+            ) : (
+              <div className="mt-5 space-y-3 animate-pulse">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="rounded-[14px] border border-[#EAEAEA] p-4 h-[158px]">
+                    <div className="space-y-2 animate-pulse">
+                      <div className="flex justify-between">
+                        <div className="h-3 w-24 bg-gray-100 rounded" />
+                        <div className="h-4 w-16 bg-gray-100 rounded-full" />
+                      </div>
+                      <div className="h-4 w-32 bg-gray-100 rounded" />
+                      <div className="h-3 w-full bg-gray-100 rounded" />
+                      <div className="h-3 w-2/3 bg-gray-100 rounded" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
+          ) : (
+            <div className="mt-5 space-y-3">
+              {claims.map((claim) => (
+                <ClaimCard key={claim.id} claim={claim} />
+              ))}
+            </div>
+          )}
+
+          {claimTotalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 pt-4">
+              <button
+                disabled={claimPage <= 1}
+                onClick={() => handleClaimPageChange(claimPage - 1)}
+                className="w-7 h-7 flex items-center justify-center rounded-md border border-[#EAEAEA] text-gray-400 hover:border-primary hover:text-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <ChevronLeft size={14} />
+              </button>
+              <span className="text-xs text-[#9CA3AF]">{claimPage} / {claimTotalPages}</span>
+              <button
+                disabled={claimPage >= claimTotalPages}
+                onClick={() => handleClaimPageChange(claimPage + 1)}
+                className="w-7 h-7 flex items-center justify-center rounded-md border border-[#EAEAEA] text-gray-400 hover:border-primary hover:text-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <ChevronRight size={14} />
+              </button>
+            </div>
+          )}
         </aside>
+      </div>
+    </div>
+  );
+}
+const claimStatusColor: Record<string, string> = {
+  INPROGRESS: "#FF944D",
+  HOLD: "#2D7CA4",
+  REJECT: "#F44034",
+  APPROVED: "#24A148",
+};
+
+const claimStatusLabel: Record<string, string> = {
+  INPROGRESS: "อยู่ระหว่างดำเนินการ",
+  HOLD: "รอเอกสารเพิ่มเติม",
+  REJECT: "ปฏิเสธการจ่าย",
+  APPROVED: "อนุมัติ",
+};
+
+const claimConsiderLabel: Record<string, string> = {
+  PENDING: "อยู่ระหว่างดำเนินการ",
+  REPAIR: "ซ่อม",
+  REPLACEMENT: "เปลี่ยนเครื่อง",
+  SWAP: "เปลี่ยนเครื่อง",
+  REJECT: "ปฏิเสธการจ่าย",
+};
+
+function ClaimCard({ claim }: { claim: Claim }) {
+  const [expanded, setExpanded] = useState(false);
+  const [statuses, setStatuses] = useState<ClaimStatus[]>([]);
+  const [loadingStatuses, setLoadingStatuses] = useState(false);
+
+  const color = claimStatusColor[claim.status] || "#9CA3AF";
+  const label = claimStatusLabel[claim.status] || claim.status;
+  const considerLabel = claimConsiderLabel[claim.statusConsider] || claim.statusConsider;
+
+  const handleToggle = async () => {
+    if (!expanded && statuses.length === 0) {
+      setLoadingStatuses(true);
+      const res = await claimApi.getStatuses(claim.id).catch(() => null);
+      if (res?.success) setStatuses(res.data);
+      setLoadingStatuses(false);
+    }
+    setExpanded(!expanded);
+  };
+
+  return (
+    <div className={`rounded-[14px] border transition-all duration-200 overflow-hidden cursor-pointer ${
+      expanded ? "border-primary/40 shadow-sm" : "border-[#EAEAEA] hover:border-primary/30"
+    }`}>
+      <div
+        onClick={handleToggle}
+        className="p-4"
+      >
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-[#9CA3AF]">เลขที่คำร้องเคลม</p>
+            <span className="rounded-full px-3 py-0.5 text-xs font-medium text-white" style={{ backgroundColor: color }}>
+              {label}
+            </span>
+          </div>
+          <p className="text-sm font-bold text-[#243333]">{claim.code}</p>
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-[#9CA3AF]">วันที่ยื่นคำร้อง</p>
+            <p className="text-xs font-medium text-[#565656]">
+              {new Date(claim.createdOn).toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "numeric" })}
+            </p>
+          </div>
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-[#9CA3AF]">ผลพิจารณา</p>
+            <p className="text-xs font-medium text-[#565656]">{considerLabel}</p>
+          </div>
+        </div>
+        <p className="text-center text-[11px] text-primary/70 mt-3">
+          {expanded ? "ซ่อน" : "ดูไทม์ไลน์"}
+        </p>
+      </div>
+
+      <div
+        className={`grid transition-all duration-300 ease-in-out ${
+          expanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+        }`}
+      >
+        <div className="overflow-hidden">
+          <div className="px-4 pb-4 pt-1 border-t border-[#F5F5F5]">
+            <p className="text-xs font-medium text-[#9CA3AF] mb-3">ไทม์ไลน์</p>
+            {loadingStatuses ? (
+              <div className="space-y-2 animate-pulse">
+                <div className="h-4 w-3/4 bg-gray-100 rounded" />
+                <div className="h-4 w-1/2 bg-gray-100 rounded" />
+              </div>
+            ) : statuses.length === 0 ? (
+              <p className="text-xs text-[#9CA3AF]">ไม่พบข้อมูล</p>
+            ) : (
+              <div className="relative pl-4">
+                <div className="absolute left-[5px] top-1.5 bottom-1.5 w-px bg-[#EAEAEA]" />
+                {statuses.map((s, idx) => (
+                  <div key={s.id} className="relative flex items-start gap-3 pb-3 last:pb-0">
+                    <div className={`relative z-10 mt-0.5 w-[10px] h-[10px] rounded-full border-2 ${
+                      idx === statuses.length - 1
+                        ? "border-primary bg-primary"
+                        : "border-[#DCDCDC] bg-white"
+                    }`} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium text-[#243333]">{s.label}</p>
+                      <p className="text-[11px] text-[#9CA3AF]">
+                        {new Date(s.createdOn).toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
