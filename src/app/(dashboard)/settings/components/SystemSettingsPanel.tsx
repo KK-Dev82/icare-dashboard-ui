@@ -89,7 +89,7 @@ export function SystemSettingsPanel() {
             <Input
               size="md"
               className="w-full"
-              label={keyLabel[item.key] || item.description}
+              label={keyLabel[item.key] || item.description || undefined}
               value={formValues[item.key] || ""}
               onChange={(e) => setFormValues((prev) => ({ ...prev, [item.key]: e.target.value }))}
             />

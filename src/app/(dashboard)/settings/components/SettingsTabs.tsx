@@ -1,4 +1,4 @@
-export type SettingTab = "system" | "policy" | "content" | "contact";
+export type SettingTab = "system" | "policy" | "content" | "contact" | "notification";
 
 interface SettingsTabsProps {
   activeTab: SettingTab;
@@ -10,11 +10,12 @@ const tabs: Array<{ label: string; value: SettingTab }> = [
   { label: "การตั้งค่าผลิตภัณฑ์", value: "policy" },
   { label: "การตั้งค่าข่าวสาร / โปรโมชั่น", value: "content" },
   { label: "การตั้งค่าหัวข้อการติดต่อ", value: "contact" },
+  { label: "ตั้งค่าการแจ้งเตือนกรมธรรม์", value: "notification" },
 ];
 
 export function SettingsTabs({ activeTab, onChange }: SettingsTabsProps) {
   return (
-    <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+    <div className="mt-4 flex flex-col gap-3">
       {tabs.map((tab) => {
         const isActive = activeTab === tab.value;
 
@@ -23,10 +24,11 @@ export function SettingsTabs({ activeTab, onChange }: SettingsTabsProps) {
             key={tab.value}
             type="button"
             onClick={() => onChange(tab.value)}
-            className={`h-[39px] rounded-[6px] border px-4 text-sm font-medium transition-colors ${
+            aria-pressed={isActive}
+            className={`min-h-[44px] w-full rounded-[6px] border px-4 py-2 text-left text-sm font-medium leading-5 transition-colors ${
               isActive
                 ? "border-primary bg-primary text-white"
-                : "border-primary text-primary hover:bg-primary/5"
+                : "border-[#D6EEEE] bg-white text-primary hover:border-primary hover:bg-primary/5"
             }`}
           >
             {tab.label}
