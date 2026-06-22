@@ -2,9 +2,11 @@
 
 import { Input } from "@/components/ui/input";
 import { Eye, EyeOff } from "lucide-react";
+import Image from "next/image";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { authApi } from "@/api/auth";
+import iciLogo from "@/../assets/ici.png";
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -40,13 +42,14 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-[#F4FAFA]">
       <div className="w-full max-w-[440px]">
         {/* Logo */}
-        <div className="flex items-center justify-center gap-2 mb-10">
-          <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
-            <span className="text-white font-bold text-lg">iC</span>
-          </div>
-          <span className="text-2xl font-bold text-[#243333]">
-            iCare <span className="text-primary">Insurance</span>
-          </span>
+        <div className="flex justify-center mb-5">
+          <Image
+            src={iciLogo}
+            alt="ICI Logo"
+            width={238}
+            height={91}
+            className="h-[91px] w-[238px] object-contain"
+          />
         </div>
 
         {/* Card */}

@@ -156,6 +156,18 @@ export default function ContactCasePage() {
     setAppliedSubmittedDate(submittedDate);
   };
 
+  const handleClear = () => {
+    setSearch("");
+    setCategoryId("");
+    setReadStatus("");
+    setSubmittedDate("");
+    setPage(1);
+    setAppliedSearch("");
+    setAppliedCategoryId("");
+    setAppliedReadStatus("");
+    setAppliedSubmittedDate("");
+  };
+
   const handlePageChange = (nextPage: number) => {
     setPage(nextPage);
   };
@@ -204,14 +216,17 @@ export default function ContactCasePage() {
         <StatCard label="วันนี้" value={stats.today} color="#FF7468" />
       </div>
 
-      <div className="mt-8 grid gap-3 lg:grid-cols-[minmax(180px,1fr)_230px_230px_230px_145px] lg:items-center">
+      <div className="mt-8 grid gap-3 lg:grid-cols-[minmax(160px,1fr)_220px_220px_220px_125px_95px] lg:items-center">
         <Input
           size="md"
           className="w-full"
           label="ค้นหา"
-          placeholder="ค้นหา"
+          placeholder="ค้นหาเลขที่เรื่อง, หัวข้อ, เบอร์โทรศัพท์, ผู้ติดต่อ"
           value={search}
           onChange={(event) => setSearch(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") handleSearch();
+          }}
         />
         <Select
           size="md"
@@ -243,6 +258,9 @@ export default function ContactCasePage() {
             type="date"
             value={submittedDate}
             onChange={(event) => setSubmittedDate(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") handleSearch();
+            }}
             className="h-[42px] w-full rounded-[10px] border border-[#DCDCDC] bg-white px-4 pr-11 text-[14px] text-[#565656] outline-none transition-all duration-200 hover:border-primary hover:shadow-[0_4px_12px_rgba(7,162,162,0.08)] focus:border-primary [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-4 [&::-webkit-calendar-picker-indicator]:h-5 [&::-webkit-calendar-picker-indicator]:w-5 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0"
           />
           <CalendarDays
@@ -256,6 +274,13 @@ export default function ContactCasePage() {
           className="h-[42px] rounded-[8px] bg-[#FF944D] px-8 text-[14px] font-medium text-white transition hover:bg-[#f28338]"
         >
           ค้นหา
+        </button>
+        <button
+          type="button"
+          onClick={handleClear}
+          className="h-[42px] rounded-[8px] border border-[#DCDCDC] bg-white px-5 text-[14px] font-medium text-[#707070] transition hover:border-primary hover:text-primary"
+        >
+          ล้าง
         </button>
       </div>
 
@@ -397,6 +422,31 @@ function StatCard({
   value: number;
   color: string;
 }) {
+  const [displayValue, setDisplayValue] = useState(0);
+
+  useEffect(() => {
+    const numericValue = Number(value);
+    const target = Number.isFinite(numericValue) ? numericValue : 0;
+
+    const duration = 600;
+    const steps = 30;
+    const stepTime = duration / steps;
+    let current = 0;
+    const increment = target / steps;
+
+    const timer = window.setInterval(() => {
+      current += increment;
+      if (current >= target) {
+        setDisplayValue(target);
+        window.clearInterval(timer);
+      } else {
+        setDisplayValue(Math.floor(current));
+      }
+    }, stepTime);
+
+    return () => window.clearInterval(timer);
+  }, [value]);
+
   return (
     <div className="flex h-[76px] items-center justify-center gap-8 rounded-[10px] border border-[#EAEAEA] bg-white px-6">
       <span
@@ -406,7 +456,9 @@ function StatCard({
         {label}
       </span>
       <div className="flex items-end gap-4">
-        <p className="text-[28px] font-bold leading-none text-[#243333]">{value}</p>
+        <p className="text-[28px] font-bold leading-none text-[#243333] tabular-nums">
+          {displayValue}
+        </p>
         <p className="pb-1 text-[13px] text-[#9FA2A9]">รายการ</p>
       </div>
     </div>

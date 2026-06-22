@@ -32,7 +32,7 @@ const menuItems = [
     icon: MapPin,
     children: [
       { label: "คำร้องขอติดต่อ", href: "/contact-case" },
-      { label: "ความสนใจผลิตภัณฑ์", href: "/product-interest" },
+      { label: "ความสนใจผลิตภัณฑ์/คอนเทนต์", href: "/product-interest" },
     ],
   },
   { label: "ผู้ใช้งาน", href: "/accounts", icon: UserCog },
