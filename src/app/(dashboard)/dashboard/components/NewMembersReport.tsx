@@ -135,6 +135,20 @@ export function NewMembersReport() {
     setAppliedMemberCustomTo(memberCustomTo);
   };
 
+  const handleMemberClear = () => {
+    setMemberSearch("");
+    setMemberAccountLevel("");
+    setMemberQuickFilter("");
+    setMemberCustomFrom("");
+    setMemberCustomTo("");
+    setMemberPage(1);
+    setAppliedMemberSearch("");
+    setAppliedMemberAccountLevel("");
+    setAppliedMemberQuickFilter("");
+    setAppliedMemberCustomFrom("");
+    setAppliedMemberCustomTo("");
+  };
+
   return (
     <section className="flex flex-col rounded-[18px] bg-white px-6 py-6 shadow-[0_2px_12px_rgba(0,0,0,0.04)] sm:px-8 xl:col-span-3">
       <PanelHeader
@@ -147,7 +161,7 @@ export function NewMembersReport() {
           size="md"
           className="w-full lg:flex-1"
           label="ค้นหา"
-          placeholder="ค้นหา"
+          placeholder="ค้นหาเบอร์โทรศัพท์, อีเมล, ชื่อ, นามสกุล"
           value={memberSearch}
           onChange={(event) => setMemberSearch(event.target.value)}
           onKeyDown={(event) => {
@@ -188,6 +202,13 @@ export function NewMembersReport() {
           className="h-[42px] rounded-[8px] bg-[#FF944D] px-8 text-[14px] font-medium text-white transition hover:bg-[#f28338] lg:w-[145px]"
         >
           ค้นหา
+        </button>
+        <button
+          type="button"
+          onClick={handleMemberClear}
+          className="h-[42px] rounded-[8px] border border-[#DCDCDC] px-8 text-[14px] font-medium text-[#565656] transition hover:bg-gray-50 lg:w-[110px]"
+        >
+          ล้าง
         </button>
       </div>
 

@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Pencil, Power, Plus } from "lucide-react";
+import { Pencil, Power, Plus, Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { ConfirmModal } from "@/components/ui/modal";
 import { adminUserApi } from "@/api/admin-user";
 import { ErrorState } from "@/components/ui/error-state";
 import { useAsyncData } from "@/hooks/useAsyncData";
-import type { AdminUser, AdminRole } from "@/types/admin-user";
+import type { AdminUser, AdminRole, AdminStatus } from "@/types/admin-user";
 
 const roleLabel: Record<AdminRole, string> = {
   SUPER_ADMIN: "Super Admin",
@@ -22,9 +22,21 @@ const roleColor: Record<AdminRole, string> = {
   CONTENT_EDITOR: "#FF944D",
 };
 
+const statusLabel: Record<AdminStatus, string> = {
+  ACTIVE: "เปิดการใช้งาน",
+  INACTIVE: "ปิดการใช้งาน",
+};
+
+type AccountFormErrors = Partial<Record<"username" | "fullName" | "email" | "password", string>>;
+
 export default function AccountsPage() {
   const [search, setSearch] = useState("");
   const [filterRole, setFilterRole] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
+  const [appliedSearch, setAppliedSearch] = useState("");
+  const [appliedRole, setAppliedRole] = useState("");
+  const [appliedStatus, setAppliedStatus] = useState("");
+  const [detailItem, setDetailItem] = useState<AdminUser | null>(null);
   const [toggleItem, setToggleItem] = useState<AdminUser | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [editItem, setEditItem] = useState<AdminUser | null>(null);
@@ -35,6 +47,8 @@ export default function AccountsPage() {
   const [formFullName, setFormFullName] = useState("");
   const [formEmail, setFormEmail] = useState("");
   const [formRole, setFormRole] = useState<AdminRole>("ADMIN");
+  const [formError, setFormError] = useState("");
+  const [formErrors, setFormErrors] = useState<AccountFormErrors>({});
   const [saving, setSaving] = useState(false);
 
   const { data: items = [], loading, errorMessage, refetch } = useAsyncData(async () => {
@@ -56,26 +70,61 @@ export default function AccountsPage() {
   };
 
   const handleSave = async () => {
-    setSaving(true);
-    if (editItem) {
-      await adminUserApi.update(editItem.id, {
-        fullName: formFullName,
-        email: formEmail || undefined,
-        role: formRole,
-        password: formPassword || undefined,
-      });
-    } else {
-      await adminUserApi.create({
-        username: formUsername,
-        password: formPassword,
-        fullName: formFullName,
-        email: formEmail || undefined,
-        role: formRole,
-      });
+    const password = formPassword.trim();
+    const errors: AccountFormErrors = {};
+
+    if (!formFullName.trim()) {
+      errors.fullName = "กรุณากรอกชื่อ-นามสกุล";
     }
-    setSaving(false);
-    closeForm();
-    refetch();
+    if (!editItem && !formUsername.trim()) {
+      errors.username = "กรุณากรอกชื่อผู้ใช้";
+    }
+    if (formEmail.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formEmail.trim())) {
+      errors.email = "รูปแบบอีเมลไม่ถูกต้อง เช่น name@example.com";
+    }
+    if (!editItem && password.length < 6) {
+      errors.password = "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร";
+    }
+    if (editItem && password && password.length < 6) {
+      errors.password = "รหัสผ่านใหม่ต้องมีอย่างน้อย 6 ตัวอักษร";
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      setFormError("");
+      return;
+    }
+
+    setSaving(true);
+    setFormError("");
+    setFormErrors({});
+
+    try {
+      if (editItem) {
+        const res = await adminUserApi.update(editItem.id, {
+          fullName: formFullName.trim(),
+          email: formEmail.trim() || undefined,
+          role: formRole,
+          password: password || undefined,
+        });
+        if (!res.success) throw new Error(res.message || "บันทึกข้อมูลไม่สำเร็จ");
+      } else {
+        const res = await adminUserApi.create({
+          username: formUsername.trim(),
+          password,
+          fullName: formFullName.trim(),
+          email: formEmail.trim() || undefined,
+          role: formRole,
+        });
+        if (!res.success) throw new Error(res.message || "สร้างผู้ใช้งานไม่สำเร็จ");
+      }
+      closeForm();
+      refetch();
+    } catch (error) {
+      setFormError(getErrorMessage(error));
+    } finally {
+      setSaving(false);
+    }
   };
 
   const openCreate = () => {
@@ -85,6 +134,8 @@ export default function AccountsPage() {
     setFormFullName("");
     setFormEmail("");
     setFormRole("ADMIN");
+    setFormError("");
+    setFormErrors({});
     setShowForm(true);
   };
 
@@ -95,17 +146,43 @@ export default function AccountsPage() {
     setFormFullName(item.fullName);
     setFormEmail(item.email || "");
     setFormRole(item.role);
+    setFormError("");
+    setFormErrors({});
     setShowForm(true);
   };
 
   const closeForm = () => {
     setShowForm(false);
     setEditItem(null);
+    setFormError("");
+    setFormErrors({});
+  };
+
+  const handleSearch = () => {
+    setAppliedSearch(search.trim());
+    setAppliedRole(filterRole);
+    setAppliedStatus(filterStatus);
+  };
+
+  const handleClear = () => {
+    setSearch("");
+    setFilterRole("");
+    setFilterStatus("");
+    setAppliedSearch("");
+    setAppliedRole("");
+    setAppliedStatus("");
   };
 
   const filtered = items.filter((item) => {
-    if (search && !item.fullName.toLowerCase().includes(search.toLowerCase()) && !item.username.toLowerCase().includes(search.toLowerCase())) return false;
-    if (filterRole && item.role !== filterRole) return false;
+    const keyword = appliedSearch.toLowerCase();
+    if (
+      keyword &&
+      !item.fullName.toLowerCase().includes(keyword) &&
+      !item.username.toLowerCase().includes(keyword) &&
+      !(item.email || "").toLowerCase().includes(keyword)
+    ) return false;
+    if (appliedRole && item.role !== appliedRole) return false;
+    if (appliedStatus && item.status !== appliedStatus) return false;
     return true;
   });
 
@@ -129,20 +206,58 @@ export default function AccountsPage() {
 
         {/* Filter */}
         <div className="flex items-center gap-3 mb-8">
-          <Input size="md" className="w-[280px]" label="ค้นหา" placeholder="ค้นหาชื่อหรือ username" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <Input
+            size="md"
+            className="w-[280px]"
+            label="ค้นหา"
+            placeholder="ค้นหาชื่อ, ชื่อผู้ใช้, อีเมล"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleSearch();
+            }}
+          />
           <Select
             size="md"
             className="w-[200px]"
-            label="บทบาท"
+            label="ประเภทผู้ใช้งาน"
             placeholder="เลือกบทบาท"
             value={filterRole}
             onChange={setFilterRole}
             options={[
+              { label: "ทั้งหมด", value: "" },
               { label: "Super Admin", value: "SUPER_ADMIN" },
               { label: "Admin", value: "ADMIN" },
               { label: "Content Editor", value: "CONTENT_EDITOR" },
             ]}
           />
+          <Select
+            size="md"
+            className="w-[200px]"
+            label="สถานะการใช้งาน"
+            placeholder="เลือกสถานะ"
+            value={filterStatus}
+            onChange={setFilterStatus}
+            options={[
+              { label: "ทั้งหมด", value: "" },
+              { label: statusLabel.ACTIVE, value: "ACTIVE" },
+              { label: statusLabel.INACTIVE, value: "INACTIVE" },
+            ]}
+          />
+          <button
+            type="button"
+            onClick={handleSearch}
+            className="h-[42px] rounded-[8px] bg-[#FF944D] px-8 text-[14px] font-medium text-white transition hover:bg-[#f28338]"
+          >
+            ค้นหา
+          </button>
+          <button
+            type="button"
+            onClick={handleClear}
+            className="h-[42px] rounded-[8px] border border-[#DCDCDC] px-8 text-[14px] font-medium text-[#565656] transition hover:bg-gray-50"
+          >
+            ล้าง
+          </button>
         </div>
 
         {/* Stale data warning */}
@@ -164,13 +279,13 @@ export default function AccountsPage() {
           <table className="w-full">
             <thead>
               <tr>
-                <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide py-3 px-4">ลำดับ</th>
-                <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide py-3 px-4">ชื่อ</th>
-                <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide py-3 px-4">Username</th>
-                <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide py-3 px-4">อีเมล</th>
-                <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide py-3 px-4">บทบาท</th>
-                <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide py-3 px-4">สถานะ</th>
-                <th className="text-right text-xs font-semibold text-gray-400 uppercase tracking-wide py-3 px-4">จัดการ</th>
+                <th className="text-center text-xs font-semibold text-gray-400 uppercase tracking-wide py-3 px-4">ลำดับ</th>
+                <th className="text-center text-xs font-semibold text-gray-400 uppercase tracking-wide py-3 px-4">ชื่อผู้ใช้</th>
+                <th className="text-center text-xs font-semibold text-gray-400 uppercase tracking-wide py-3 px-4">ชื่อ</th>
+                <th className="text-center text-xs font-semibold text-gray-400 uppercase tracking-wide py-3 px-4">อีเมล</th>
+                <th className="text-center text-xs font-semibold text-gray-400 uppercase tracking-wide py-3 px-4">ประเภทผู้ใช้งาน</th>
+                <th className="text-center text-xs font-semibold text-gray-400 uppercase tracking-wide py-3 px-4">สถานะการใช้งาน</th>
+                <th className="text-center text-xs font-semibold text-gray-400 uppercase tracking-wide py-3 px-4">จัดการ</th>
               </tr>
             </thead>
             <tbody>
@@ -196,22 +311,29 @@ export default function AccountsPage() {
                 </tr>
               ) : filtered.map((item, idx) => (
                 <tr key={item.id} className="border-b border-[#F5F5F5] hover:bg-primary/[0.02] transition-colors">
-                  <td className="py-4 px-4 text-sm text-gray-600">{idx + 1}</td>
-                  <td className="py-4 px-4 text-sm font-medium text-gray-800">{item.fullName}</td>
-                  <td className="py-4 px-4 text-sm text-gray-600">{item.username}</td>
-                  <td className="py-4 px-4 text-sm text-gray-600">{item.email || "-"}</td>
-                  <td className="py-4 px-4">
+                  <td className="py-4 px-4 text-center text-sm text-gray-600">{idx + 1}</td>
+                  <td className="py-4 px-4 text-center text-sm text-gray-600">{item.username}</td>
+                  <td className="py-4 px-4 text-center text-sm font-medium text-gray-800">{item.fullName}</td>
+                  <td className="py-4 px-4 text-center text-sm text-gray-600">{item.email || "-"}</td>
+                  <td className="py-4 px-4 text-center">
                     <span className="text-sm font-medium" style={{ color: roleColor[item.role] }}>
                       {roleLabel[item.role]}
                     </span>
                   </td>
-                  <td className="py-4 px-4">
+                  <td className="py-4 px-4 text-center">
                     <span className={`text-sm font-medium ${item.status === "ACTIVE" ? "text-[#24A148]" : "text-[#F44034]"}`}>
-                      {item.status === "ACTIVE" ? "เปิดใช้งาน" : "ปิดใช้งาน"}
+                      {statusLabel[item.status]}
                     </span>
                   </td>
                   <td className="py-4 px-4">
-                    <div className="flex items-center justify-end gap-2">
+                    <div className="flex items-center justify-center gap-2">
+                      <button
+                        onClick={() => setDetailItem(item)}
+                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-primary text-white hover:bg-primary/85 transition-colors"
+                        aria-label={`ดูรายละเอียด ${item.fullName}`}
+                      >
+                        <Search size={15} />
+                      </button>
                       <button
                         onClick={() => openEdit(item)}
                         className="w-8 h-8 flex items-center justify-center rounded-lg bg-[#FF944D] text-white hover:bg-[#FF944D]/85 transition-colors"
@@ -236,6 +358,8 @@ export default function AccountsPage() {
           </table>
         </div>
       </div>
+
+      <AccountDetailModal item={detailItem} onClose={() => setDetailItem(null)} />
 
       {/* Toggle Status Confirm */}
       <ConfirmModal
@@ -262,27 +386,37 @@ export default function AccountsPage() {
             </h2>
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <Input
-                  size="lg"
-                  className="w-full"
-                  label="ชื่อ-นามสกุล *"
-                  placeholder="กรอกชื่อ"
-                  value={formFullName}
-                  onChange={(e) => setFormFullName(e.target.value)}
-                />
-                <Select
-                  size="lg"
-                  className="w-full"
-                  label="บทบาท *"
-                  placeholder="เลือกบทบาท"
-                  value={formRole}
-                  onChange={(v) => setFormRole(v as AdminRole)}
-                  options={[
-                    { label: "Super Admin", value: "SUPER_ADMIN" },
-                    { label: "Admin", value: "ADMIN" },
-                    { label: "Content Editor", value: "CONTENT_EDITOR" },
-                  ]}
-                />
+                <div>
+                  <Input
+                    size="lg"
+                    className="w-full"
+                    label="ชื่อ-นามสกุล *"
+                    placeholder="กรอกชื่อ"
+                    value={formFullName}
+                    onChange={(e) => {
+                      setFormFullName(e.target.value);
+                      setFormErrors((current) => ({ ...current, fullName: undefined }));
+                    }}
+                  />
+                  {formErrors.fullName && (
+                    <p className="mt-1 text-xs text-[#F44034]">{formErrors.fullName}</p>
+                  )}
+                </div>
+                <div>
+                  <Select
+                    size="lg"
+                    className="w-full"
+                    label="บทบาท *"
+                    placeholder="เลือกบทบาท"
+                    value={formRole}
+                    onChange={(v) => setFormRole(v as AdminRole)}
+                    options={[
+                      { label: "Super Admin", value: "SUPER_ADMIN" },
+                      { label: "Admin", value: "ADMIN" },
+                      { label: "Content Editor", value: "CONTENT_EDITOR" },
+                    ]}
+                  />
+                </div>
               </div>
               {!editItem && (
                 <Input
@@ -291,8 +425,14 @@ export default function AccountsPage() {
                   label="Username *"
                   placeholder="กรอก username"
                   value={formUsername}
-                  onChange={(e) => setFormUsername(e.target.value)}
+                  onChange={(e) => {
+                    setFormUsername(e.target.value);
+                    setFormErrors((current) => ({ ...current, username: undefined }));
+                  }}
                 />
+              )}
+              {!editItem && formErrors.username && (
+                <p className="-mt-2 text-xs text-[#F44034]">{formErrors.username}</p>
               )}
               <Input
                 size="lg"
@@ -301,8 +441,14 @@ export default function AccountsPage() {
                 type="email"
                 placeholder="กรอกอีเมล"
                 value={formEmail}
-                onChange={(e) => setFormEmail(e.target.value)}
+                onChange={(e) => {
+                  setFormEmail(e.target.value);
+                  setFormErrors((current) => ({ ...current, email: undefined }));
+                }}
               />
+              {formErrors.email && (
+                <p className="-mt-2 text-xs text-[#F44034]">{formErrors.email}</p>
+              )}
               <Input
                 size="lg"
                 className="w-full"
@@ -310,8 +456,24 @@ export default function AccountsPage() {
                 type="password"
                 placeholder="กรอกรหัสผ่าน"
                 value={formPassword}
-                onChange={(e) => setFormPassword(e.target.value)}
+                onChange={(e) => {
+                  setFormPassword(e.target.value);
+                  setFormErrors((current) => ({ ...current, password: undefined }));
+                }}
               />
+              <p className="-mt-2 text-xs text-[#9FA2A9]">
+                {editItem
+                  ? "ถ้าต้องการเปลี่ยนรหัสผ่านใหม่ ต้องมีอย่างน้อย 6 ตัวอักษร"
+                  : "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร"}
+              </p>
+              {formErrors.password && (
+                <p className="-mt-2 text-xs text-[#F44034]">{formErrors.password}</p>
+              )}
+              {formError && (
+                <div className="rounded-[8px] border border-[#F44034]/25 bg-[#F44034]/5 px-4 py-3 text-sm text-[#F44034]">
+                  {formError}
+                </div>
+              )}
             </div>
             <div className="flex items-center justify-end gap-3 mt-6">
               <button
@@ -322,7 +484,7 @@ export default function AccountsPage() {
               </button>
               <button
                 onClick={handleSave}
-                disabled={saving || !formFullName || (!editItem && (!formUsername || !formPassword))}
+                disabled={saving}
                 className="h-[40px] px-5 rounded-[10px] bg-primary text-sm font-medium text-white hover:bg-primary/90 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {saving ? "กำลังบันทึก..." : "บันทึก"}
@@ -333,4 +495,80 @@ export default function AccountsPage() {
       )}
     </div>
   );
+}
+
+function AccountDetailModal({
+  item,
+  onClose,
+}: {
+  item: AdminUser | null;
+  onClose: () => void;
+}) {
+  if (!item) return null;
+
+  const { firstName, lastName } = splitFullName(item.fullName);
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
+      <div className="absolute inset-0 bg-black/25" onClick={onClose} />
+      <div className="relative w-full max-w-[420px] rounded-[20px] bg-white px-8 py-7 shadow-[0_8px_32px_rgba(0,0,0,0.12)]">
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute right-3 top-3 flex h-6 w-6 items-center justify-center rounded-full bg-[#FF944D] text-white transition-opacity hover:opacity-85"
+          aria-label="ปิด"
+        >
+          <X size={16} strokeWidth={3} />
+        </button>
+
+        <h2 className="text-lg font-bold leading-6 text-[#243333]">ข้อมูลผู้ใช้งาน</h2>
+
+        <div className="mt-5 grid grid-cols-2 gap-x-8 gap-y-4">
+          <DetailItem label="ชื่อผู้ใช้งาน" value={item.username} />
+          <DetailItem label="ประเภทผู้ใช้งาน" value={roleLabel[item.role]} />
+          <DetailItem label="ชื่อ" value={firstName} />
+          <DetailItem label="นามสกุล" value={lastName} />
+          <DetailItem label="อีเมล" value={item.email || "-"} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DetailItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="text-xs font-semibold leading-5 text-[#707070]">{label}</p>
+      <p className="mt-0.5 text-sm leading-5 text-[#9FA2A9]">{value}</p>
+    </div>
+  );
+}
+
+function splitFullName(fullName: string) {
+  const parts = fullName.trim().split(/\s+/).filter(Boolean);
+  return {
+    firstName: parts[0] || "-",
+    lastName: parts.length > 1 ? parts.slice(1).join(" ") : "-",
+  };
+}
+
+function getErrorMessage(error: unknown) {
+  if (error instanceof Error) {
+    const responseData = (error as { response?: { data?: unknown } }).response?.data;
+    const message = getResponseMessage(responseData);
+    if (message) return message;
+    return error.message || "บันทึกข้อมูลไม่สำเร็จ";
+  }
+
+  return "บันทึกข้อมูลไม่สำเร็จ";
+}
+
+function getResponseMessage(data: unknown) {
+  if (!data || typeof data !== "object") return "";
+
+  const message = (data as { message?: unknown }).message;
+  if (Array.isArray(message)) return message.join(", ");
+  if (typeof message === "string") return message;
+
+  return "";
 }

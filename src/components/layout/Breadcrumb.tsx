@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronRight, Home } from "lucide-react";
+import { useBreadcrumbLabels } from "@/components/layout/BreadcrumbContext";
 
 const labelMap: Record<string, string> = {
   dashboard: "Dashboard",
@@ -10,7 +11,7 @@ const labelMap: Record<string, string> = {
   news: "ข่าวสาร / โปรโมชั่น",
   policies: "จัดการผลิตภัณฑ์",
   "contact-case": "คำร้อง / ติดต่อ",
-  "product-interest": "ความสนใจผลิตภัณฑ์",
+  "product-interest": "ความสนใจผลิตภัณฑ์/คอนเทนต์",
   "policy-categories": "หมวดหมู่ผลิตภัณฑ์",
   accounts: "ผู้ใช้งาน",
   "activity-log": "ประวัติการใช้งาน",
@@ -21,15 +22,20 @@ const labelMap: Record<string, string> = {
 
 export default function Breadcrumb() {
   const pathname = usePathname();
+  const dynamicLabels = useBreadcrumbLabels();
   const segments = pathname.split("/").filter(Boolean);
 
   if (segments.length === 0 || (segments.length === 1 && segments[0] === "dashboard")) return null;
 
-  const crumbs = segments.map((seg, idx) => {
+  const crumbs = segments.flatMap((seg, idx) => {
+    if (shouldHideEditSegment(segments, idx)) return [];
+
     const href = "/" + segments.slice(0, idx + 1).join("/");
     const isLast = idx === segments.length - 1;
     const isUuid = seg.length > 8 && /^[0-9a-f-]+$/.test(seg);
-    const label = isUuid ? "รายละเอียด" : (labelMap[seg] || seg);
+    const label =
+      dynamicLabels[href] ||
+      (isUuid ? "รายละเอียด" : (labelMap[seg] || seg));
 
     return { label, href, isLast };
   });
@@ -52,5 +58,14 @@ export default function Breadcrumb() {
         </span>
       ))}
     </nav>
+  );
+}
+
+function shouldHideEditSegment(segments: string[], index: number) {
+  const root = segments[0];
+  return (
+    (root === "news" || root === "policies") &&
+    segments[index] === "edit" &&
+    Boolean(segments[index + 1])
   );
 }

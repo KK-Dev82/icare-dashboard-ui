@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Plus, X } from "lucide-react";
 import { PageBackHeader } from "@/components/layout/PageBackHeader";
+import { useBreadcrumbLabel } from "@/components/layout/BreadcrumbContext";
 import { ChangeHistory } from "@/components/ui/change-history";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -36,6 +37,8 @@ export default function EditProductPage() {
   const [expiredAt, setExpiredAt] = useState("");
   const [publishDate, setPublishDate] = useState("");
   const [albumUploading, setAlbumUploading] = useState(false);
+
+  useBreadcrumbLabel(`/policies/edit/${id}`, title);
 
   useEffect(() => {
     policyCategoryApi.getAll().then((res) => {
