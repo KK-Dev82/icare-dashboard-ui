@@ -87,6 +87,10 @@ export default function PolicyCategoriesPage() {
     });
   }, [filterRole, filterStatus, search, users]);
 
+  const handleSearch = () => {
+    setSearch((current) => current.trim());
+  };
+
   const handleViewDetail = async (id: string) => {
     setDetailOpen(true);
     setDetailUser(null);
@@ -153,6 +157,9 @@ export default function PolicyCategoriesPage() {
             placeholder="ค้นหา"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleSearch();
+            }}
           />
           <Select
             size="md"
@@ -178,7 +185,11 @@ export default function PolicyCategoriesPage() {
               { label: "ปิดการใช้งาน", value: "INACTIVE" },
             ]}
           />
-          <button className="h-[42px] rounded-[8px] bg-[#FF944D] px-8 text-[14px] font-medium text-white transition hover:bg-[#f28338]">
+          <button
+            type="button"
+            onClick={handleSearch}
+            className="h-[42px] rounded-[8px] bg-[#FF944D] px-8 text-[14px] font-medium text-white transition hover:bg-[#f28338]"
+          >
             ค้นหา
           </button>
         </div>

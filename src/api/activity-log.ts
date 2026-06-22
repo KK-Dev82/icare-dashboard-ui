@@ -15,8 +15,6 @@ export function buildActivityLogQuery(filter: ActivityLogFilter | ActivityLogLis
   if (filter.entityId) params.set("entityId", filter.entityId);
   if (filter.action) params.set("action", filter.action);
   if (filter.adminId) params.set("adminId", filter.adminId);
-  if (filter.adminSearch) params.set("adminSearch", filter.adminSearch);
-  if (filter.search) params.set("search", filter.search);
 
   return params.toString();
 }

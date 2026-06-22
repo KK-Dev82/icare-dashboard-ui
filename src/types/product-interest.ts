@@ -26,11 +26,20 @@ export interface ProductInterest {
       name: string;
     };
   } | null;
+  content?: {
+    id: string;
+    title: string;
+    category?: {
+      id: string;
+      name: string;
+    };
+  } | null;
 }
 
 export interface ProductInterestListParams {
   keyword?: string;
   productId?: string;
+  type?: string;
   status?: string;
   createdFrom?: string;
   createdTo?: string;

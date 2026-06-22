@@ -68,6 +68,12 @@ export function ContactCasesWidget() {
     setAppliedContactSearch(contactSearch.trim());
   };
 
+  const handleContactClear = () => {
+    setContactSearch("");
+    setContactPage(1);
+    setAppliedContactSearch("");
+  };
+
   const clearReadTimer = useCallback(() => {
     if (readTimerRef.current) {
       window.clearTimeout(readTimerRef.current);
@@ -137,9 +143,12 @@ export function ContactCasesWidget() {
             size="md"
             className="min-w-0 flex-1"
             label="ค้นหา"
-            placeholder=""
+            placeholder="ค้นหาเลขที่ร้อง, หัวข้อ, เบอร์โทรศัพท์, ผู้ติดต่อ"
             value={contactSearch}
             onChange={(event) => setContactSearch(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") handleContactSearch();
+            }}
           />
           <button
             type="button"
@@ -147,6 +156,13 @@ export function ContactCasesWidget() {
             className="h-[39px] w-[112px] rounded-[6px] bg-[#FF944D] text-[14px] font-medium text-white transition hover:bg-[#f28338] sm:w-[145px]"
           >
             ค้นหา
+          </button>
+          <button
+            type="button"
+            onClick={handleContactClear}
+            className="h-[39px] w-[92px] rounded-[6px] border border-[#DCDCDC] text-[14px] font-medium text-[#565656] transition hover:bg-gray-50"
+          >
+            ล้าง
           </button>
         </div>
 

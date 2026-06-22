@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { CalendarDays, Search, X } from "lucide-react";
 import { productInterestApi } from "@/api/product-interest";
-import { productApi } from "@/api/product";
 import { ActionIconButton } from "@/components/ui/action-button";
 import { ErrorState } from "@/components/ui/error-state";
 import { Input } from "@/components/ui/input";
@@ -16,7 +15,6 @@ import type {
   ProductInterestStats,
   ProductInterestStatus,
 } from "@/types/product-interest";
-import type { Product } from "@/types/product";
 
 const PAGE_SIZE = 10;
 
@@ -47,16 +45,15 @@ const defaultStats: ProductInterestStats = {
 
 export default function ProductInterestPage() {
   const [stats, setStats] = useState<ProductInterestStats>(defaultStats);
-  const [products, setProducts] = useState<Product[]>([]);
   const [detailLoadingId, setDetailLoadingId] = useState<string | null>(null);
   const [detailErrorMessage, setDetailErrorMessage] = useState<string | null>(null);
   const [statusSaving, setStatusSaving] = useState(false);
   const [search, setSearch] = useState("");
-  const [productId, setProductId] = useState("");
+  const [interestType, setInterestType] = useState("");
   const [status, setStatus] = useState("");
   const [submittedDate, setSubmittedDate] = useState("");
   const [appliedSearch, setAppliedSearch] = useState("");
-  const [appliedProductId, setAppliedProductId] = useState("");
+  const [appliedInterestType, setAppliedInterestType] = useState("");
   const [appliedStatus, setAppliedStatus] = useState("");
   const [appliedSubmittedDate, setAppliedSubmittedDate] = useState("");
   const [selectedLead, setSelectedLead] = useState<ProductInterest | null>(null);
@@ -72,7 +69,7 @@ export default function ProductInterestPage() {
       page,
       limit: PAGE_SIZE,
       keyword: appliedSearch || undefined,
-      productId: appliedProductId || undefined,
+      type: appliedInterestType || undefined,
       status: appliedStatus || undefined,
       createdFrom: appliedSubmittedDate || undefined,
       createdTo: appliedSubmittedDate || undefined,
@@ -93,19 +90,11 @@ export default function ProductInterestPage() {
   }, []);
 
   useEffect(() => {
-    let active = true;
     const timer = window.setTimeout(() => {
       fetchStats().catch((err) => console.error("[product-interest] summary failed", err));
-      productApi
-        .getAll({ page: 1, limit: 100 })
-        .then((res) => {
-          if (active && res.success) setProducts(res.data);
-        })
-        .catch((err) => console.error("[product-interest] products failed", err));
     }, 0);
 
     return () => {
-      active = false;
       window.clearTimeout(timer);
     };
   }, [fetchStats]);
@@ -113,14 +102,26 @@ export default function ProductInterestPage() {
   useEffect(() => {
     const timer = window.setTimeout(fetchList, 0);
     return () => window.clearTimeout(timer);
-  }, [appliedProductId, appliedSearch, appliedStatus, appliedSubmittedDate, page, fetchList]);
+  }, [appliedInterestType, appliedSearch, appliedStatus, appliedSubmittedDate, page, fetchList]);
 
   const handleSearch = () => {
     setPage(1);
     setAppliedSearch(search.trim());
-    setAppliedProductId(productId);
+    setAppliedInterestType(interestType);
     setAppliedStatus(status);
     setAppliedSubmittedDate(submittedDate);
+  };
+
+  const handleClear = () => {
+    setSearch("");
+    setInterestType("");
+    setStatus("");
+    setSubmittedDate("");
+    setPage(1);
+    setAppliedSearch("");
+    setAppliedInterestType("");
+    setAppliedStatus("");
+    setAppliedSubmittedDate("");
   };
 
   const handlePageChange = (nextPage: number) => {
@@ -142,19 +143,20 @@ export default function ProductInterestPage() {
     }
   };
 
-  const productOptions = [
+  const interestTypeOptions = [
     { label: "ทั้งหมด", value: "" },
-    ...products.map((item) => ({ label: item.title, value: item.id })),
+    { label: "ผลิตภัณฑ์", value: "product" },
+    { label: "คอนเทนต์", value: "content" },
   ];
 
   return (
     <div className="flex w-full flex-col rounded-[18px] bg-white p-8 shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
       <div className="border-b border-[#EAEAEA] pb-6">
         <h1 className="text-xl font-bold leading-8 text-[#243333]">
-          รายการผู้สนใจผลิตภัณฑ์
+          รายการผู้สนใจ
         </h1>
         <p className="text-base leading-[25px] text-[#9FA2A9]">
-          รวบรวมการผู้ใช้งานที่สนใจผลิตภัณฑ์ เพื่อให้เจ้าหน้าที่ติดต่อกลับ
+          รวบรวมผู้ใช้งานที่สนใจผลิตภัณฑ์หรือคอนเทนต์ เพื่อให้เจ้าหน้าที่ติดต่อกลับ
         </p>
       </div>
 
@@ -165,23 +167,26 @@ export default function ProductInterestPage() {
         <StatCard label="วันนี้" value={stats.today} color="#FF7468" />
       </div>
 
-      <div className="mt-8 grid gap-3 lg:grid-cols-[minmax(180px,1fr)_230px_230px_230px_145px] lg:items-center">
+      <div className="mt-8 grid gap-3 lg:grid-cols-[minmax(160px,1fr)_220px_220px_220px_125px_95px] lg:items-center">
         <Input
           size="md"
           className="w-full"
           label="ค้นหา"
-          placeholder="ค้นหา"
+          placeholder="ค้นหาเลขคำร้อง, ผู้ติดต่อ, เบอร์โทรศัพท์"
           value={search}
           onChange={(event) => setSearch(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") handleSearch();
+          }}
         />
         <Select
           size="md"
           className="w-full"
-          label="ผลิตภัณฑ์"
-          placeholder="เลือกผลิตภัณฑ์"
-          value={productId}
-          onChange={setProductId}
-          options={productOptions}
+          label="ประเภทสิ่งที่สนใจ"
+          placeholder="เลือกประเภทสิ่งที่สนใจ"
+          value={interestType}
+          onChange={setInterestType}
+          options={interestTypeOptions}
         />
         <Select
           size="md"
@@ -203,6 +208,9 @@ export default function ProductInterestPage() {
             type="date"
             value={submittedDate}
             onChange={(event) => setSubmittedDate(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") handleSearch();
+            }}
             className="h-[42px] w-full rounded-[10px] border border-[#DCDCDC] bg-white px-4 pr-11 text-[14px] text-[#565656] outline-none transition-all duration-200 hover:border-primary hover:shadow-[0_4px_12px_rgba(7,162,162,0.08)] focus:border-primary [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-4 [&::-webkit-calendar-picker-indicator]:h-5 [&::-webkit-calendar-picker-indicator]:w-5 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0"
           />
           <CalendarDays
@@ -216,6 +224,13 @@ export default function ProductInterestPage() {
           className="h-[42px] rounded-[8px] bg-[#FF944D] px-8 text-[14px] font-medium text-white transition hover:bg-[#f28338]"
         >
           ค้นหา
+        </button>
+        <button
+          type="button"
+          onClick={handleClear}
+          className="h-[42px] rounded-[8px] border border-[#DCDCDC] bg-white px-5 text-[14px] font-medium text-[#707070] transition hover:border-primary hover:text-primary"
+        >
+          ล้าง
         </button>
       </div>
 
@@ -263,7 +278,7 @@ export default function ProductInterestPage() {
               <TableHead>เลขคำร้อง</TableHead>
               <TableHead>เบอร์โทรศัพท์</TableHead>
               <TableHead>ผู้ติดต่อ</TableHead>
-              <TableHead>ผลิตภัณฑ์ที่สนใจ</TableHead>
+              <TableHead>สิ่งที่สนใจ</TableHead>
               <TableHead>วันที่ส่ง</TableHead>
               <TableHead>สถานะ</TableHead>
               <TableHead>จัดการ</TableHead>
@@ -402,14 +417,14 @@ function ProductInterestDetailModal({
         </button>
 
         <h2 className="text-lg font-bold leading-6 text-[#243333]">
-          ข้อมูลผู้สนใจผลิตภัณฑ์
+          ข้อมูลผู้สนใจ
         </h2>
         <p className="mt-1 text-sm leading-5 text-[#9CA3AF]">{getLeadNo(item)}</p>
 
         <div className="mt-6 space-y-4">
           <InfoItem label="เบอร์โทรศัพท์" value={item.phone} />
           <InfoItem label="วันที่ส่ง:" value={formatLeadDateTime(item.createdAt)} />
-          <InfoItem label="ผลิตภัณฑ์ที่สนใจ" value={getProductName(item)} />
+          <InfoItem label="สิ่งที่สนใจ" value={getProductName(item)} />
           <InfoItem label="ผู้ติดต่อ" value={getContactName(item)} />
           <InfoItem label="เบอร์โทรศัพท์" value={item.phone} />
           {item.email && <InfoItem label="อีเมล" value={item.email} />}
@@ -459,6 +474,31 @@ function StatCard({
   value: number;
   color: string;
 }) {
+  const [displayValue, setDisplayValue] = useState(0);
+
+  useEffect(() => {
+    const numericValue = Number(value);
+    const target = Number.isFinite(numericValue) ? numericValue : 0;
+
+    const duration = 600;
+    const steps = 30;
+    const stepTime = duration / steps;
+    let current = 0;
+    const increment = target / steps;
+
+    const timer = window.setInterval(() => {
+      current += increment;
+      if (current >= target) {
+        setDisplayValue(target);
+        window.clearInterval(timer);
+      } else {
+        setDisplayValue(Math.floor(current));
+      }
+    }, stepTime);
+
+    return () => window.clearInterval(timer);
+  }, [value]);
+
   return (
     <div className="flex h-[76px] items-center justify-center gap-8 rounded-[10px] border border-[#EAEAEA] bg-white px-6">
       <span
@@ -468,7 +508,9 @@ function StatCard({
         {label}
       </span>
       <div className="flex items-end gap-4">
-        <p className="text-[28px] font-bold leading-none text-[#243333]">{value}</p>
+        <p className="text-[28px] font-bold leading-none text-[#243333] tabular-nums">
+          {displayValue}
+        </p>
         <p className="pb-1 text-[13px] text-[#9FA2A9]">รายการ</p>
       </div>
     </div>
@@ -530,7 +572,7 @@ function getContactName(item: ProductInterest) {
 }
 
 function getProductName(item: ProductInterest) {
-  return item.product?.title || "-";
+  return item.product?.title ?? item.content?.title ?? "-";
 }
 
 function getStatus(item: ProductInterest) {
