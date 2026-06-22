@@ -147,6 +147,14 @@ export default function ActivityLogPage() {
     ],
     [adminUsers],
   );
+  const adminUserNameMap = useMemo(
+    () =>
+      adminUsers.reduce<Record<string, string>>((map, user) => {
+        map[user.id] = getAdminUserLabel(user);
+        return map;
+      }, {}),
+    [adminUsers],
+  );
 
   useEffect(() => {
     const handle = window.setTimeout(() => {
@@ -325,7 +333,7 @@ export default function ActivityLogPage() {
                       {formatDateTime(item.createdAt)}
                     </td>
                     <td className="px-4 py-4 text-center text-sm text-gray-600">
-                      {getAdminName(item)}
+                      {getAdminName(item, adminUserNameMap)}
                     </td>
                     <td className="px-4 py-4 text-center text-sm text-gray-600">
                       {getActionLabel(item.action)}
@@ -349,17 +357,18 @@ export default function ActivityLogPage() {
           </table>
         </div>
 
-        <TablePagination
-          current={items.length}
-          total={meta.total}
-          page={meta.page}
-          totalPages={meta.totalPages}
-          onPageChange={handlePageChange}
-        />
+      <TablePagination
+        current={items.length}
+        total={meta.total}
+        page={meta.page}
+        totalPages={meta.totalPages}
+        onPageChange={handlePageChange}
+      />
       </div>
 
       <ActivityLogDetailModal
         log={selectedLog}
+        adminUserNameMap={adminUserNameMap}
         onClose={() => setSelectedLog(null)}
       />
     </div>
@@ -368,9 +377,11 @@ export default function ActivityLogPage() {
 
 function ActivityLogDetailModal({
   log,
+  adminUserNameMap,
   onClose,
 }: {
   log: ActivityLog | null;
+  adminUserNameMap: Record<string, string>;
   onClose: () => void;
 }) {
   if (!log) return null;
@@ -396,7 +407,7 @@ function ActivityLogDetailModal({
         </div>
 
         <div className="mt-5 space-y-4">
-          <ModalInfo label="ผู้ใช้งาน" value={getAdminName(log)} />
+          <ModalInfo label="ผู้ใช้งาน" value={getAdminName(log, adminUserNameMap)} />
           <ModalInfo label="การกระทำ" value={getActionLabel(log.action)} />
           <ModalInfo label="เมนู" value={getEntityLabel(log.entityType)} />
           {changedFields.length > 0 ? (
@@ -516,11 +527,12 @@ function getFieldOrder(entityType: string, field: string, fallbackIndex: number)
 }
 
 function getAdminUserLabel(user: AdminUser) {
-  return user.fullName?.trim() || user.username || user.email || user.id;
+  return user.username || user.id;
 }
 
-function getAdminName(log: ActivityLog) {
+function getAdminName(log: ActivityLog, adminUserNameMap: Record<string, string> = {}) {
   const value =
+    (log.adminId ? adminUserNameMap[log.adminId] : undefined) ||
     log.adminName ||
     log.adminId ||
     log.actorName ||
