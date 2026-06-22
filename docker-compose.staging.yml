@@ -32,6 +32,12 @@ services:
       HOSTNAME: "0.0.0.0"
       # /api/* is proxied by nginx (see nginx/conf.d/icare-dashboard.*).
       # No need to expose the backend URL to the dashboard container.
+    volumes:
+      # Static mobile-flow page mounted into Next.js `public/` so it's served
+      # at /mobile-flow/index.html (no rebuild needed). `:ro` = read-only.
+      # Host path is relative to this compose file on the VPS, i.e.
+      #   /srv/deploy/icare/icare-app-dashboard/mobile-flow
+      - ./mobile-flow:/app/public/mobile-flow:ro
     networks:
       - web
 
