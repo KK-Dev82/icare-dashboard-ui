@@ -14,6 +14,7 @@ export function NewsPromotionSettingsPanel() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [editItem, setEditItem] = useState<ContentCategory | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   // Form state
   const [formName, setFormName] = useState("");
@@ -26,7 +27,7 @@ export function NewsPromotionSettingsPanel() {
     setErrorMessage(null);
     try {
       const res = await contentCategoryApi.getAll();
-      if (res.success) setItems(res.data);
+      if (res.success) setItems(sortContentCategories(res.data));
     } catch (err) {
       setErrorMessage(err instanceof Error ? err.message : "โหลดข้อมูลไม่สำเร็จ");
     } finally {
@@ -79,8 +80,32 @@ export function NewsPromotionSettingsPanel() {
   };
 
   const handleToggle = async (item: ContentCategory) => {
-    await contentCategoryApi.delete(item.id);
-    fetchData();
+    const isActive = item.isActive !== false;
+    setUpdatingId(item.id);
+    setErrorMessage(null);
+
+    try {
+      const res = isActive
+        ? await contentCategoryApi.delete(item.id)
+        : await contentCategoryApi.update(item.id, { isActive: true });
+
+      if (!res.success) {
+        setErrorMessage(res.message || "อัปเดตสถานะไม่สำเร็จ");
+        return;
+      }
+
+      setItems((current) =>
+        current.map((currentItem) =>
+          currentItem.id === item.id
+            ? { ...currentItem, ...res.data, isActive: !isActive }
+            : currentItem,
+        ),
+      );
+    } catch (err) {
+      setErrorMessage(err instanceof Error ? err.message : "อัปเดตสถานะไม่สำเร็จ");
+    } finally {
+      setUpdatingId(null);
+    }
   };
 
   return (
@@ -101,43 +126,50 @@ export function NewsPromotionSettingsPanel() {
         <p className="py-8 text-center text-sm text-[#9CA3AF]">ยังไม่มีหมวดหมู่ข่าวสาร</p>
       ) : (
         <div className="space-y-3">
-          {items.map((item, index) => (
-            <div
-              key={item.id}
-              className="flex items-center gap-3 rounded-[10px] border border-[#EAEAEA] px-4 py-3 hover:border-primary/30 transition-colors"
-            >
-              <div className="flex h-[32px] w-[32px] items-center justify-center rounded-[6px] border border-[#DCDCDC] text-xs text-[#707070]">
-                {index + 1}
-              </div>
-              {item.bannerImage && (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img src={item.bannerImage} alt={item.name} className="w-9 h-9 rounded-md object-cover" />
-              )}
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-[#243333] truncate">{item.name}</p>
-                {item.description && (
-                  <p className="text-xs text-[#9CA3AF] truncate">{item.description}</p>
+          {items.map((item, index) => {
+            const isActive = item.isActive !== false;
+            const isUpdating = updatingId === item.id;
+
+            return (
+              <div
+                key={item.id}
+                className="flex items-center gap-3 rounded-[10px] border border-[#EAEAEA] px-4 py-3 hover:border-primary/30 transition-colors"
+              >
+                <div className="flex h-[32px] w-[32px] items-center justify-center rounded-[6px] border border-[#DCDCDC] text-xs text-[#707070]">
+                  {index + 1}
+                </div>
+                {item.bannerImage && (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img src={item.bannerImage} alt={item.name} className="w-9 h-9 rounded-md object-cover" />
                 )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-[#243333] truncate">{item.name}</p>
+                  {item.description && (
+                    <p className="text-xs text-[#9CA3AF] truncate">{item.description}</p>
+                  )}
+                </div>
+                <span className={`text-xs font-medium ${isActive ? "text-[#24A148]" : "text-[#F44034]"}`}>
+                  {isActive ? "เปิด" : "ปิด"}
+                </span>
+                <button
+                  onClick={() => openEdit(item)}
+                  disabled={isUpdating}
+                  className="h-[32px] w-[32px] flex items-center justify-center rounded-[6px] bg-[#FF944D] text-white hover:bg-[#FF944D]/85 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <Pencil size={14} />
+                </button>
+                <button
+                  onClick={() => handleToggle(item)}
+                  disabled={isUpdating}
+                  className={`h-[32px] w-[32px] flex items-center justify-center rounded-[6px] text-white transition-colors ${
+                    isActive ? "bg-[#F44034] hover:bg-[#F44034]/85" : "bg-[#24A148] hover:bg-[#24A148]/85"
+                  } disabled:cursor-not-allowed disabled:opacity-60`}
+                >
+                  <Power size={14} strokeWidth={3} />
+                </button>
               </div>
-              <span className={`text-xs font-medium ${item.isActive ? "text-[#24A148]" : "text-[#F44034]"}`}>
-                {item.isActive ? "เปิด" : "ปิด"}
-              </span>
-              <button
-                onClick={() => openEdit(item)}
-                className="h-[32px] w-[32px] flex items-center justify-center rounded-[6px] bg-[#FF944D] text-white hover:bg-[#FF944D]/85 transition-colors"
-              >
-                <Pencil size={14} />
-              </button>
-              <button
-                onClick={() => handleToggle(item)}
-                className={`h-[32px] w-[32px] flex items-center justify-center rounded-[6px] text-white transition-colors ${
-                  item.isActive ? "bg-[#F44034] hover:bg-[#F44034]/85" : "bg-[#24A148] hover:bg-[#24A148]/85"
-                }`}
-              >
-                <Power size={14} strokeWidth={3} />
-              </button>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -209,4 +241,12 @@ export function NewsPromotionSettingsPanel() {
       )}
     </section>
   );
+}
+
+function sortContentCategories(items: ContentCategory[]) {
+  return [...items].sort((a, b) => {
+    const createdAtDiff = new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    if (createdAtDiff !== 0) return createdAtDiff;
+    return a.id.localeCompare(b.id);
+  });
 }

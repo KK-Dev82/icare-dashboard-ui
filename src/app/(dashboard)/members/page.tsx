@@ -104,9 +104,12 @@ export default function MembersPage() {
             size="md"
             className="w-[280px]"
             label="ค้นหา"
-            placeholder="เบอร์โทร, ชื่อ, นามสกุล"
+            placeholder="ค้นหาเบอร์โทรศัพท์, อีเมล, ชื่อ, นามสกุล"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleSearch();
+            }}
           />
           <Select
             size="md"
@@ -166,14 +169,14 @@ export default function MembersPage() {
           <table className="w-full">
             <thead>
               <tr>
-                <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide py-3 px-4">ลำดับ</th>
-                <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide py-3 px-4">เบอร์โทรศัพท์</th>
-                <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide py-3 px-4">ชื่อ - นามสกุล</th>
-                <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide py-3 px-4">อีเมล</th>
-                <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide py-3 px-4">ระดับ</th>
-                <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide py-3 px-4">สถานะ</th>
-                <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide py-3 px-4">เข้าสู่ระบบล่าสุด</th>
-                <th className="text-right text-xs font-semibold text-gray-400 uppercase tracking-wide py-3 px-4">จัดการ</th>
+                <th className="text-center text-xs font-semibold text-gray-400 uppercase tracking-wide py-3 px-4">ลำดับ</th>
+                <th className="text-center text-xs font-semibold text-gray-400 uppercase tracking-wide py-3 px-4">เบอร์โทรศัพท์</th>
+                <th className="text-center text-xs font-semibold text-gray-400 uppercase tracking-wide py-3 px-4">ชื่อ - นามสกุล</th>
+                <th className="text-center text-xs font-semibold text-gray-400 uppercase tracking-wide py-3 px-4">อีเมล</th>
+                <th className="text-center text-xs font-semibold text-gray-400 uppercase tracking-wide py-3 px-4">ระดับ</th>
+                <th className="text-center text-xs font-semibold text-gray-400 uppercase tracking-wide py-3 px-4">สถานะ</th>
+                <th className="text-center text-xs font-semibold text-gray-400 uppercase tracking-wide py-3 px-4">เข้าสู่ระบบล่าสุด</th>
+                <th className="text-center text-xs font-semibold text-gray-400 uppercase tracking-wide py-3 px-4">จัดการ</th>
               </tr>
             </thead>
             <tbody>
@@ -202,27 +205,27 @@ export default function MembersPage() {
                 const fullName = [item.firstName, item.lastName].filter(Boolean).join(" ") || "-";
                 return (
                   <tr key={item.id} className="border-b border-[#F5F5F5] hover:bg-primary/[0.02] transition-colors">
-                    <td className="py-4 px-4 text-sm text-gray-600">{(meta.page - 1) * meta.limit + idx + 1}</td>
-                    <td className="py-4 px-4 text-sm text-gray-800 font-medium">{item.phone}</td>
-                    <td className="py-4 px-4 text-sm text-gray-600">{fullName}</td>
-                    <td className="py-4 px-4 text-sm text-gray-600">{item.email || "-"}</td>
-                    <td className="py-4 px-4">
+                    <td className="py-4 px-4 text-center text-sm text-gray-600">{(meta.page - 1) * meta.limit + idx + 1}</td>
+                    <td className="py-4 px-4 text-center text-sm text-gray-800 font-medium">{item.phone}</td>
+                    <td className="py-4 px-4 text-center text-sm text-gray-600">{fullName}</td>
+                    <td className="py-4 px-4 text-center text-sm text-gray-600">{item.email || "-"}</td>
+                    <td className="py-4 px-4 text-center">
                       <span className="text-sm font-medium" style={{ color: accountLevelColor[item.accountLevel] }}>
                         {accountLevelLabel[item.accountLevel]}
                       </span>
                     </td>
-                    <td className="py-4 px-4">
+                    <td className="py-4 px-4 text-center">
                       <span className="text-sm font-medium" style={{ color: statusColor[item.status] }}>
                         {statusLabel[item.status]}
                       </span>
                     </td>
-                    <td className="py-4 px-4 text-sm text-gray-600">
+                    <td className="py-4 px-4 text-center text-sm text-gray-600">
                       {item.lastLoginAt
                         ? new Date(item.lastLoginAt).toLocaleString("th-TH", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })
                         : "-"}
                     </td>
                     <td className="py-4 px-4">
-                      <div className="flex items-center justify-end">
+                      <div className="flex items-center justify-center">
                         <button
                           onClick={() => router.push(`/members/${item.id}`)}
                           className="w-8 h-8 flex items-center justify-center rounded-lg bg-[#07A2A2] text-white hover:bg-[#07A2A2]/85 transition-colors"

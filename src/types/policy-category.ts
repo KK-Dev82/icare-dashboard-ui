@@ -16,6 +16,7 @@ export interface CreatePolicyCategoryPayload {
   bannerImage?: string;
   icon?: string;
   tagColor?: string;
+  isActive?: boolean;
 }
 
 export type UpdatePolicyCategoryPayload = Partial<CreatePolicyCategoryPayload>;
