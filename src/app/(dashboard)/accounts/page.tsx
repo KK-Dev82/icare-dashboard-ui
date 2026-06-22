@@ -220,7 +220,7 @@ export default function AccountsPage() {
           <Select
             size="md"
             className="w-[200px]"
-            label="บทบาท"
+            label="ประเภทผู้ใช้งาน"
             placeholder="เลือกบทบาท"
             value={filterRole}
             onChange={setFilterRole}
