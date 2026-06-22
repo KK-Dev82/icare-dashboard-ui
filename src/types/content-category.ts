@@ -12,6 +12,7 @@ export interface CreateContentCategoryPayload {
   name: string;
   description?: string;
   bannerImage?: string;
+  isActive?: boolean;
 }
 
 export type UpdateContentCategoryPayload = Partial<CreateContentCategoryPayload>;

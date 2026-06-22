@@ -63,9 +63,7 @@ export interface ActivityLog {
 }
 
 export interface ActivityLogFilter {
-  search?: string;
   adminId?: string;
-  adminSearch?: string;
   entityId?: string;
   entityType?: ActivityEntityType;
   action?: ActivityAction;
@@ -76,9 +74,7 @@ export interface ActivityLogFilter {
 }
 
 export interface ActivityLogListParams {
-  search?: string;
   adminId?: string;
-  adminSearch?: string;
   entityType?: ActivityLogEntityType;
   action?: ActivityAction;
   startDate?: string;

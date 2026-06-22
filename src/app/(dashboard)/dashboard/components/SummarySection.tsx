@@ -34,9 +34,13 @@ export function SummarySection() {
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
 
-  const fetchData = async (range?: QuickRange) => {
+  const fetchData = async (
+    range?: QuickRange,
+    from = customFrom,
+    to = customTo
+  ) => {
     const r = range !== undefined ? range : quickRange;
-    const params = getDateRange(r, customFrom, customTo);
+    const params = getDateRange(r, from, to);
     try {
       const res = await dashboardApi.getSummary(params);
       if (res.success) setSummary(res.data);
@@ -44,11 +48,24 @@ export function SummarySection() {
   };
 
   useEffect(() => {
-    fetchData();
+    const timer = window.setTimeout(() => {
+      dashboardApi.getSummary().then((res) => {
+        if (res.success) setSummary(res.data);
+      }).catch(() => {});
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, []);
 
   const handleSearch = () => {
     fetchData();
+  };
+
+  const handleClear = () => {
+    setQuickRange("");
+    setCustomFrom("");
+    setCustomTo("");
+    fetchData("", "", "");
   };
 
   const summaryItems: Array<{
@@ -121,6 +138,9 @@ export function SummarySection() {
                   type="date"
                   value={customFrom}
                   onChange={(e) => setCustomFrom(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleSearch();
+                  }}
                   className="h-[42px] w-[160px] rounded-[10px] border border-[#DCDCDC] bg-white px-4 text-[14px] text-[#565656] outline-none focus:border-primary"
                 />
               </div>
@@ -130,6 +150,9 @@ export function SummarySection() {
                   type="date"
                   value={customTo}
                   onChange={(e) => setCustomTo(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleSearch();
+                  }}
                   className="h-[42px] w-[160px] rounded-[10px] border border-[#DCDCDC] bg-white px-4 text-[14px] text-[#565656] outline-none focus:border-primary"
                 />
               </div>
@@ -140,6 +163,13 @@ export function SummarySection() {
             className="h-[42px] rounded-[8px] bg-[#FF944D] px-8 text-[14px] font-medium text-white transition hover:bg-[#f28338]"
           >
             ค้นหา
+          </button>
+          <button
+            type="button"
+            onClick={handleClear}
+            className="h-[42px] rounded-[8px] border border-[#DCDCDC] px-8 text-[14px] font-medium text-[#565656] transition hover:bg-gray-50"
+          >
+            ล้าง
           </button>
         </div>
       </div>
@@ -170,13 +200,13 @@ function SummaryCard({
 
   useEffect(() => {
     if (value === "-") {
-      setDisplayValue("-");
-      return;
+      const timer = window.setTimeout(() => setDisplayValue("-"), 0);
+      return () => window.clearTimeout(timer);
     }
     const target = Number(value);
     if (isNaN(target)) {
-      setDisplayValue(value);
-      return;
+      const timer = window.setTimeout(() => setDisplayValue(value), 0);
+      return () => window.clearTimeout(timer);
     }
 
     const duration = 600;

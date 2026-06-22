@@ -129,9 +129,12 @@ export default function ProductsPage() {
             size="md"
             className="w-[280px]"
             label="ค้นหา"
-            placeholder="ค้นหา"
+            placeholder="ค้นหาชื่อผลิตภัณฑ์"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleSearch();
+            }}
           />
           <Select
             size="md"

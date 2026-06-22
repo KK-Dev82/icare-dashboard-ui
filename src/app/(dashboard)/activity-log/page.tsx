@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Search, XCircle } from "lucide-react";
 import { ActionIconButton } from "@/components/ui/action-button";
 import { ErrorState } from "@/components/ui/error-state";
-import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { TablePagination } from "@/components/ui/table-pagination";
 import { activityLogApi } from "@/api/activity-log";
+import { userApi } from "@/api/user";
 import { useAsyncData } from "@/hooks/useAsyncData";
 import {
   ACTIVITY_ACTION_OPTIONS,
@@ -23,6 +23,7 @@ import type {
   ActivityLog,
   ActivityLogFilter,
 } from "@/types/activity-log";
+import type { AdminUser } from "@/types/user";
 
 const defaultMeta = { page: 1, limit: 10, total: 0, totalPages: 1 };
 
@@ -110,15 +111,13 @@ const DETAIL_FIELD_ORDER: Record<string, string[]> = {
 };
 
 const initialFilter: ActivityLogFilter = {
-  search: "",
-  adminSearch: "",
   page: 1,
   limit: 10,
 };
 
 export default function ActivityLogPage() {
-  const [search, setSearch] = useState("");
-  const [adminSearch, setAdminSearch] = useState("");
+  const [adminUsers, setAdminUsers] = useState<AdminUser[]>([]);
+  const [adminId, setAdminId] = useState("");
   const [entityType, setEntityType] = useState("");
   const [action, setAction] = useState("");
   const [currentRole, setCurrentRole] = useState<string | null>(null);
@@ -135,6 +134,19 @@ export default function ActivityLogPage() {
 
   const items = listData?.items ?? [];
   const meta = listData?.meta ?? defaultMeta;
+  const adminUserOptions = useMemo(
+    () => [
+      { label: "ทั้งหมด", value: "" },
+      ...adminUsers
+        .slice()
+        .sort((a, b) => getAdminUserLabel(a).localeCompare(getAdminUserLabel(b), "th"))
+        .map((user) => ({
+          label: getAdminUserLabel(user),
+          value: user.id,
+        })),
+    ],
+    [adminUsers],
+  );
 
   useEffect(() => {
     const handle = window.setTimeout(() => {
@@ -150,10 +162,25 @@ export default function ActivityLogPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appliedFilter, canViewActivityLog]);
 
+  useEffect(() => {
+    if (!canViewActivityLog) return;
+
+    let active = true;
+    userApi
+      .getAll()
+      .then((res) => {
+        if (active && res.success) setAdminUsers(res.data);
+      })
+      .catch((error) => console.error("[activity-log] admin users failed", error));
+
+    return () => {
+      active = false;
+    };
+  }, [canViewActivityLog]);
+
   const handleSearch = () => {
     setAppliedFilter({
-      search: search.trim(),
-      adminSearch: adminSearch.trim() || undefined,
+      adminId: adminId.trim() || undefined,
       entityType: (entityType || undefined) as ActivityEntityType | undefined,
       action: (action || undefined) as ActivityAction | undefined,
       page: 1,
@@ -162,8 +189,7 @@ export default function ActivityLogPage() {
   };
 
   const handleClear = () => {
-    setSearch("");
-    setAdminSearch("");
+    setAdminId("");
     setEntityType("");
     setAction("");
     setAppliedFilter(initialFilter);
@@ -194,21 +220,14 @@ export default function ActivityLogPage() {
         </div>
 
         <div className="mb-8 flex flex-wrap items-center gap-3">
-          <Input
-            size="md"
-            className="w-[230px]"
-            label="ค้นหา"
-            placeholder="ค้นหารายละเอียด"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-          <Input
+          <Select
             size="md"
             className="w-[230px]"
             label="ผู้ใช้งาน"
-            placeholder="ชื่อผู้ใช้งาน หรือ Admin ID"
-            value={adminSearch}
-            onChange={(e) => setAdminSearch(e.target.value)}
+            placeholder="ผู้ใช้งานทั้งหมด"
+            value={adminId}
+            onChange={setAdminId}
+            options={adminUserOptions}
           />
           <Select
             size="md"
@@ -494,6 +513,10 @@ function getFieldOrder(entityType: string, field: string, fallbackIndex: number)
   const order = DETAIL_FIELD_ORDER[entityType] ?? [];
   const index = order.indexOf(field);
   return index >= 0 ? index : order.length + fallbackIndex;
+}
+
+function getAdminUserLabel(user: AdminUser) {
+  return user.fullName?.trim() || user.username || user.email || user.id;
 }
 
 function getAdminName(log: ActivityLog) {
