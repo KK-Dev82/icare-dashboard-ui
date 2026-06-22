@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { CalendarDays, Search, X } from "lucide-react";
+import { contentApi } from "@/api/content";
 import { productInterestApi } from "@/api/product-interest";
 import { ActionIconButton } from "@/components/ui/action-button";
 import { ErrorState } from "@/components/ui/error-state";
@@ -45,6 +46,7 @@ const defaultStats: ProductInterestStats = {
 
 export default function ProductInterestPage() {
   const [stats, setStats] = useState<ProductInterestStats>(defaultStats);
+  const [contentTitleMap, setContentTitleMap] = useState<Record<string, string>>({});
   const [detailLoadingId, setDetailLoadingId] = useState<string | null>(null);
   const [detailErrorMessage, setDetailErrorMessage] = useState<string | null>(null);
   const [statusSaving, setStatusSaving] = useState(false);
@@ -92,6 +94,9 @@ export default function ProductInterestPage() {
   useEffect(() => {
     const timer = window.setTimeout(() => {
       fetchStats().catch((err) => console.error("[product-interest] summary failed", err));
+      fetchContentTitleMap()
+        .then(setContentTitleMap)
+        .catch((err) => console.error("[product-interest] content titles failed", err));
     }, 0);
 
     return () => {
@@ -324,7 +329,7 @@ export default function ProductInterestPage() {
                     <TableCell>{getLeadNo(item)}</TableCell>
                     <TableCell>{item.phone}</TableCell>
                     <TableCell>{getContactName(item)}</TableCell>
-                    <TableCell className="truncate">{getProductName(item)}</TableCell>
+                    <TableCell className="truncate">{getInterestTitle(item, contentTitleMap)}</TableCell>
                     <TableCell>{formatThaiDate(item.createdAt)}</TableCell>
                     <TableCell>
                       <span style={{ color: statusItem.color }}>{statusItem.label}</span>
@@ -359,6 +364,7 @@ export default function ProductInterestPage() {
       <ProductInterestDetailModal
         open={Boolean(selectedLead)}
         item={selectedLead}
+        contentTitleMap={contentTitleMap}
         saving={statusSaving}
         onSave={async (nextStatus) => {
           if (!selectedLead) return;
@@ -381,12 +387,14 @@ export default function ProductInterestPage() {
 function ProductInterestDetailModal({
   open,
   item,
+  contentTitleMap,
   saving,
   onSave,
   onClose,
 }: {
   open: boolean;
   item: ProductInterest | null;
+  contentTitleMap: Record<string, string>;
   saving: boolean;
   onSave: (status: ProductInterestStatus) => Promise<void>;
   onClose: () => void;
@@ -424,7 +432,7 @@ function ProductInterestDetailModal({
         <div className="mt-6 space-y-4">
           <InfoItem label="เบอร์โทรศัพท์" value={item.phone} />
           <InfoItem label="วันที่ส่ง:" value={formatLeadDateTime(item.createdAt)} />
-          <InfoItem label="สิ่งที่สนใจ" value={getProductName(item)} />
+          <InfoItem label="สิ่งที่สนใจ" value={getInterestTitle(item, contentTitleMap)} />
           <InfoItem label="ผู้ติดต่อ" value={getContactName(item)} />
           <InfoItem label="เบอร์โทรศัพท์" value={item.phone} />
           {item.email && <InfoItem label="อีเมล" value={item.email} />}
@@ -563,6 +571,26 @@ function InfoItem({
   );
 }
 
+async function fetchContentTitleMap() {
+  const titles: Record<string, string> = {};
+  let page = 1;
+  let totalPages = 1;
+
+  do {
+    const res = await contentApi.getAll({ page, limit: 100 });
+    if (res.success === false) break;
+
+    res.data.forEach((item) => {
+      titles[item.id] = item.title;
+    });
+
+    totalPages = Math.max(1, res.meta?.totalPages ?? 1);
+    page += 1;
+  } while (page <= totalPages);
+
+  return titles;
+}
+
 function getLeadNo(item: ProductInterest) {
   return item.leadNo || "-";
 }
@@ -571,8 +599,13 @@ function getContactName(item: ProductInterest) {
   return item.fullName || "-";
 }
 
-function getProductName(item: ProductInterest) {
-  return item.product?.title ?? item.content?.title ?? "-";
+function getInterestTitle(item: ProductInterest, contentTitleMap: Record<string, string>) {
+  return (
+    item.product?.title ??
+    item.content?.title ??
+    (item.contentId ? contentTitleMap[item.contentId] : undefined) ??
+    "-"
+  );
 }
 
 function getStatus(item: ProductInterest) {
