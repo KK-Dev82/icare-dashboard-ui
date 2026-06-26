@@ -160,17 +160,6 @@ export default function AccountsPage() {
 
   const handleSearch = () => {
     setAppliedSearch(search.trim());
-    setAppliedRole(filterRole);
-    setAppliedStatus(filterStatus);
-  };
-
-  const handleClear = () => {
-    setSearch("");
-    setFilterRole("");
-    setFilterStatus("");
-    setAppliedSearch("");
-    setAppliedRole("");
-    setAppliedStatus("");
   };
 
   const filtered = items.filter((item) => {
@@ -223,7 +212,10 @@ export default function AccountsPage() {
             label="ประเภทผู้ใช้งาน"
             placeholder="เลือกบทบาท"
             value={filterRole}
-            onChange={setFilterRole}
+            onChange={(value) => {
+              setFilterRole(value);
+              setAppliedRole(value);
+            }}
             options={[
               { label: "ทั้งหมด", value: "" },
               { label: "Super Admin", value: "SUPER_ADMIN" },
@@ -237,27 +229,16 @@ export default function AccountsPage() {
             label="สถานะการใช้งาน"
             placeholder="เลือกสถานะ"
             value={filterStatus}
-            onChange={setFilterStatus}
+            onChange={(value) => {
+              setFilterStatus(value);
+              setAppliedStatus(value);
+            }}
             options={[
               { label: "ทั้งหมด", value: "" },
               { label: statusLabel.ACTIVE, value: "ACTIVE" },
               { label: statusLabel.INACTIVE, value: "INACTIVE" },
             ]}
           />
-          <button
-            type="button"
-            onClick={handleSearch}
-            className="h-[42px] rounded-[8px] bg-[#FF944D] px-8 text-[14px] font-medium text-white transition hover:bg-[#f28338]"
-          >
-            ค้นหา
-          </button>
-          <button
-            type="button"
-            onClick={handleClear}
-            className="h-[42px] rounded-[8px] border border-[#DCDCDC] px-8 text-[14px] font-medium text-[#565656] transition hover:bg-gray-50"
-          >
-            ล้าง
-          </button>
         </div>
 
         {/* Stale data warning */}

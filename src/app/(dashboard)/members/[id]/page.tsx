@@ -20,6 +20,10 @@ export default function MemberDetailPage() {
   const [claims, setClaims] = useState<Claim[]>([]);
   const [claimPage, setClaimPage] = useState(1);
   const [claimTotalPages, setClaimTotalPages] = useState(1);
+  const [insuranceSearch, setInsuranceSearch] = useState("");
+  const [appliedInsuranceSearch, setAppliedInsuranceSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
   const [memberPhone, setMemberPhone] = useState("");
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -88,6 +92,24 @@ export default function MemberDetailPage() {
   const activeCount = insurance.filter((i) => i.status === "A").length;
   const expiredCount = insurance.filter((i) => i.status !== "A").length;
 
+  const typeOptions = [
+    { label: "ทั้งหมด", value: "" },
+    ...[...new Set(insurance.map((i) => i.product.type))].map((t) => ({ label: t, value: t })),
+  ];
+
+  const filteredInsurance = insurance.filter((item) => {
+    const policyNo = item.policies?.[0]?.no || item.certificateNo;
+    if (appliedInsuranceSearch) {
+      const kw = appliedInsuranceSearch.toLowerCase();
+      const matchNo = policyNo?.toLowerCase().includes(kw);
+      const matchName = item.product.name.toLowerCase().includes(kw);
+      if (!matchNo && !matchName) return false;
+    }
+    if (statusFilter && item.status !== statusFilter) return false;
+    if (typeFilter && item.product.type !== typeFilter) return false;
+    return true;
+  });
+
   return (
     <div className="min-h-screen bg-[#F4FAFA] p-6">
       <div className="grid grid-cols-[1fr_320px] gap-6">
@@ -138,13 +160,26 @@ export default function MemberDetailPage() {
 
           {/* Filter */}
           <div className="mt-6 flex items-center gap-3">
-            <Input size="md" className="w-[190px]" label="ค้นหา" placeholder="ค้นหา" />
+            <Input
+              size="md"
+              className="w-[190px]"
+              label="ค้นหา"
+              placeholder="ค้นหาเลขที่กรมธรรม์, ชื่อผลิตภัณฑ์"
+              value={insuranceSearch}
+              onChange={(e) => setInsuranceSearch(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") setAppliedInsuranceSearch(insuranceSearch.trim());
+              }}
+            />
             <Select
               size="md"
               className="w-[170px]"
               label="สถานะกรมธรรม์"
               placeholder="เลือกสถานะ"
+              value={statusFilter}
+              onChange={(v) => setStatusFilter(v)}
               options={[
+                { label: "ทั้งหมด", value: "" },
                 { label: "คุ้มครอง", value: "A" },
                 { label: "หมดอายุ", value: "E" },
               ]}
@@ -154,22 +189,18 @@ export default function MemberDetailPage() {
               className="w-[170px]"
               label="ประเภทประกัน"
               placeholder="เลือกประเภท"
-              options={[
-                { label: "MOBILE", value: "MOBILE" },
-                { label: "MOTOR", value: "MOTOR" },
-              ]}
+              value={typeFilter}
+              onChange={(v) => setTypeFilter(v)}
+              options={typeOptions}
             />
-            <button className="h-[42px] flex-1 rounded-[10px] bg-[#FF944D] text-sm font-medium text-white hover:bg-[#f28338]">
-              ค้นหา
-            </button>
           </div>
 
           {/* Insurance Cards */}
           <div className="mt-8 grid grid-cols-3 gap-6">
-            {insurance.length === 0 ? (
+            {filteredInsurance.length === 0 ? (
               <div className="col-span-3 py-12 text-center text-sm text-[#9CA3AF]">ไม่พบข้อมูลกรมธรรม์</div>
             ) : (
-              insurance.map((item) => (
+              filteredInsurance.map((item) => (
                 <InsuranceCard key={item.id} item={item} />
               ))
             )}

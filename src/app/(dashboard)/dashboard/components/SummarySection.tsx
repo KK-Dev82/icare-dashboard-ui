@@ -57,17 +57,6 @@ export function SummarySection() {
     return () => window.clearTimeout(timer);
   }, []);
 
-  const handleSearch = () => {
-    fetchData();
-  };
-
-  const handleClear = () => {
-    setQuickRange("");
-    setCustomFrom("");
-    setCustomTo("");
-    fetchData("", "", "");
-  };
-
   const summaryItems: Array<{
     value: string;
     unit: string;
@@ -121,7 +110,11 @@ export function SummarySection() {
             label="ช่วงเวลา"
             placeholder="เลือกช่วงเวลา"
             value={quickRange}
-            onChange={(v) => setQuickRange(v as QuickRange)}
+            onChange={(v) => {
+              const r = v as QuickRange;
+              setQuickRange(r);
+              if (r !== "CUSTOM") fetchData(r);
+            }}
             options={[
               { label: "ทั้งหมด", value: "" },
               { label: "7 วันล่าสุด", value: "7" },
@@ -137,9 +130,9 @@ export function SummarySection() {
                 <input
                   type="date"
                   value={customFrom}
-                  onChange={(e) => setCustomFrom(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") handleSearch();
+                  onChange={(e) => {
+                    setCustomFrom(e.target.value);
+                    fetchData("CUSTOM", e.target.value, customTo);
                   }}
                   className="h-[42px] w-[160px] rounded-[10px] border border-[#DCDCDC] bg-white px-4 text-[14px] text-[#565656] outline-none focus:border-primary"
                 />
@@ -149,28 +142,15 @@ export function SummarySection() {
                 <input
                   type="date"
                   value={customTo}
-                  onChange={(e) => setCustomTo(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") handleSearch();
+                  onChange={(e) => {
+                    setCustomTo(e.target.value);
+                    fetchData("CUSTOM", customFrom, e.target.value);
                   }}
                   className="h-[42px] w-[160px] rounded-[10px] border border-[#DCDCDC] bg-white px-4 text-[14px] text-[#565656] outline-none focus:border-primary"
                 />
               </div>
             </div>
           ) : null}
-          <button
-            onClick={handleSearch}
-            className="h-[42px] rounded-[8px] bg-[#FF944D] px-8 text-[14px] font-medium text-white transition hover:bg-[#f28338]"
-          >
-            ค้นหา
-          </button>
-          <button
-            type="button"
-            onClick={handleClear}
-            className="h-[42px] rounded-[8px] border border-[#DCDCDC] px-8 text-[14px] font-medium text-[#565656] transition hover:bg-gray-50"
-          >
-            ล้าง
-          </button>
         </div>
       </div>
 
