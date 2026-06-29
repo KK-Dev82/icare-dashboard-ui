@@ -126,29 +126,6 @@ export function NewMembersReport() {
     return () => window.clearTimeout(timer);
   }, [fetchMembers]);
 
-  const handleMemberSearch = () => {
-    setMemberPage(1);
-    setAppliedMemberSearch(memberSearch.trim());
-    setAppliedMemberAccountLevel(memberAccountLevel);
-    setAppliedMemberQuickFilter(memberQuickFilter);
-    setAppliedMemberCustomFrom(memberCustomFrom);
-    setAppliedMemberCustomTo(memberCustomTo);
-  };
-
-  const handleMemberClear = () => {
-    setMemberSearch("");
-    setMemberAccountLevel("");
-    setMemberQuickFilter("");
-    setMemberCustomFrom("");
-    setMemberCustomTo("");
-    setMemberPage(1);
-    setAppliedMemberSearch("");
-    setAppliedMemberAccountLevel("");
-    setAppliedMemberQuickFilter("");
-    setAppliedMemberCustomFrom("");
-    setAppliedMemberCustomTo("");
-  };
-
   return (
     <section className="flex flex-col rounded-[18px] bg-white px-6 py-6 shadow-[0_2px_12px_rgba(0,0,0,0.04)] sm:px-8 xl:col-span-3">
       <PanelHeader
@@ -165,7 +142,10 @@ export function NewMembersReport() {
           value={memberSearch}
           onChange={(event) => setMemberSearch(event.target.value)}
           onKeyDown={(event) => {
-            if (event.key === "Enter") handleMemberSearch();
+            if (event.key === "Enter") {
+              setAppliedMemberSearch(memberSearch.trim());
+              setMemberPage(1);
+            }
           }}
         />
         <Select
@@ -174,7 +154,11 @@ export function NewMembersReport() {
           label="สถานะกรมธรรม์"
           placeholder="เลือกสถานะ"
           value={memberAccountLevel}
-          onChange={setMemberAccountLevel}
+          onChange={(value) => {
+            setMemberAccountLevel(value);
+            setAppliedMemberAccountLevel(value);
+            setMemberPage(1);
+          }}
           options={[
             { label: "ทั้งหมด", value: "" },
             { label: "สมาชิก", value: "MEMBER" },
@@ -187,7 +171,18 @@ export function NewMembersReport() {
           label="ช่วงวันที่สมัคร"
           placeholder="เลือกช่วงวันที่"
           value={memberQuickFilter}
-          onChange={(value) => setMemberQuickFilter(value as MemberQuickFilter)}
+          onChange={(value) => {
+            const qf = value as MemberQuickFilter;
+            setMemberQuickFilter(qf);
+            setAppliedMemberQuickFilter(qf);
+            if (qf !== "CUSTOM") {
+              setMemberCustomFrom("");
+              setAppliedMemberCustomFrom("");
+              setMemberCustomTo("");
+              setAppliedMemberCustomTo("");
+            }
+            setMemberPage(1);
+          }}
           options={[
             { label: "ทั้งหมด", value: "" },
             { label: "7 วันล่าสุด", value: "7" },
@@ -196,20 +191,6 @@ export function NewMembersReport() {
             { label: "กำหนดเอง", value: "CUSTOM" },
           ]}
         />
-        <button
-          type="button"
-          onClick={handleMemberSearch}
-          className="h-[42px] rounded-[8px] bg-[#FF944D] px-8 text-[14px] font-medium text-white transition hover:bg-[#f28338] lg:w-[145px]"
-        >
-          ค้นหา
-        </button>
-        <button
-          type="button"
-          onClick={handleMemberClear}
-          className="h-[42px] rounded-[8px] border border-[#DCDCDC] px-8 text-[14px] font-medium text-[#565656] transition hover:bg-gray-50 lg:w-[110px]"
-        >
-          ล้าง
-        </button>
       </div>
 
       {memberQuickFilter === "CUSTOM" && (
@@ -221,7 +202,11 @@ export function NewMembersReport() {
             <input
               type="date"
               value={memberCustomFrom}
-              onChange={(event) => setMemberCustomFrom(event.target.value)}
+              onChange={(event) => {
+                setMemberCustomFrom(event.target.value);
+                setAppliedMemberCustomFrom(event.target.value);
+                setMemberPage(1);
+              }}
               className="h-[42px] w-full rounded-[10px] border border-[#DCDCDC] px-4 text-sm text-[#565656] outline-none transition-colors focus:border-primary"
             />
           </div>
@@ -232,7 +217,11 @@ export function NewMembersReport() {
             <input
               type="date"
               value={memberCustomTo}
-              onChange={(event) => setMemberCustomTo(event.target.value)}
+              onChange={(event) => {
+                setMemberCustomTo(event.target.value);
+                setAppliedMemberCustomTo(event.target.value);
+                setMemberPage(1);
+              }}
               className="h-[42px] w-full rounded-[10px] border border-[#DCDCDC] px-4 text-sm text-[#565656] outline-none transition-colors focus:border-primary"
             />
           </div>

@@ -71,14 +71,7 @@ export default function NewsPage() {
   }, []);
 
   const handleSearch = () => {
-    setAppliedParams({ search: search.trim(), filterCategory, filterStatus, page: 1 });
-  };
-
-  const handleClear = () => {
-    setSearch("");
-    setFilterCategory("");
-    setFilterStatus("");
-    setAppliedParams({ search: "", filterCategory: "", filterStatus: "", page: 1 });
+    setAppliedParams((prev) => ({ ...prev, search: search.trim(), page: 1 }));
   };
 
   const handlePageChange = (newPage: number) => {
@@ -141,8 +134,14 @@ export default function NewsPage() {
             label="หมวดหมู่"
             placeholder="เลือกหมวดหมู่"
             value={filterCategory}
-            onChange={setFilterCategory}
-            options={categories.map((c) => ({ label: c.name, value: c.id }))}
+            onChange={(value) => {
+              setFilterCategory(value);
+              setAppliedParams((prev) => ({ ...prev, filterCategory: value, page: 1 }));
+            }}
+            options={[
+              { label: "ทั้งหมด", value: "" },
+              ...categories.map((c) => ({ label: c.name, value: c.id })),
+            ]}
           />
           <Select
             size="md"
@@ -150,25 +149,17 @@ export default function NewsPage() {
             label="สถานะ"
             placeholder="เลือกสถานะ"
             value={filterStatus}
-            onChange={setFilterStatus}
+            onChange={(value) => {
+              setFilterStatus(value);
+              setAppliedParams((prev) => ({ ...prev, filterStatus: value, page: 1 }));
+            }}
             options={[
+              { label: "ทั้งหมด", value: "" },
               { label: "เผยแพร่", value: "PUBLISHED" },
               { label: "แบบร่าง", value: "DRAFT" },
               { label: "ปิดการใช้งาน", value: "UNPUBLISHED" },
             ]}
           />
-          <button
-            onClick={handleSearch}
-            className="h-[42px] rounded-[8px] bg-[#FF944D] px-8 text-[14px] font-medium text-white transition hover:bg-[#f28338]"
-          >
-            ค้นหา
-          </button>
-          <button
-            onClick={handleClear}
-            className="h-[42px] rounded-[8px] border border-[#DCDCDC] px-8 text-[14px] font-medium text-[#565656] transition hover:bg-gray-50"
-          >
-            ล้าง
-          </button>
         </div>
 
         {/* Stale data warning */}
