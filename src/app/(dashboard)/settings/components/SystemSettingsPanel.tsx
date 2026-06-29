@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { settingsApi } from "@/api/settings";
 import { ErrorState } from "@/components/ui/error-state";
+import { ConfirmModal } from "@/components/ui/modal";
+import { useToast } from "@/components/ui/toast";
 import type { SettingItem } from "@/types/settings";
 
 const keyLabel: Record<string, string> = {
@@ -13,11 +15,13 @@ const keyLabel: Record<string, string> = {
 };
 
 export function SystemSettingsPanel() {
+  const toast = useToast();
   const [items, setItems] = useState<SettingItem[]>([]);
   const [formValues, setFormValues] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [confirmSave, setConfirmSave] = useState(false);
 
   const fetchData = () => {
     setLoading(true);
@@ -40,10 +44,19 @@ export function SystemSettingsPanel() {
   }, []);
 
   const handleSave = async () => {
+    if (saving) return;
+
     setSaving(true);
-    const settings = Object.entries(formValues).map(([key, value]) => ({ key, value }));
-    await settingsApi.updateSettings({ settings });
-    setSaving(false);
+
+    try {
+      const settings = Object.entries(formValues).map(([key, value]) => ({ key, value }));
+      await settingsApi.updateSettings({ settings });
+      toast.success("บันทึกการตั้งค่าระบบสำเร็จ");
+    } catch (error) {
+      toast.fromError(error);
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (loading) {
@@ -72,7 +85,7 @@ export function SystemSettingsPanel() {
         <h2 className="text-lg font-bold text-[#243333]">การตั้งค่าระบบ</h2>
         <button
           type="button"
-          onClick={handleSave}
+          onClick={() => setConfirmSave(true)}
           disabled={saving}
           className="h-[39px] min-w-[145px] rounded-[6px] bg-[#24A148] px-6 text-sm font-medium text-white transition-colors hover:bg-[#1e8e3e] disabled:opacity-60 disabled:cursor-not-allowed"
         >
@@ -96,6 +109,19 @@ export function SystemSettingsPanel() {
           </div>
         ))}
       </div>
+
+      <ConfirmModal
+        open={confirmSave}
+        title="ยืนยันการบันทึก"
+        message="ต้องการบันทึกการตั้งค่าระบบใช่หรือไม่?"
+        confirmLabel="บันทึก"
+        confirmColor="success"
+        onConfirm={() => {
+          setConfirmSave(false);
+          void handleSave();
+        }}
+        onCancel={() => setConfirmSave(false)}
+      />
     </section>
   );
 }
