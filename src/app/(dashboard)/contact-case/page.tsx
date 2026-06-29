@@ -148,26 +148,6 @@ export default function ContactCasePage() {
 
   useEffect(() => clearReadTimer, [clearReadTimer]);
 
-  const handleSearch = () => {
-    setPage(1);
-    setAppliedSearch(search.trim());
-    setAppliedCategoryId(categoryId);
-    setAppliedReadStatus(readStatus);
-    setAppliedSubmittedDate(submittedDate);
-  };
-
-  const handleClear = () => {
-    setSearch("");
-    setCategoryId("");
-    setReadStatus("");
-    setSubmittedDate("");
-    setPage(1);
-    setAppliedSearch("");
-    setAppliedCategoryId("");
-    setAppliedReadStatus("");
-    setAppliedSubmittedDate("");
-  };
-
   const handlePageChange = (nextPage: number) => {
     setPage(nextPage);
   };
@@ -216,7 +196,7 @@ export default function ContactCasePage() {
         <StatCard label="วันนี้" value={stats.today} color="#FF7468" />
       </div>
 
-      <div className="mt-8 grid gap-3 lg:grid-cols-[minmax(160px,1fr)_220px_220px_220px_125px_95px] lg:items-center">
+      <div className="mt-8 grid gap-3 lg:grid-cols-[minmax(160px,1fr)_220px_220px_220px] lg:items-center">
         <Input
           size="md"
           className="w-full"
@@ -225,7 +205,10 @@ export default function ContactCasePage() {
           value={search}
           onChange={(event) => setSearch(event.target.value)}
           onKeyDown={(event) => {
-            if (event.key === "Enter") handleSearch();
+            if (event.key === "Enter") {
+              setAppliedSearch(search.trim());
+              setPage(1);
+            }
           }}
         />
         <Select
@@ -234,7 +217,11 @@ export default function ContactCasePage() {
           label="ประเภท"
           placeholder="เลือกประเภท"
           value={categoryId}
-          onChange={setCategoryId}
+          onChange={(value) => {
+            setCategoryId(value);
+            setAppliedCategoryId(value);
+            setPage(1);
+          }}
           options={categoryOptions}
         />
         <Select
@@ -243,7 +230,11 @@ export default function ContactCasePage() {
           label="สถานะการอ่าน"
           placeholder="เลือกสถานะ"
           value={readStatus}
-          onChange={setReadStatus}
+          onChange={(value) => {
+            setReadStatus(value);
+            setAppliedReadStatus(value);
+            setPage(1);
+          }}
           options={[
             { label: "ทั้งหมด", value: "" },
             { label: "ยังไม่ได้อ่าน", value: "UNREAD" },
@@ -257,9 +248,10 @@ export default function ContactCasePage() {
           <input
             type="date"
             value={submittedDate}
-            onChange={(event) => setSubmittedDate(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") handleSearch();
+            onChange={(event) => {
+              setSubmittedDate(event.target.value);
+              setAppliedSubmittedDate(event.target.value);
+              setPage(1);
             }}
             className="h-[42px] w-full rounded-[10px] border border-[#DCDCDC] bg-white px-4 pr-11 text-[14px] text-[#565656] outline-none transition-all duration-200 hover:border-primary hover:shadow-[0_4px_12px_rgba(7,162,162,0.08)] focus:border-primary [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-4 [&::-webkit-calendar-picker-indicator]:h-5 [&::-webkit-calendar-picker-indicator]:w-5 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0"
           />
@@ -268,20 +260,6 @@ export default function ContactCasePage() {
             className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[#243333]"
           />
         </div>
-        <button
-          type="button"
-          onClick={handleSearch}
-          className="h-[42px] rounded-[8px] bg-[#FF944D] px-8 text-[14px] font-medium text-white transition hover:bg-[#f28338]"
-        >
-          ค้นหา
-        </button>
-        <button
-          type="button"
-          onClick={handleClear}
-          className="h-[42px] rounded-[8px] border border-[#DCDCDC] bg-white px-5 text-[14px] font-medium text-[#707070] transition hover:border-primary hover:text-primary"
-        >
-          ล้าง
-        </button>
       </div>
 
       {!loading && error && items.length > 0 && (

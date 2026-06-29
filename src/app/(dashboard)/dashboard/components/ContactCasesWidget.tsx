@@ -63,17 +63,6 @@ export function ContactCasesWidget() {
     return () => window.clearTimeout(timer);
   }, [fetchUnreadContactCases]);
 
-  const handleContactSearch = () => {
-    setContactPage(1);
-    setAppliedContactSearch(contactSearch.trim());
-  };
-
-  const handleContactClear = () => {
-    setContactSearch("");
-    setContactPage(1);
-    setAppliedContactSearch("");
-  };
-
   const clearReadTimer = useCallback(() => {
     if (readTimerRef.current) {
       window.clearTimeout(readTimerRef.current);
@@ -147,23 +136,12 @@ export function ContactCasesWidget() {
             value={contactSearch}
             onChange={(event) => setContactSearch(event.target.value)}
             onKeyDown={(event) => {
-              if (event.key === "Enter") handleContactSearch();
+              if (event.key === "Enter") {
+                setAppliedContactSearch(contactSearch.trim());
+                setContactPage(1);
+              }
             }}
           />
-          <button
-            type="button"
-            onClick={handleContactSearch}
-            className="h-[39px] w-[112px] rounded-[6px] bg-[#FF944D] text-[14px] font-medium text-white transition hover:bg-[#f28338] sm:w-[145px]"
-          >
-            ค้นหา
-          </button>
-          <button
-            type="button"
-            onClick={handleContactClear}
-            className="h-[39px] w-[92px] rounded-[6px] border border-[#DCDCDC] text-[14px] font-medium text-[#565656] transition hover:bg-gray-50"
-          >
-            ล้าง
-          </button>
         </div>
 
         <div className="mt-6 overflow-x-auto">

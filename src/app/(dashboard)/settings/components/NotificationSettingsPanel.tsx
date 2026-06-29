@@ -7,6 +7,8 @@ import { settingsApi } from "@/api/settings";
 import { ActionIconButton } from "@/components/ui/action-button";
 import { ErrorState } from "@/components/ui/error-state";
 import { Input } from "@/components/ui/input";
+import { ConfirmModal } from "@/components/ui/modal";
+import { useToast } from "@/components/ui/toast";
 import type { RenewalRule } from "@/types/renewal";
 
 const RENEWAL_ENABLED_KEY = "renewal_enabled";
@@ -27,7 +29,10 @@ function sortRenewalRules(rules: RenewalRule[]) {
 }
 
 export function NotificationSettingsPanel() {
+  const toast = useToast();
   const [enabled, setEnabled] = useState(true);
+  const [confirmItem, setConfirmItem] = useState<RenewalRule | null>(null);
+  const [confirmGlobal, setConfirmGlobal] = useState(false);
   const [items, setItems] = useState<RenewalRule[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -98,6 +103,10 @@ export function NotificationSettingsPanel() {
     setFormError("");
   };
 
+  const handleGlobalToggleClick = () => {
+    setConfirmGlobal(true);
+  };
+
   const handleGlobalToggle = async () => {
     const nextEnabled = !enabled;
     setUpdatingGlobal(true);
@@ -112,11 +121,10 @@ export function NotificationSettingsPanel() {
           },
         ],
       });
+      toast.success(nextEnabled ? "เปิดการแจ้งเตือนสำเร็จ" : "ปิดการแจ้งเตือนสำเร็จ");
     } catch (error) {
       setEnabled(!nextEnabled);
-      setErrorMessage(
-        error instanceof Error ? error.message : "อัปเดตสถานะการแจ้งเตือนไม่สำเร็จ",
-      );
+      toast.fromError(error);
     } finally {
       setUpdatingGlobal(false);
     }
@@ -140,7 +148,7 @@ export function NotificationSettingsPanel() {
       return;
     }
     if (items.some((item) => item.daysBefore === daysBefore && item.id !== editItem?.id)) {
-      setFormError("มีการตั้งค่าจำนวนวันนี้อยู่แล้ว");
+      toast.warning("มีการตั้งค่าจำนวนวันนี้อยู่แล้ว");
       return;
     }
 
@@ -166,18 +174,22 @@ export function NotificationSettingsPanel() {
         setItems((current) => [...current, createdRule]);
       }
 
+      toast.success(editItem ? "แก้ไขข้อความแจ้งเตือนสำเร็จ" : "เพิ่มข้อความแจ้งเตือนสำเร็จ");
       setShowForm(false);
       setEditItem(null);
     } catch (error) {
-      setFormError(error instanceof Error ? error.message : "บันทึกข้อมูลไม่สำเร็จ");
+      toast.fromError(error);
     } finally {
       setSaving(false);
     }
   };
 
+  const handleToggleClick = (item: RenewalRule) => {
+    setConfirmItem(item);
+  };
+
   const handleToggle = async (item: RenewalRule) => {
     setUpdatingId(item.id);
-    setErrorMessage(null);
 
     try {
       const updatedRule = await renewalApi.updateRule(item.id, {
@@ -186,8 +198,9 @@ export function NotificationSettingsPanel() {
       setItems((current) =>
         current.map((rule) => (rule.id === updatedRule.id ? updatedRule : rule)),
       );
+      toast.success(item.isEnabled ? "ปิดการแจ้งเตือนสำเร็จ" : "เปิดการแจ้งเตือนสำเร็จ");
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "อัปเดตสถานะไม่สำเร็จ");
+      toast.fromError(error);
     } finally {
       setUpdatingId(null);
     }
@@ -209,7 +222,7 @@ export function NotificationSettingsPanel() {
             role="switch"
             aria-checked={enabled}
             aria-label="เปิดใช้งานการแจ้งเตือน"
-            onClick={handleGlobalToggle}
+            onClick={handleGlobalToggleClick}
             disabled={updatingGlobal}
             className={`flex h-8 w-8 items-center justify-center rounded-lg text-white transition-opacity hover:opacity-[0.85] disabled:cursor-not-allowed disabled:opacity-60 ${
               enabled ? "bg-[#F44034]" : "bg-[#DCDCDC]"
@@ -276,7 +289,7 @@ export function NotificationSettingsPanel() {
                   variant={item.isEnabled ? "danger" : "success"}
                   iconStrokeWidth={3}
                   aria-label={`${item.isEnabled ? "ปิด" : "เปิด"} ${item.daysBefore} วัน`}
-                  onClick={() => handleToggle(item)}
+                  onClick={() => handleToggleClick(item)}
                   disabled={isUpdating}
                 />
               </div>
@@ -295,6 +308,26 @@ export function NotificationSettingsPanel() {
           เพิ่มข้อความแจ้งเตือน
         </button>
       </div>
+
+      <ConfirmModal
+        open={Boolean(confirmItem)}
+        title={confirmItem?.isEnabled ? "ปิดการแจ้งเตือน" : "เปิดการแจ้งเตือน"}
+        message={`ต้องการ${confirmItem?.isEnabled ? "ปิด" : "เปิด"}การแจ้งเตือน "${confirmItem?.daysBefore} วันก่อนหมดอายุ" ใช่หรือไม่?`}
+        confirmLabel={confirmItem?.isEnabled ? "ปิดการแจ้งเตือน" : "เปิดการแจ้งเตือน"}
+        confirmColor={confirmItem?.isEnabled ? "danger" : "success"}
+        onConfirm={() => { void handleToggle(confirmItem!); setConfirmItem(null); }}
+        onCancel={() => setConfirmItem(null)}
+      />
+
+      <ConfirmModal
+        open={confirmGlobal}
+        title={enabled ? "ปิดการแจ้งเตือนทั้งหมด" : "เปิดการแจ้งเตือนทั้งหมด"}
+        message={`ต้องการ${enabled ? "ปิด" : "เปิด"}การแจ้งเตือนกรมธรรม์ทั้งหมดใช่หรือไม่?`}
+        confirmLabel={enabled ? "ปิดการแจ้งเตือน" : "เปิดการแจ้งเตือน"}
+        confirmColor={enabled ? "danger" : "success"}
+        onConfirm={() => { void handleGlobalToggle(); setConfirmGlobal(false); }}
+        onCancel={() => setConfirmGlobal(false)}
+      />
 
       {showForm && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">

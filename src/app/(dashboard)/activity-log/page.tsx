@@ -186,23 +186,6 @@ export default function ActivityLogPage() {
     };
   }, [canViewActivityLog]);
 
-  const handleSearch = () => {
-    setAppliedFilter({
-      adminId: adminId.trim() || undefined,
-      entityType: (entityType || undefined) as ActivityEntityType | undefined,
-      action: (action || undefined) as ActivityAction | undefined,
-      page: 1,
-      limit: 10,
-    });
-  };
-
-  const handleClear = () => {
-    setAdminId("");
-    setEntityType("");
-    setAction("");
-    setAppliedFilter(initialFilter);
-  };
-
   const handlePageChange = (page: number) => {
     setAppliedFilter((prev) => ({ ...prev, page }));
   };
@@ -234,7 +217,10 @@ export default function ActivityLogPage() {
             label="ผู้ใช้งาน"
             placeholder="ผู้ใช้งานทั้งหมด"
             value={adminId}
-            onChange={setAdminId}
+            onChange={(value) => {
+              setAdminId(value);
+              setAppliedFilter((prev) => ({ ...prev, adminId: value || undefined, page: 1 }));
+            }}
             options={adminUserOptions}
           />
           <Select
@@ -243,8 +229,11 @@ export default function ActivityLogPage() {
             label="เมนู"
             placeholder="เมนูทั้งหมด"
             value={entityType}
-            onChange={setEntityType}
-            options={entityTypeOptions}
+            onChange={(value) => {
+              setEntityType(value);
+              setAppliedFilter((prev) => ({ ...prev, entityType: (value || undefined) as ActivityEntityType | undefined, page: 1 }));
+            }}
+            options={[{ label: "ทั้งหมด", value: "" }, ...entityTypeOptions]}
           />
           <Select
             size="md"
@@ -252,23 +241,12 @@ export default function ActivityLogPage() {
             label="การกระทำ"
             placeholder="การกระทำทั้งหมด"
             value={action}
-            onChange={setAction}
-            options={actionOptions}
+            onChange={(value) => {
+              setAction(value);
+              setAppliedFilter((prev) => ({ ...prev, action: (value || undefined) as ActivityAction | undefined, page: 1 }));
+            }}
+            options={[{ label: "ทั้งหมด", value: "" }, ...actionOptions]}
           />
-          <button
-            type="button"
-            onClick={handleSearch}
-            className="h-[42px] rounded-[8px] bg-[#FF944D] px-8 text-[14px] font-medium text-white transition hover:bg-[#f28338]"
-          >
-            ค้นหา
-          </button>
-          <button
-            type="button"
-            onClick={handleClear}
-            className="h-[42px] rounded-[8px] border border-[#DCDCDC] px-8 text-[14px] font-medium text-[#565656] transition hover:bg-gray-50"
-          >
-            ล้าง
-          </button>
         </div>
 
         {!loading && errorMessage && items.length > 0 && (

@@ -53,6 +53,7 @@ export default function Navbar() {
   const [pwError, setPwError] = useState("");
   const [pwLoading, setPwLoading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const navRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     const handle = window.setTimeout(() => {
@@ -64,9 +65,16 @@ export default function Navbar() {
   }, []);
 
   useEffect(() => {
+    setNavDropdownOpen(null);
+  }, [pathname]);
+
+  useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setDropdownOpen(false);
+      }
+      if (navRef.current && !navRef.current.contains(e.target as Node)) {
+        setNavDropdownOpen(null);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -112,7 +120,7 @@ export default function Navbar() {
           </Link>
 
           {/* Center - Navigation */}
-          <nav className="flex h-full items-center gap-1">
+          <nav ref={navRef} className="flex h-full items-center gap-1">
             {menuItems
               .filter((item) => !item.superAdminOnly || role === "SUPER_ADMIN")
               .map((item) => {
