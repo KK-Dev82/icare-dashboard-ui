@@ -1,7 +1,6 @@
 "use client";
 
 import { Input } from "@/components/ui/input";
-import { Eye, EyeOff } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -79,7 +78,7 @@ export default function LoginPage() {
               required
             />
 
-            <div className="relative w-full">
+            <div className="space-y-3">
               <Input
                 size="lg"
                 className="w-full"
@@ -90,26 +89,16 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-5 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-primary transition-colors"
-              >
-                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-              </button>
-            </div>
 
-            <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 cursor-pointer">
+              <label className="flex cursor-pointer items-center gap-2">
                 <input
                   type="checkbox"
-                  className="w-4 h-4 rounded border-[#DCDCDC] text-primary focus:ring-primary/20"
+                  checked={showPassword}
+                  onChange={(e) => setShowPassword(e.target.checked)}
+                  className="h-4 w-4 rounded border-[#DCDCDC] text-primary focus:ring-primary/20"
                 />
-                <span className="text-sm text-[#565656]">จดจำการเข้าสู่ระบบ</span>
+                <span className="text-sm text-[#565656]">แสดงรหัสผ่าน</span>
               </label>
-              <a href="#" className="text-sm text-primary hover:underline">
-                ลืมรหัสผ่าน?
-              </a>
             </div>
 
             <button

@@ -6,10 +6,14 @@ import { contactCaseApi } from "@/api/contact-case";
 import { ActionIconButton } from "@/components/ui/action-button";
 import { ErrorState } from "@/components/ui/error-state";
 import { Input } from "@/components/ui/input";
+import { ConfirmModal } from "@/components/ui/modal";
+import { useToast } from "@/components/ui/toast";
 import type { ContactCategory } from "@/types/contact-case";
 
 export function ContactCategorySettingsPanel() {
+  const toast = useToast();
   const [items, setItems] = useState<ContactCategory[]>([]);
+  const [confirmItem, setConfirmItem] = useState<ContactCategory | null>(null);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [editItem, setEditItem] = useState<ContactCategory | null>(null);
@@ -85,32 +89,39 @@ export function ContactCategorySettingsPanel() {
     try {
       if (editItem) {
         await contactCaseApi.updateCategory(editItem.id, { name, sortOrder });
+        toast.success("แก้ไขหัวข้อการติดต่อสำเร็จ");
       } else {
         await contactCaseApi.createCategory({ name, sortOrder });
+        toast.success("เพิ่มหัวข้อการติดต่อสำเร็จ");
       }
       setShowForm(false);
       setEditItem(null);
       await fetchData();
     } catch (error) {
-      setFormError(error instanceof Error ? error.message : "บันทึกข้อมูลไม่สำเร็จ");
+      toast.fromError(error);
     } finally {
       setSaving(false);
     }
   };
 
+  const handleToggleClick = (item: ContactCategory) => {
+    setConfirmItem(item);
+  };
+
   const handleToggle = async (item: ContactCategory) => {
+    const isActive = item.isActive !== false;
     setUpdatingId(item.id);
-    setErrorMessage(null);
 
     try {
-      if (item.isActive === false) {
+      if (!isActive) {
         await contactCaseApi.updateCategory(item.id, { isActive: true });
       } else {
         await contactCaseApi.deleteCategory(item.id);
       }
+      toast.success(isActive ? "ปิดการใช้งานสำเร็จ" : "เปิดการใช้งานสำเร็จ");
       await fetchData();
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "อัปเดตสถานะไม่สำเร็จ");
+      toast.fromError(error);
     } finally {
       setUpdatingId(null);
     }
@@ -184,7 +195,7 @@ export function ContactCategorySettingsPanel() {
                   variant={isActive ? "danger" : "success"}
                   iconStrokeWidth={3}
                   aria-label={`${isActive ? "ปิด" : "เปิด"} ${item.name}`}
-                  onClick={() => handleToggle(item)}
+                  onClick={() => handleToggleClick(item)}
                   disabled={isUpdating}
                 />
               </div>
@@ -203,6 +214,16 @@ export function ContactCategorySettingsPanel() {
           เพิ่มหัวข้อการติดต่อ
         </button>
       </div>
+
+      <ConfirmModal
+        open={Boolean(confirmItem)}
+        title={confirmItem?.isActive !== false ? "ปิดการใช้งาน" : "เปิดการใช้งาน"}
+        message={`ต้องการ${confirmItem?.isActive !== false ? "ปิด" : "เปิด"}การใช้งาน "${confirmItem?.name}" ใช่หรือไม่?`}
+        confirmLabel={confirmItem?.isActive !== false ? "ปิดการใช้งาน" : "เปิดการใช้งาน"}
+        confirmColor={confirmItem?.isActive !== false ? "danger" : "success"}
+        onConfirm={() => { handleToggle(confirmItem!); setConfirmItem(null); }}
+        onCancel={() => setConfirmItem(null)}
+      />
 
       {showForm && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">

@@ -73,14 +73,7 @@ export default function MembersPage() {
   }, [appliedParams]);
 
   const handleSearch = () => {
-    setAppliedParams({ search: search.trim(), filterLevel, filterStatus, page: 1 });
-  };
-
-  const handleClear = () => {
-    setSearch("");
-    setFilterLevel("");
-    setFilterStatus("");
-    setAppliedParams({ search: "", filterLevel: "", filterStatus: "", page: 1 });
+    setAppliedParams((prev) => ({ ...prev, search: search.trim(), page: 1 }));
   };
 
   const handlePageChange = (newPage: number) => {
@@ -117,8 +110,12 @@ export default function MembersPage() {
             label="ระดับ"
             placeholder="เลือกระดับ"
             value={filterLevel}
-            onChange={setFilterLevel}
+            onChange={(value) => {
+              setFilterLevel(value);
+              setAppliedParams((prev) => ({ ...prev, filterLevel: value, page: 1 }));
+            }}
             options={[
+              { label: "ทั้งหมด", value: "" },
               { label: "สมาชิก (MEMBER)", value: "MEMBER" },
               { label: "ลูกค้า (CUSTOMER)", value: "CUSTOMER" },
             ]}
@@ -129,25 +126,17 @@ export default function MembersPage() {
             label="สถานะ"
             placeholder="เลือกสถานะ"
             value={filterStatus}
-            onChange={setFilterStatus}
+            onChange={(value) => {
+              setFilterStatus(value);
+              setAppliedParams((prev) => ({ ...prev, filterStatus: value, page: 1 }));
+            }}
             options={[
+              { label: "ทั้งหมด", value: "" },
               { label: "เปิดใช้งาน", value: "ACTIVE" },
               { label: "ปิดใช้งาน", value: "INACTIVE" },
               { label: "ระงับ", value: "SUSPENDED" },
             ]}
           />
-          <button
-            onClick={handleSearch}
-            className="h-[42px] rounded-[8px] bg-[#FF944D] px-8 text-[14px] font-medium text-white transition hover:bg-[#f28338]"
-          >
-            ค้นหา
-          </button>
-          <button
-            onClick={handleClear}
-            className="h-[42px] rounded-[8px] border border-[#DCDCDC] px-8 text-[14px] font-medium text-[#565656] transition hover:bg-gray-50"
-          >
-            ล้าง
-          </button>
         </div>
 
         {/* Stale data warning */}

@@ -19,6 +19,15 @@ body {
   color: var(--color-foreground);
 }
 
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear,
+input[type="password"]::-webkit-credentials-auto-fill-button,
+input[type="password"]::-webkit-contacts-auto-fill-button {
+  display: none !important;
+  visibility: hidden;
+  pointer-events: none;
+}
+
 @keyframes slide-in-from-right {
   from {
     opacity: 0;

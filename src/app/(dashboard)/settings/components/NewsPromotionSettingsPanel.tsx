@@ -6,10 +6,14 @@ import { Input } from "@/components/ui/input";
 import { ImageUpload } from "@/components/ui/upload";
 import { contentCategoryApi } from "@/api/content-category";
 import { ErrorState } from "@/components/ui/error-state";
+import { ConfirmModal } from "@/components/ui/modal";
+import { useToast } from "@/components/ui/toast";
 import type { ContentCategory } from "@/types/content-category";
 
 export function NewsPromotionSettingsPanel() {
+  const toast = useToast();
   const [items, setItems] = useState<ContentCategory[]>([]);
+  const [confirmItem, setConfirmItem] = useState<ContentCategory | null>(null);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [editItem, setEditItem] = useState<ContentCategory | null>(null);
@@ -69,20 +73,30 @@ export function NewsPromotionSettingsPanel() {
       description: formDesc || undefined,
       bannerImage: formBanner || undefined,
     };
-    if (editItem) {
-      await contentCategoryApi.update(editItem.id, payload);
-    } else {
-      await contentCategoryApi.create(payload);
+    try {
+      if (editItem) {
+        await contentCategoryApi.update(editItem.id, payload);
+        toast.success("แก้ไขหมวดหมู่ข่าวสารสำเร็จ");
+      } else {
+        await contentCategoryApi.create(payload);
+        toast.success("เพิ่มหมวดหมู่ข่าวสารสำเร็จ");
+      }
+      closeForm();
+      fetchData();
+    } catch (err) {
+      toast.fromError(err);
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
-    closeForm();
-    fetchData();
+  };
+
+  const handleToggleClick = (item: ContentCategory) => {
+    setConfirmItem(item);
   };
 
   const handleToggle = async (item: ContentCategory) => {
     const isActive = item.isActive !== false;
     setUpdatingId(item.id);
-    setErrorMessage(null);
 
     try {
       const res = isActive
@@ -90,7 +104,7 @@ export function NewsPromotionSettingsPanel() {
         : await contentCategoryApi.update(item.id, { isActive: true });
 
       if (!res.success) {
-        setErrorMessage(res.message || "อัปเดตสถานะไม่สำเร็จ");
+        toast.error(res.message || "อัปเดตสถานะไม่สำเร็จ");
         return;
       }
 
@@ -101,8 +115,9 @@ export function NewsPromotionSettingsPanel() {
             : currentItem,
         ),
       );
+      toast.success(isActive ? "ปิดการใช้งานสำเร็จ" : "เปิดการใช้งานสำเร็จ");
     } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : "อัปเดตสถานะไม่สำเร็จ");
+      toast.fromError(err);
     } finally {
       setUpdatingId(null);
     }
@@ -159,7 +174,7 @@ export function NewsPromotionSettingsPanel() {
                   <Pencil size={14} />
                 </button>
                 <button
-                  onClick={() => handleToggle(item)}
+                  onClick={() => handleToggleClick(item)}
                   disabled={isUpdating}
                   className={`h-[32px] w-[32px] flex items-center justify-center rounded-[6px] text-white transition-colors ${
                     isActive ? "bg-[#F44034] hover:bg-[#F44034]/85" : "bg-[#24A148] hover:bg-[#24A148]/85"
@@ -172,6 +187,16 @@ export function NewsPromotionSettingsPanel() {
           })}
         </div>
       )}
+
+      <ConfirmModal
+        open={Boolean(confirmItem)}
+        title={confirmItem?.isActive !== false ? "ปิดการใช้งาน" : "เปิดการใช้งาน"}
+        message={`ต้องการ${confirmItem?.isActive !== false ? "ปิด" : "เปิด"}การใช้งาน "${confirmItem?.name}" ใช่หรือไม่?`}
+        confirmLabel={confirmItem?.isActive !== false ? "ปิดการใช้งาน" : "เปิดการใช้งาน"}
+        confirmColor={confirmItem?.isActive !== false ? "danger" : "success"}
+        onConfirm={() => { handleToggle(confirmItem!); setConfirmItem(null); }}
+        onCancel={() => setConfirmItem(null)}
+      />
 
       <div className="mt-5 flex justify-center">
         <button
