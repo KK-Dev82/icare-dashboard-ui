@@ -113,13 +113,18 @@ export function ContactCategorySettingsPanel() {
     setUpdatingId(item.id);
 
     try {
-      if (!isActive) {
-        await contactCaseApi.updateCategory(item.id, { isActive: true });
-      } else {
-        await contactCaseApi.deleteCategory(item.id);
-      }
+      const updatedItem = isActive
+        ? await contactCaseApi.deleteCategory(item.id)
+        : await contactCaseApi.updateCategory(item.id, { isActive: true });
+
+      setItems((current) =>
+        current.map((currentItem) =>
+          currentItem.id === item.id
+            ? { ...currentItem, ...updatedItem, isActive: !isActive }
+            : currentItem,
+        ),
+      );
       toast.success(isActive ? "ปิดการใช้งานสำเร็จ" : "เปิดการใช้งานสำเร็จ");
-      await fetchData();
     } catch (error) {
       toast.fromError(error);
     } finally {
