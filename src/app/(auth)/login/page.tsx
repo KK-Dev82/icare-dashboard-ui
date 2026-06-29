@@ -101,19 +101,6 @@ export default function LoginPage() {
               </label>
             </div>
 
-            <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="w-4 h-4 rounded border-[#DCDCDC] text-primary focus:ring-primary/20"
-                />
-                <span className="text-sm text-[#565656]">จดจำการเข้าสู่ระบบ</span>
-              </label>
-              <a href="#" className="text-sm text-primary hover:underline">
-                ลืมรหัสผ่าน?
-              </a>
-            </div>
-
             <button
               type="submit"
               disabled={loading}
