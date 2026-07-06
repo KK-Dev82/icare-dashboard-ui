@@ -98,15 +98,15 @@ export default function MemberDetailPage() {
   ];
 
   const filteredInsurance = insurance.filter((item) => {
-    const policyNo = item.policies?.[0]?.no || item.certificateNo;
+    const searchText = item.productName || "";
     if (appliedInsuranceSearch) {
       const kw = appliedInsuranceSearch.toLowerCase();
-      const matchNo = policyNo?.toLowerCase().includes(kw);
-      const matchName = item.product.name.toLowerCase().includes(kw);
-      if (!matchNo && !matchName) return false;
+      const matchName = searchText.toLowerCase().includes(kw);
+      const matchBrand = (item.brand || "").toLowerCase().includes(kw);
+      if (!matchName && !matchBrand) return false;
     }
     if (statusFilter && item.status !== statusFilter) return false;
-    if (typeFilter && item.product.type !== typeFilter) return false;
+    if (typeFilter && item.type !== typeFilter) return false;
     return true;
   });
 
