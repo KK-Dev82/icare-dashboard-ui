@@ -50,8 +50,8 @@ export default function MemberDetailPage() {
         }
       }
       if (insuranceRes?.success) {
-        setInsurance(insuranceRes.data.data);
-        setInsuranceTotal(insuranceRes.data.total);
+        setInsurance(insuranceRes.data.data || insuranceRes.data || []);
+        setInsuranceTotal((insuranceRes.data.data || insuranceRes.data || []).length);
       }
     }).catch((err) => {
       setErrorMessage(err instanceof Error ? err.message : "โหลดข้อมูลไม่สำเร็จ");
@@ -89,12 +89,12 @@ export default function MemberDetailPage() {
   if (!member) return null;
 
   const fullName = [member.firstName, member.lastName].filter(Boolean).join(" ") || "-";
-  const activeCount = insurance.filter((i) => i.status === "A").length;
-  const expiredCount = insurance.filter((i) => i.status !== "A").length;
+  const activeCount = (insurance || []).filter((i) => i.status === "ACTIVE").length;
+  const expiredCount = (insurance || []).filter((i) => i.status !== "ACTIVE").length;
 
   const typeOptions = [
     { label: "ทั้งหมด", value: "" },
-    ...[...new Set(insurance.map((i) => i.product.type))].map((t) => ({ label: t, value: t })),
+    ...[...new Set(insurance.map((i) => i.type))].map((t) => ({ label: t, value: t })),
   ];
 
   const filteredInsurance = insurance.filter((item) => {
@@ -383,14 +383,13 @@ function ClaimCard({ claim }: { claim: Claim }) {
 }
 
 function InsuranceCard({ item }: { item: MemberInsuranceItem }) {
-  const isActive = item.status === "A";
-  const policyNo = item.policies?.[0]?.no || item.certificateNo;
+  const isActive = item.status === "ACTIVE";
 
   return (
     <div className="relative rounded-[20px] border border-[#EAEAEA] bg-white p-6 transition hover:border-[#07A2A2] hover:shadow-sm">
       <div className="mb-7">
-        <p className="text-xs text-[#9CA3AF]">เลขที่กรมธรรม์</p>
-        <h3 className="mt-1 text-[15px] font-bold text-[#111827]">{policyNo}</h3>
+        <p className="text-xs text-[#9CA3AF]">ผลิตภัณฑ์</p>
+        <h3 className="mt-1 text-[15px] font-bold text-[#111827]">{item.productName}</h3>
       </div>
 
       <span
@@ -400,12 +399,12 @@ function InsuranceCard({ item }: { item: MemberInsuranceItem }) {
       </span>
 
       <div className="space-y-5 text-sm">
-        <InfoRow label="ผลิตภัณฑ์" value={item.product.name} />
+        <InfoRow label="ประเภท" value={item.type} />
         <InfoRow label="วันเริ่มคุ้มครอง" value={new Date(item.effectiveOn).toLocaleDateString("th-TH")} />
         <InfoRow label="วันสิ้นสุด" value={new Date(item.expireOn).toLocaleDateString("th-TH")} />
         <InfoRow label="ทุนประกัน" value={`${Number(item.sumInsured).toLocaleString()} บาท`} />
-        {item.mobile && <InfoRow label="อุปกรณ์" value={`${item.mobile.brand} ${item.mobile.model}`} />}
-        {item.vehicle && <InfoRow label="ทะเบียน" value={item.vehicle.plateNo} />}
+        {item.brand && <InfoRow label="ยี่ห้อ/รุ่น" value={`${item.brand} ${item.model}`} />}
+        {item.imei && <InfoRow label="IMEI" value={item.imei} />}
       </div>
     </div>
   );

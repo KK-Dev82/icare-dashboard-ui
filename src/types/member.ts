@@ -24,40 +24,21 @@ export interface MemberInsurancePolicy {
 export interface MemberInsuranceItem {
   id: number;
   status: string;
+  productName: string;
   effectiveOn: string;
   expireOn: string;
-  premium: string;
-  sumInsured: string;
-  certificateNo: string;
-  certificateDocument: string | null;
-  insured: {
-    fullName: string;
-    telephone: string;
-    email: string;
-  };
-  product: {
-    name: string;
-    type: string;
-    categories: { id: number; name: string }[];
-  };
-  policies: MemberInsurancePolicy[];
-  mobile?: {
-    brand: string;
-    model: string;
-    imei: string;
-    serial: string;
-  };
-  vehicle?: {
-    brand: string;
-    model: string;
-    plateNo: string;
-    year: string;
-    color: string;
-  };
+  claimable: boolean;
+  sumInsured: number;
+  brand: string;
+  model: string;
+  type: string;
+  subModel: string;
+  imei: string;
+  serial: string;
+  renewal: unknown;
 }
 
 export interface MemberInsuranceResponse {
-  total: number;
   data: MemberInsuranceItem[];
 }
 
