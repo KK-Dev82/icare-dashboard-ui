@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ContactCategorySettingsPanel } from "./components/ContactCategorySettingsPanel";
+import { ConsentTypeSettingsPanel } from "./components/ConsentTypeSettingsPanel";
 import { NewsPromotionSettingsPanel } from "./components/NewsPromotionSettingsPanel";
 import { NotificationSettingsPanel } from "./components/NotificationSettingsPanel";
 import { PolicyTypeSettingsPanel } from "./components/PolicyTypeSettingsPanel";
@@ -27,6 +28,7 @@ export default function SettingsPage() {
         {activeTab === "policy" && <PolicyTypeSettingsPanel />}
         {activeTab === "content" && <NewsPromotionSettingsPanel />}
         {activeTab === "contact" && <ContactCategorySettingsPanel />}
+        {activeTab === "consent" && <ConsentTypeSettingsPanel />}
         {activeTab === "notification" && <NotificationSettingsPanel />}
       </div>
     </div>
