@@ -28,7 +28,11 @@ export function ImageUpload({
   // Sync with external value
   useEffect(() => {
     if (value !== undefined) {
-      setPreview(value);
+      const handle = window.setTimeout(() => {
+        setPreview(value);
+      }, 0);
+
+      return () => window.clearTimeout(handle);
     }
   }, [value]);
 

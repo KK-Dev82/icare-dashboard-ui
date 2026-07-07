@@ -1,4 +1,10 @@
-export type SettingTab = "system" | "policy" | "content" | "contact" | "notification";
+export type SettingTab =
+  | "system"
+  | "policy"
+  | "content"
+  | "contact"
+  | "consent"
+  | "notification";
 
 interface SettingsTabsProps {
   activeTab: SettingTab;
@@ -10,6 +16,7 @@ const tabs: Array<{ label: string; value: SettingTab }> = [
   { label: "การตั้งค่าผลิตภัณฑ์", value: "policy" },
   { label: "การตั้งค่าข่าวสาร / โปรโมชั่น", value: "content" },
   { label: "การตั้งค่าหัวข้อการติดต่อ", value: "contact" },
+  { label: "การตั้งค่าประเภท Consent", value: "consent" },
   { label: "ตั้งค่าการแจ้งเตือนกรมธรรม์", value: "notification" },
 ];
 
