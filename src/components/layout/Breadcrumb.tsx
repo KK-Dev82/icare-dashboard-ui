@@ -18,6 +18,7 @@ const labelMap: Record<string, string> = {
   settings: "การตั้งค่า",
   create: "เพิ่มใหม่",
   edit: "แก้ไข",
+  consents: "การยินยอม",
 };
 
 export default function Breadcrumb() {
@@ -64,7 +65,7 @@ export default function Breadcrumb() {
 function shouldHideEditSegment(segments: string[], index: number) {
   const root = segments[0];
   return (
-    (root === "news" || root === "policies") &&
+    (root === "news" || root === "policies" || root === "consents") &&
     segments[index] === "edit" &&
     Boolean(segments[index + 1])
   );

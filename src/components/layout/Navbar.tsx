@@ -14,6 +14,7 @@ import {
   UserCog,
   Settings,
   History,
+  ShieldCheck,
   ChevronDown,
   KeyRound,
   LogOut,
@@ -38,6 +39,7 @@ const menuItems = [
   { label: "ผู้ใช้งาน", href: "/accounts", icon: UserCog },
   { label: "ประวัติการใช้งาน", href: "/activity-log", icon: History, superAdminOnly: true },
   { label: "การตั้งค่า", href: "/settings", icon: Settings },
+  { label: "การยินยอม", href: "/consents", icon: ShieldCheck },
 ];
 
 export default function Navbar() {
@@ -65,7 +67,11 @@ export default function Navbar() {
   }, []);
 
   useEffect(() => {
-    setNavDropdownOpen(null);
+    const handle = window.setTimeout(() => {
+      setNavDropdownOpen(null);
+    }, 0);
+
+    return () => window.clearTimeout(handle);
   }, [pathname]);
 
   useEffect(() => {
