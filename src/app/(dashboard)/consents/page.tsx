@@ -14,12 +14,7 @@ import type { ConsentPolicy, ConsentStatus, ConsentType } from "@/types/consent"
 
 const defaultMeta = { page: 1, limit: 10, total: 0, totalPages: 1 };
 
-const summaryCards = [
-  { label: "ทั้งหมด", pillClass: "bg-primary text-white" },
-  { label: "เผยแพร่", pillClass: "bg-[#24A148] text-white" },
-  { label: "ร่าง", pillClass: "bg-[#FF944D] text-white" },
-  { label: "เก็บถาวร", pillClass: "bg-[#707070] text-white" },
-];
+
 
 const statusConfig: Record<ConsentStatus, { label: string; color: string }> = {
   DRAFT: { label: "ร่าง", color: "#FF944D" },
@@ -112,26 +107,7 @@ export default function ConsentsPage() {
           </button>
         </div>
 
-        <div className="grid grid-cols-4 gap-6 mb-8">
-          {summaryCards.map((card) => (
-            <div
-              key={card.label}
-              className="flex h-[74px] items-center justify-center gap-8 rounded-[10px] border border-[#EAEAEA]"
-            >
-              <span
-                className={`inline-flex h-[26px] min-w-[86px] items-center justify-center rounded-full px-4 text-xs font-medium ${card.pillClass}`}
-              >
-                {card.label}
-              </span>
-              <span className="flex items-center gap-3">
-                <strong className="text-[28px] font-bold leading-none text-[#243333]">
-                  -
-                </strong>
-                <span className="text-sm text-[#9CA3AF]">รายการ</span>
-              </span>
-            </div>
-          ))}
-        </div>
+
 
         <div className="flex items-center gap-3 mb-6">
           <Select
