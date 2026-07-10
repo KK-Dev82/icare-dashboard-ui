@@ -227,31 +227,9 @@ export function ConsentForm({ mode, initialData }: ConsentFormProps) {
                 </div>
               )}
 
-              <div>
-                <label className="block text-xs font-medium text-[#565656] mb-1.5">
-                  วันที่เริ่มใช้งาน
-                </label>
-                <input
-                  type="date"
-                  value={effectiveFrom}
-                  onChange={(event) => setEffectiveFrom(event.target.value)}
-                  disabled={!canEdit}
-                  className="w-full h-[42px] px-4 rounded-[10px] border border-[#DCDCDC] text-sm text-[#565656] outline-none focus:border-primary transition-colors disabled:bg-gray-50 disabled:opacity-60"
-                />
-              </div>
+              {/* วันที่เริ่มใช้งาน - ซ่อนไว้ก่อน ยังไม่มีความจำเป็นต้องใช้ */}
 
-              <div>
-                <label className="block text-xs font-medium text-[#565656] mb-1.5">
-                  วันที่สิ้นสุด
-                </label>
-                <input
-                  type="date"
-                  value={effectiveTo}
-                  onChange={(event) => setEffectiveTo(event.target.value)}
-                  disabled={!canEdit}
-                  className="w-full h-[42px] px-4 rounded-[10px] border border-[#DCDCDC] text-sm text-[#565656] outline-none focus:border-primary transition-colors disabled:bg-gray-50 disabled:opacity-60"
-                />
-              </div>
+              {/* วันที่สิ้นสุด - ซ่อนไว้ก่อน ยังไม่มีความจำเป็นต้องใช้ */}
             </div>
 
             <div className="mt-6 grid grid-cols-2 gap-3">
