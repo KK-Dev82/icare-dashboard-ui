@@ -137,4 +137,11 @@ export const consentApi = {
     >("/api/v1/admin/consent/user-consents", { params });
     return data;
   },
+
+  getExternalPolicy: async (): Promise<{ content: string; updatedAt: string }> => {
+    const { data } = await apiClient.get<DataEnvelope<{ content: string; updatedAt: string }>>(
+      "/api/v1/admin/consent/external-policy",
+    );
+    return unwrapData(data);
+  },
 };
