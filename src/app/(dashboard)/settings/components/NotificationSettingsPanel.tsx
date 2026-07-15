@@ -215,7 +215,7 @@ export function NotificationSettingsPanel() {
             ตั้งค่าข้อความแจ้งเตือนล่วงหน้าก่อนกรมธรรม์หมดอายุ
           </p>
         </div>
-        <div className="flex shrink-0 items-center gap-3">
+        {/* <div className="flex shrink-0 items-center gap-3">
           <span className="text-sm font-semibold text-[#243333]">เปิดใช้งานการแจ้งเตือน</span>
           <button
             type="button"
@@ -230,7 +230,7 @@ export function NotificationSettingsPanel() {
           >
             <Power size={15} strokeWidth={3} />
           </button>
-        </div>
+        </div> */}
       </div>
 
       {loading ? (
