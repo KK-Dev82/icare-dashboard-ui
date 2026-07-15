@@ -2,10 +2,12 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { marked } from "marked";
 import { consentApi } from "@/api/consent";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { useToast } from "@/components/ui/toast";
+import { ConfirmModal } from "@/components/ui/modal";
 import type { ConsentPolicy, ConsentStatus, ConsentType } from "@/types/consent";
 import { RichTextEditor } from "./RichTextEditor";
 
@@ -48,6 +50,8 @@ export function ConsentForm({ mode, initialData }: ConsentFormProps) {
   const [effectiveTo, setEffectiveTo] = useState(
     initialData?.effectiveTo ? initialData.effectiveTo.split("T")[0] : "",
   );
+  const [useExternal, setUseExternal] = useState(false);
+  const [loadingExternal, setLoadingExternal] = useState(false);
 
   const canEdit = !initialData || initialData.status === "DRAFT";
 
@@ -74,6 +78,36 @@ export function ConsentForm({ mode, initialData }: ConsentFormProps) {
       cancelled = true;
     };
   }, []);
+
+  const [confirmExternal, setConfirmExternal] = useState(false);
+
+  const handleExternalToggle = async () => {
+    if (!useExternal) {
+      if (stripHtml(contentHtml).trim()) {
+        setConfirmExternal(true);
+        return;
+      }
+      await fetchExternalContent();
+    } else {
+      setUseExternal(false);
+    }
+  };
+
+  const fetchExternalContent = async () => {
+    setLoadingExternal(true);
+    try {
+      const res = await consentApi.getExternalPolicy();
+      const content = res?.content ?? "";
+      const html = content ? await marked(content) : "";
+      setContentHtml(html);
+      setUseExternal(true);
+    } catch (err) {
+      toast.fromError(err);
+      setUseExternal(false);
+    } finally {
+      setLoadingExternal(false);
+    }
+  };
 
   const isValid = useMemo(
     () =>
@@ -187,6 +221,31 @@ export function ConsentForm({ mode, initialData }: ConsentFormProps) {
             disabled={!canEdit}
           />
 
+          {canEdit && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-[#243333]">ดึงข้อมูลจาก API ภายนอก</p>
+                  <p className="text-xs text-[#9CA3AF]">เมื่อเปิดใช้งาน ระบบจะดึงข้อความ Consent จาก API มาแสดงในช่องรายละเอียดฉบับเต็ม</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleExternalToggle}
+                  disabled={loadingExternal}
+                  className={`relative inline-flex h-[26px] w-[48px] shrink-0 rounded-full transition-colors disabled:opacity-60 ${
+                    useExternal ? "bg-primary" : "bg-[#DCDCDC]"
+                  }`}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-[20px] w-[20px] rounded-full bg-white shadow transform transition-transform mt-[3px] ${
+                      useExternal ? "translate-x-[25px]" : "translate-x-[3px]"
+                    }`}
+                  />
+                </button>
+              </div>
+            </div>
+          )}
+
           <RichTextEditor
             label="รายละเอียดฉบับเต็ม *"
             value={contentHtml}
@@ -252,6 +311,18 @@ export function ConsentForm({ mode, initialData }: ConsentFormProps) {
           </div>
         </div>
       </div>
+      <ConfirmModal
+        open={confirmExternal}
+        title="ยืนยันการดึงเนื้อหา"
+        message="ข้อมูลใน text editor จะถูกแทนที่ด้วยเนื้อหาจาก iCare ต้องการดำเนินการต่อใช่หรือไม่?"
+        confirmLabel="ยืนยัน"
+        confirmColor="danger"
+        onConfirm={() => {
+          setConfirmExternal(false);
+          void fetchExternalContent();
+        }}
+        onCancel={() => setConfirmExternal(false)}
+      />
     </form>
   );
 }
