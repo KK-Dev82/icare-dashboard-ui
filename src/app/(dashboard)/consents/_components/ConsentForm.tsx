@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { marked } from "marked";
 import { consentApi } from "@/api/consent";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -48,6 +49,9 @@ export function ConsentForm({ mode, initialData }: ConsentFormProps) {
   const [effectiveTo, setEffectiveTo] = useState(
     initialData?.effectiveTo ? initialData.effectiveTo.split("T")[0] : "",
   );
+  const [useExternal, setUseExternal] = useState(false);
+  const [loadingExternal, setLoadingExternal] = useState(false);
+  const [savedContentHtml, setSavedContentHtml] = useState("");
 
   const canEdit = !initialData || initialData.status === "DRAFT";
 
@@ -74,6 +78,26 @@ export function ConsentForm({ mode, initialData }: ConsentFormProps) {
       cancelled = true;
     };
   }, []);
+
+  const handleExternalToggle = async () => {
+    if (!useExternal) {
+      setSavedContentHtml(contentHtml);
+      setLoadingExternal(true);
+      try {
+        const res = await consentApi.getExternalPolicy();
+        const html = await marked(res.content);
+        setContentHtml(html);
+        setUseExternal(true);
+      } catch (err) {
+        toast.fromError(err);
+      } finally {
+        setLoadingExternal(false);
+      }
+    } else {
+      setContentHtml(savedContentHtml);
+      setUseExternal(false);
+    }
+  };
 
   const isValid = useMemo(
     () =>
@@ -191,8 +215,23 @@ export function ConsentForm({ mode, initialData }: ConsentFormProps) {
             label="รายละเอียดฉบับเต็ม *"
             value={contentHtml}
             onChange={setContentHtml}
-            disabled={!canEdit}
+            disabled={!canEdit || useExternal}
           />
+
+          {canEdit && (
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={useExternal}
+                onChange={handleExternalToggle}
+                disabled={loadingExternal}
+                className="h-4 w-4 rounded border-[#DCDCDC] text-primary focus:ring-primary"
+              />
+              <span className="text-sm text-[#565656]">
+                {loadingExternal ? "กำลังโหลดเนื้อหา..." : "ใช้เนื้อหาจาก icare"}
+              </span>
+            </label>
+          )}
         </div>
 
         <div className="space-y-6">
