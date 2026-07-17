@@ -1,23 +1,11 @@
 "use client";
 
-import { useEffect, useSyncExternalStore } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/layout/Navbar";
 import Breadcrumb from "@/components/layout/Breadcrumb";
 import { BreadcrumbProvider } from "@/components/layout/BreadcrumbContext";
 import { ToastProvider } from "@/components/ui/toast";
-
-function subscribe() {
-  return () => {};
-}
-
-function getSnapshot() {
-  return !!localStorage.getItem("accessToken");
-}
-
-function getServerSnapshot() {
-  return false;
-}
 
 export default function DashboardLayout({
   children,
@@ -25,14 +13,19 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const hasToken = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  const [mounted, setMounted] = useState(false);
+  const [hasToken, setHasToken] = useState(false);
 
   useEffect(() => {
-    if (!hasToken) {
+    const token = !!localStorage.getItem("accessToken");
+    setHasToken(token);
+    setMounted(true);
+    if (!token) {
       router.replace("/login");
     }
-  }, [hasToken, router]);
+  }, [router]);
 
+  if (!mounted) return null;
   if (!hasToken) return null;
 
   return (
