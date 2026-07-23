@@ -196,9 +196,9 @@ export default function MemberDetailPage() {
           </div>
 
           {/* Insurance Cards */}
-          <div className="mt-8 grid grid-cols-3 gap-6">
+          <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
             {filteredInsurance.length === 0 ? (
-              <div className="col-span-3 py-12 text-center text-sm text-[#9CA3AF]">ไม่พบข้อมูลกรมธรรม์</div>
+              <div className="col-span-full py-12 text-center text-sm text-[#9CA3AF]">ไม่พบข้อมูลกรมธรรม์</div>
             ) : (
               filteredInsurance.map((item) => (
                 <InsuranceCard key={item.id} item={item} />
@@ -386,17 +386,18 @@ function InsuranceCard({ item }: { item: MemberInsuranceItem }) {
   const isActive = item.status === "ACTIVE";
 
   return (
-    <div className="relative rounded-[20px] border border-[#EAEAEA] bg-white p-6 transition hover:border-[#07A2A2] hover:shadow-sm">
+    <div className="rounded-[20px] border border-[#EAEAEA] bg-white p-6 transition hover:border-[#07A2A2] hover:shadow-sm">
       <div className="mb-7">
-        <p className="text-xs text-[#9CA3AF]">ผลิตภัณฑ์</p>
+        <div className="flex items-start justify-between gap-3">
+          <p className="text-xs text-[#9CA3AF]">ผลิตภัณฑ์</p>
+          <span
+            className={`shrink-0 rounded-full px-4 py-1.5 text-xs font-medium text-white ${isActive ? "bg-[#07A2A2]" : "bg-[#F44034]"}`}
+          >
+            {isActive ? "คุ้มครอง" : "หมดอายุ"}
+          </span>
+        </div>
         <h3 className="mt-1 text-[15px] font-bold text-[#111827]">{item.productName}</h3>
       </div>
-
-      <span
-        className={`absolute right-5 top-5 rounded-full px-4 py-1.5 text-xs font-medium text-white ${isActive ? "bg-[#07A2A2]" : "bg-[#F44034]"}`}
-      >
-        {isActive ? "คุ้มครอง" : "หมดอายุ"}
-      </span>
 
       <div className="space-y-5 text-sm">
         <InfoRow label="ประเภท" value={item.type} />
