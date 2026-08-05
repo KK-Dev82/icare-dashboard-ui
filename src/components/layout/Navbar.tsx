@@ -126,7 +126,7 @@ export default function Navbar() {
           </Link>
 
           {/* Center - Navigation */}
-          <nav ref={navRef} className="flex h-full items-center gap-1">
+          <nav ref={navRef} className="flex h-full items-center gap-1 overflow-x-auto">
             {menuItems
               .filter((item) => !item.superAdminOnly || role === "SUPER_ADMIN")
               .map((item) => {
@@ -142,7 +142,7 @@ export default function Navbar() {
                       onClick={() =>
                         setNavDropdownOpen((current) => (current === item.href ? null : item.href))
                       }
-                      className={`relative flex h-full items-center gap-2 px-4 text-[13px] font-medium transition-all ${
+                      className={`relative flex h-full items-center gap-1.5 whitespace-nowrap px-3 text-[13px] font-medium transition-all 2xl:gap-2 2xl:px-4 ${
                         isActive
                           ? "text-primary"
                           : "text-gray-500 hover:bg-primary/5 hover:text-primary"
@@ -190,7 +190,7 @@ export default function Navbar() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`relative flex h-full items-center gap-2 px-4 text-[13px] font-medium transition-all ${
+                  className={`relative flex h-full items-center gap-1.5 whitespace-nowrap px-3 text-[13px] font-medium transition-all 2xl:gap-2 2xl:px-4 ${
                     isActive
                       ? "text-primary"
                       : "text-gray-500 hover:text-primary hover:bg-primary/5"
