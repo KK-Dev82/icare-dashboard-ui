@@ -161,7 +161,7 @@ export default function MembersPage() {
                 <th className="text-center text-xs font-semibold text-gray-400 uppercase tracking-wide py-3 px-4">ลำดับ</th>
                 <th className="text-center text-xs font-semibold text-gray-400 uppercase tracking-wide py-3 px-4">เบอร์โทรศัพท์</th>
                 <th className="text-center text-xs font-semibold text-gray-400 uppercase tracking-wide py-3 px-4">ชื่อ - นามสกุล</th>
-                <th className="text-center text-xs font-semibold text-gray-400 uppercase tracking-wide py-3 px-4">อีเมล</th>
+                <th className="text-center text-xs font-semibold text-gray-400 uppercase tracking-wide py-3 px-4">เลขบัตรประชาชน</th>
                 <th className="text-center text-xs font-semibold text-gray-400 uppercase tracking-wide py-3 px-4">ระดับ</th>
                 <th className="text-center text-xs font-semibold text-gray-400 uppercase tracking-wide py-3 px-4">สถานะ</th>
                 <th className="text-center text-xs font-semibold text-gray-400 uppercase tracking-wide py-3 px-4">เข้าสู่ระบบล่าสุด</th>
@@ -197,7 +197,7 @@ export default function MembersPage() {
                     <td className="py-4 px-4 text-center text-sm text-gray-600">{(meta.page - 1) * meta.limit + idx + 1}</td>
                     <td className="py-4 px-4 text-center text-sm text-gray-800 font-medium">{item.phone}</td>
                     <td className="py-4 px-4 text-center text-sm text-gray-600">{fullName}</td>
-                    <td className="py-4 px-4 text-center text-sm text-gray-600">{item.email || "-"}</td>
+                    <td className="py-4 px-4 text-center text-sm text-gray-600">{item.nationalId || "-"}</td>
                     <td className="py-4 px-4 text-center">
                       <span className="text-sm font-medium" style={{ color: accountLevelColor[item.accountLevel] }}>
                         {accountLevelLabel[item.accountLevel]}
