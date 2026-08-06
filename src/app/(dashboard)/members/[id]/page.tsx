@@ -138,13 +138,14 @@ export default function MemberDetailPage() {
 
             <div className="relative overflow-hidden rounded-[20px] bg-[#07A2A2] p-6 text-white">
               <div className="absolute -right-8 -top-8 h-48 w-48 rounded-full bg-white/10" />
-              <div className="relative grid grid-cols-2 gap-y-4 text-sm">
+              <div className="relative grid grid-cols-2 gap-y-3 text-sm">
                 <InfoWhite label="ชื่อ - นามสกุล:" value={fullName} />
                 <InfoWhite label="อีเมล:" value={member.email || "-"} />
                 <InfoWhite label="เบอร์โทรศัพท์:" value={member.phone} />
                 <InfoWhite label="สถานะ:" value={member.status === "ACTIVE" ? "ใช้งานอยู่" : "ปิดใช้งาน"} />
                 <InfoWhite label="ยืนยันเบอร์:" value={member.isPhoneVerified ? "ยืนยันแล้ว" : "ยังไม่ยืนยัน"} />
                 <InfoWhite label="วันสมัคร:" value={new Date(member.createdAt).toLocaleDateString("th-TH")} />
+                <InfoWhite label="เลขบัตรประชาชน:" value={member.nationalId || "-"} />
               </div>
             </div>
 
@@ -196,9 +197,9 @@ export default function MemberDetailPage() {
           </div>
 
           {/* Insurance Cards */}
-          <div className="mt-8 grid grid-cols-3 gap-6">
+          <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
             {filteredInsurance.length === 0 ? (
-              <div className="col-span-3 py-12 text-center text-sm text-[#9CA3AF]">ไม่พบข้อมูลกรมธรรม์</div>
+              <div className="col-span-full py-12 text-center text-sm text-[#9CA3AF]">ไม่พบข้อมูลกรมธรรม์</div>
             ) : (
               filteredInsurance.map((item) => (
                 <InsuranceCard key={item.id} item={item} />
@@ -357,7 +358,6 @@ function ClaimCard({ claim }: { claim: Claim }) {
               <p className="text-xs text-[#9CA3AF]">ไม่พบข้อมูล</p>
             ) : (
               <div className="relative pl-4">
-                <div className="absolute left-[5px] top-1.5 bottom-1.5 w-px bg-[#EAEAEA]" />
                 {statuses.map((s, idx) => (
                   <div key={s.id} className="relative flex items-start gap-3 pb-3 last:pb-0">
                     <div className={`relative z-10 mt-0.5 w-[10px] h-[10px] rounded-full border-2 ${
@@ -386,17 +386,18 @@ function InsuranceCard({ item }: { item: MemberInsuranceItem }) {
   const isActive = item.status === "ACTIVE";
 
   return (
-    <div className="relative rounded-[20px] border border-[#EAEAEA] bg-white p-6 transition hover:border-[#07A2A2] hover:shadow-sm">
+    <div className="rounded-[20px] border border-[#EAEAEA] bg-white p-6 transition hover:border-[#07A2A2] hover:shadow-sm">
       <div className="mb-7">
-        <p className="text-xs text-[#9CA3AF]">ผลิตภัณฑ์</p>
+        <div className="flex items-start justify-between gap-3">
+          <p className="text-xs text-[#9CA3AF]">ผลิตภัณฑ์</p>
+          <span
+            className={`shrink-0 rounded-full px-4 py-1.5 text-xs font-medium text-white ${isActive ? "bg-[#07A2A2]" : "bg-[#F44034]"}`}
+          >
+            {isActive ? "คุ้มครอง" : "หมดอายุ"}
+          </span>
+        </div>
         <h3 className="mt-1 text-[15px] font-bold text-[#111827]">{item.productName}</h3>
       </div>
-
-      <span
-        className={`absolute right-5 top-5 rounded-full px-4 py-1.5 text-xs font-medium text-white ${isActive ? "bg-[#07A2A2]" : "bg-[#F44034]"}`}
-      >
-        {isActive ? "คุ้มครอง" : "หมดอายุ"}
-      </span>
 
       <div className="space-y-5 text-sm">
         <InfoRow label="ประเภท" value={item.type} />
@@ -422,7 +423,7 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 
 function InfoWhite({ label, value }: { label: string; value: string }) {
   return (
-    <div className="grid grid-cols-[100px_1fr] gap-2">
+    <div className="grid grid-cols-[90px_1fr] gap-1">
       <p className="text-xs text-white/80">{label}</p>
       <p className="text-xs font-bold text-white">{value}</p>
     </div>

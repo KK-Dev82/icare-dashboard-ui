@@ -7,6 +7,7 @@ export interface Member {
   email: string | null;
   firstName: string | null;
   lastName: string | null;
+  nationalId: string | null;
   accountLevel: AccountLevel;
   status: MemberStatus;
   isPhoneVerified: boolean;
