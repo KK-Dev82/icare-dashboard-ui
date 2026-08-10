@@ -54,8 +54,11 @@ export default function Navbar() {
   const [newPassword, setNewPassword] = useState("");
   const [pwError, setPwError] = useState("");
   const [pwLoading, setPwLoading] = useState(false);
+  const [navDropdownLeft, setNavDropdownLeft] = useState(0);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const navRef = useRef<HTMLElement>(null);
+  const navDropdownRef = useRef<HTMLDivElement>(null);
+  const headerContentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handle = window.setTimeout(() => {
@@ -76,16 +79,53 @@ export default function Navbar() {
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+
+      if (dropdownRef.current && !dropdownRef.current.contains(target)) {
         setDropdownOpen(false);
       }
-      if (navRef.current && !navRef.current.contains(e.target as Node)) {
+
+      const clickedInsideNav = navRef.current?.contains(target);
+      const clickedInsideNavDropdown = navDropdownRef.current?.contains(target);
+      if (!clickedInsideNav && !clickedInsideNavDropdown) {
         setNavDropdownOpen(null);
       }
     }
+
+    function handleResize() {
+      setNavDropdownOpen(null);
+    }
+
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      window.removeEventListener("resize", handleResize);
+    };
   }, []);
+
+  const handleNavDropdownToggle = (href: string, button: HTMLButtonElement) => {
+    if (navDropdownOpen === href) {
+      setNavDropdownOpen(null);
+      return;
+    }
+
+    const headerContent = headerContentRef.current;
+    if (headerContent) {
+      const buttonRect = button.getBoundingClientRect();
+      const headerRect = headerContent.getBoundingClientRect();
+      const dropdownWidth = 210;
+      const left = buttonRect.left - headerRect.left;
+      const maxLeft = Math.max(0, headerRect.width - dropdownWidth);
+
+      setNavDropdownLeft(Math.min(Math.max(0, left), maxLeft));
+    }
+
+    setNavDropdownOpen(href);
+  };
+
+  const openNavItem = menuItems.find((item) => item.href === navDropdownOpen);
 
   const handleLogout = () => {
     localStorage.removeItem("accessToken");
@@ -119,14 +159,18 @@ export default function Navbar() {
   return (
     <>
       <header className="sticky top-0 z-50 border-t-[3px] border-t-primary bg-white shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
-        <div className="h-[72px] flex items-center justify-between px-8">
+        <div ref={headerContentRef} className="relative h-[72px] flex items-center justify-between px-8">
           {/* Left - Logo */}
           <Link href="/dashboard" className="flex items-center shrink-0">
             <Image src={iciLogo} alt="ICI Logo" height={40} className="w-auto" />
           </Link>
 
           {/* Center - Navigation */}
-          <nav ref={navRef} className="flex h-full items-center gap-1 overflow-x-auto">
+          <nav
+            ref={navRef}
+            className="flex h-full items-center gap-1 overflow-x-auto"
+            onScroll={() => setNavDropdownOpen(null)}
+          >
             {menuItems
               .filter((item) => !item.superAdminOnly || role === "SUPER_ADMIN")
               .map((item) => {
@@ -139,8 +183,8 @@ export default function Navbar() {
                   <div key={item.href} className="relative h-full">
                     <button
                       type="button"
-                      onClick={() =>
-                        setNavDropdownOpen((current) => (current === item.href ? null : item.href))
+                      onClick={(event) =>
+                        handleNavDropdownToggle(item.href, event.currentTarget)
                       }
                       className={`relative flex h-full items-center gap-1.5 whitespace-nowrap px-3 text-[13px] font-medium transition-all 2xl:gap-2 2xl:px-4 ${
                         isActive
@@ -160,28 +204,6 @@ export default function Navbar() {
                         <span className="absolute bottom-0 left-0 right-0 h-[3px] rounded-full bg-primary" />
                       )}
                     </button>
-
-                    {navDropdownOpen === item.href && (
-                      <div className="absolute left-0 top-full z-50 mt-2 w-[210px] rounded-[12px] border border-[#EAEAEA] bg-white py-2 shadow-[0_8px_24px_rgba(0,0,0,0.08)]">
-                        {item.children?.map((child) => {
-                          const isChildActive = pathname.startsWith(child.href);
-                          return (
-                            <Link
-                              key={child.href}
-                              href={child.href}
-                              onClick={() => setNavDropdownOpen(null)}
-                              className={`block px-4 py-2.5 text-[13px] font-semibold transition-colors ${
-                                isChildActive
-                                  ? "text-primary"
-                                  : "text-[#243333] hover:bg-[#EDF9F9] hover:text-primary"
-                              }`}
-                            >
-                              {child.label}
-                            </Link>
-                          );
-                        })}
-                      </div>
-                    )}
                   </div>
                 );
               }
@@ -205,6 +227,32 @@ export default function Navbar() {
               );
             })}
           </nav>
+
+          {openNavItem?.children && (
+            <div
+              ref={navDropdownRef}
+              className="absolute top-full z-50 mt-2 w-[210px] rounded-[12px] border border-[#EAEAEA] bg-white py-2 shadow-[0_8px_24px_rgba(0,0,0,0.08)]"
+              style={{ left: navDropdownLeft }}
+            >
+              {openNavItem.children.map((child) => {
+                const isChildActive = pathname.startsWith(child.href);
+                return (
+                  <Link
+                    key={child.href}
+                    href={child.href}
+                    onClick={() => setNavDropdownOpen(null)}
+                    className={`block px-4 py-2.5 text-[13px] font-semibold transition-colors ${
+                      isChildActive
+                        ? "text-primary"
+                        : "text-[#243333] hover:bg-[#EDF9F9] hover:text-primary"
+                    }`}
+                  >
+                    {child.label}
+                  </Link>
+                );
+              })}
+            </div>
+          )}
 
           {/* Right - Actions */}
           <div className="flex items-center gap-3 shrink-0">
