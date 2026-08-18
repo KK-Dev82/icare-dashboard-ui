@@ -10,6 +10,7 @@ const labelMap: Record<string, string> = {
   members: "สมาชิก",
   news: "ข่าวสาร / โปรโมชั่น",
   policies: "จัดการผลิตภัณฑ์",
+  "product-types": "ประเภทผลิตภัณฑ์",
   "contact-case": "คำร้อง / ติดต่อ",
   "product-interest": "ความสนใจผลิตภัณฑ์/คอนเทนต์",
   "policy-categories": "หมวดหมู่ผลิตภัณฑ์",

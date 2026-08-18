@@ -5,7 +5,6 @@ import { ContactCategorySettingsPanel } from "./components/ContactCategorySettin
 import { ConsentTypeSettingsPanel } from "./components/ConsentTypeSettingsPanel";
 import { NewsPromotionSettingsPanel } from "./components/NewsPromotionSettingsPanel";
 import { NotificationSettingsPanel } from "./components/NotificationSettingsPanel";
-import { PolicyTypeSettingsPanel } from "./components/PolicyTypeSettingsPanel";
 import { RenewalContactSettingsPanel } from "./components/RenewalContactSettingsPanel";
 import { SettingsTabs, type SettingTab } from "./components/SettingsTabs";
 import { SystemSettingsPanel } from "./components/SystemSettingsPanel";
@@ -31,7 +30,6 @@ export default function SettingsPage() {
             <RenewalContactSettingsPanel />
           </div>
         )}
-        {activeTab === "policy" && <PolicyTypeSettingsPanel />}
         {activeTab === "content" && <NewsPromotionSettingsPanel />}
         {activeTab === "contact" && <ContactCategorySettingsPanel />}
         {activeTab === "consent" && <ConsentTypeSettingsPanel />}

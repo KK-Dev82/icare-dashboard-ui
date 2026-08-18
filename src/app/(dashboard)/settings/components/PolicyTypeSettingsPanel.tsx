@@ -1,14 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { CirclePlus, Pencil, Power, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { CirclePlus, Power, SquarePen, X } from "lucide-react";
+import { ActionIconButton } from "@/components/ui/action-button";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
+import {
+  getTablePageItems,
+  getTableTotalPages,
+  TablePagination,
+} from "@/components/ui/table-pagination";
 import { ImageUpload } from "@/components/ui/upload";
 import { policyCategoryApi } from "@/api/policy-category";
 import { ErrorState } from "@/components/ui/error-state";
 import { ConfirmModal } from "@/components/ui/modal";
 import { useToast } from "@/components/ui/toast";
 import type { PolicyCategory } from "@/types/policy-category";
+
+const PAGE_SIZE = 10;
 
 export function PolicyTypeSettingsPanel() {
   const toast = useToast();
@@ -19,6 +28,10 @@ export function PolicyTypeSettingsPanel() {
   const [editItem, setEditItem] = useState<PolicyCategory | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [filterType, setFilterType] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
+  const [page, setPage] = useState(1);
 
   // Form state
   const [formName, setFormName] = useState("");
@@ -45,6 +58,21 @@ export function PolicyTypeSettingsPanel() {
     const timer = window.setTimeout(fetchData, 0);
     return () => window.clearTimeout(timer);
   }, []);
+
+  const filteredItems = useMemo(() => {
+    const keyword = search.trim().toLowerCase();
+    return items.filter((item) => {
+      const status = item.isActive !== false ? "ACTIVE" : "INACTIVE";
+      if (keyword && !item.name.toLowerCase().includes(keyword) && !(item.description || "").toLowerCase().includes(keyword)) return false;
+      if (filterType && item.id !== filterType) return false;
+      if (filterStatus && status !== filterStatus) return false;
+      return true;
+    });
+  }, [filterStatus, filterType, items, search]);
+
+  const totalPages = getTableTotalPages(filteredItems.length, PAGE_SIZE);
+  const currentPage = Math.min(page, totalPages);
+  const visibleItems = getTablePageItems(filteredItems, currentPage, PAGE_SIZE);
 
   const openCreate = () => {
     setEditItem(null);
@@ -133,80 +161,181 @@ export function PolicyTypeSettingsPanel() {
   };
 
   return (
-    <section className="rounded-[18px] bg-white p-8 shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
-      <div className="mb-5 flex items-center justify-between border-b border-[#EAEAEA] pb-5">
-        <h2 className="text-lg font-bold text-[#243333]">การตั้งค่าผลิตภัณฑ์</h2>
-      </div>
-
-      {loading ? (
-        <div className="space-y-3 animate-pulse">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="h-[52px] bg-gray-100 rounded-lg" />
-          ))}
+    <section className="flex min-h-[650px] w-full flex-col rounded-3xl border border-[#EAEAEA] bg-white p-8 shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
+      <div className="mb-6 flex items-center justify-between border-b border-[#EAEAEA] pb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">รายการประเภทผลิตภัณฑ์</h1>
+          <p className="mt-1 text-sm text-[#9CA3AF]">จัดการข้อมูลประเภทผลิตภัณฑ์</p>
         </div>
-      ) : errorMessage ? (
-        <ErrorState message={errorMessage} onRetry={fetchData} />
-      ) : items.length === 0 ? (
-        <p className="py-8 text-center text-sm text-[#9CA3AF]">ยังไม่มีประเภทผลิตภัณฑ์</p>
-      ) : (
-        <div className="space-y-3">
-          {items.map((item, index) => {
-            const isActive = item.isActive !== false;
-            const isUpdating = updatingId === item.id;
-
-            return (
-              <div
-                key={item.id}
-                className="flex items-center gap-3 rounded-[10px] border border-[#EAEAEA] px-4 py-3 hover:border-primary/30 transition-colors"
-              >
-                <div className="flex h-[32px] w-[32px] items-center justify-center rounded-[6px] border border-[#DCDCDC] text-xs text-[#707070]">
-                  {index + 1}
-                </div>
-                {item.icon && (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img src={item.icon} alt={item.name} className="w-9 h-9 rounded-md object-cover" />
-                )}
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-[#243333] truncate">{item.name}</p>
-                  {item.description && (
-                    <p className="text-xs text-[#9CA3AF] truncate">{item.description}</p>
-                  )}
-                </div>
-                <span className={`text-xs font-medium ${isActive ? "text-[#24A148]" : "text-[#F44034]"}`}>
-                  {isActive ? "เปิด" : "ปิด"}
-                </span>
-                <button
-                  onClick={() => openEdit(item)}
-                  disabled={isUpdating}
-                  className="h-[32px] w-[32px] flex items-center justify-center rounded-[6px] bg-[#FF944D] text-white hover:bg-[#FF944D]/85 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  <Pencil size={14} />
-                </button>
-                <button
-                  onClick={() => handleToggleClick(item)}
-                  disabled={isUpdating}
-                  className={`h-[32px] w-[32px] flex items-center justify-center rounded-[6px] text-white transition-colors ${
-                    isActive ? "bg-[#F44034] hover:bg-[#F44034]/85" : "bg-[#24A148] hover:bg-[#24A148]/85"
-                  } disabled:cursor-not-allowed disabled:opacity-60`}
-                >
-                  <Power size={14} strokeWidth={3} />
-                </button>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      <div className="mt-5 flex justify-center">
         <button
           type="button"
           onClick={openCreate}
-          className="flex h-[39px] items-center justify-center gap-2 rounded-[6px] bg-primary px-5 text-sm font-medium text-white transition-opacity hover:opacity-90"
+          className="flex h-[42px] items-center gap-2 rounded-[10px] bg-[#24A148] px-5 text-sm font-medium text-white transition-all hover:bg-[#1e8e3e] hover:shadow-[0_4px_12px_rgba(36,161,72,0.25)]"
         >
-          <CirclePlus size={16} />
-          เพิ่มประเภทประกัน
+          <CirclePlus size={17} />
+          เพิ่มประเภทผลิตภัณฑ์
         </button>
       </div>
+
+      <div className="mb-7 flex flex-wrap items-center gap-3">
+        <Input
+          size="md"
+          className="w-[260px]"
+          label="ค้นหา"
+          placeholder="ค้นหาประเภทผลิตภัณฑ์"
+          value={search}
+          onChange={(event) => {
+            setSearch(event.target.value);
+            setPage(1);
+          }}
+        />
+        <Select
+          size="md"
+          className="w-[230px]"
+          label="ประเภทผลิตภัณฑ์"
+          placeholder="เลือกประเภท"
+          value={filterType}
+          maxVisibleOptions={5}
+          onChange={(value) => {
+            setFilterType(value);
+            setPage(1);
+          }}
+          options={[
+            { label: "ทั้งหมด", value: "" },
+            ...items.map((item) => ({ label: item.name, value: item.id })),
+          ]}
+        />
+        <Select
+          size="md"
+          className="w-[230px]"
+          label="สถานะการใช้งาน"
+          placeholder="เลือกสถานะ"
+          value={filterStatus}
+          onChange={(value) => {
+            setFilterStatus(value);
+            setPage(1);
+          }}
+          options={[
+            { label: "ทั้งหมด", value: "" },
+            { label: "เปิดการใช้งาน", value: "ACTIVE" },
+            { label: "ปิดการใช้งาน", value: "INACTIVE" },
+          ]}
+        />
+      </div>
+
+      {loading ? (
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <tbody>
+              {Array.from({ length: 4 }).map((_, index) => (
+                <tr key={index} className="animate-pulse border-b border-[#F5F5F5]">
+                  {Array.from({ length: 7 }).map((__, cellIndex) => (
+                    <td key={cellIndex} className="px-4 py-4">
+                      <div className="mx-auto h-4 w-24 rounded bg-gray-100" />
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : errorMessage ? (
+        <ErrorState message={errorMessage} onRetry={fetchData} />
+      ) : (
+        <>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[1100px]">
+              <thead>
+                <tr>
+                  <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-400">ลำดับ</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-400">ไอคอน</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-400">แบนเนอร์</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-400">ชื่อประเภทผลิตภัณฑ์</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-400">คำอธิบาย</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-400">สถานะการใช้งาน</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-400">จัดการ</th>
+                </tr>
+              </thead>
+              <tbody>
+                {visibleItems.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="py-16 text-center text-sm text-[#9CA3AF]">ไม่พบข้อมูล</td>
+                  </tr>
+                ) : visibleItems.map((item, index) => {
+                  const isActive = item.isActive !== false;
+                  const isUpdating = updatingId === item.id;
+
+                  return (
+                    <tr key={item.id} className="border-b border-[#F5F5F5] transition-colors hover:bg-primary/[0.02]">
+                      <td className="px-4 py-4 text-center text-sm text-gray-600">{(currentPage - 1) * PAGE_SIZE + index + 1}</td>
+                      <td className="px-4 py-4 text-center">
+                        {item.icon ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={item.icon}
+                            alt={`ไอคอน ${item.name}`}
+                            className="mx-auto h-10 w-10 rounded-md border border-[#EAEAEA] object-cover"
+                          />
+                        ) : (
+                          <span className="text-sm text-[#9CA3AF]">-</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-4 text-center">
+                        {item.bannerImage ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={item.bannerImage}
+                            alt={`แบนเนอร์ ${item.name}`}
+                            className="mx-auto h-12 w-24 rounded-md border border-[#EAEAEA] object-cover"
+                          />
+                        ) : (
+                          <span className="text-sm text-[#9CA3AF]">-</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-4 text-center text-sm font-medium text-gray-800">{item.name}</td>
+                      <td className="max-w-[320px] px-4 py-4 text-center text-sm text-gray-600">
+                        <span className="line-clamp-2">{item.description || "-"}</span>
+                      </td>
+                      <td className="px-4 py-4 text-center text-sm font-medium">
+                        <span className={isActive ? "text-[#24A148]" : "text-[#F44034]"}>
+                          {isActive ? "เปิดการใช้งาน" : "ปิดการใช้งาน"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="flex items-center justify-center gap-2">
+                          <ActionIconButton
+                            icon={SquarePen}
+                            variant="accent"
+                            disabled={isUpdating}
+                            aria-label={`แก้ไข ${item.name}`}
+                            onClick={() => openEdit(item)}
+                          />
+                          <ActionIconButton
+                            icon={Power}
+                            variant={isActive ? "danger" : "success"}
+                            disabled={isUpdating}
+                            aria-label={`${isActive ? "ปิด" : "เปิด"}การใช้งาน ${item.name}`}
+                            onClick={() => handleToggleClick(item)}
+                          />
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          <TablePagination
+            current={visibleItems.length}
+            total={filteredItems.length}
+            page={currentPage}
+            totalPages={totalPages}
+            pageSize={PAGE_SIZE}
+            onPageChange={setPage}
+          />
+        </>
+      )}
 
       <ConfirmModal
         open={Boolean(confirmItem)}
@@ -220,9 +349,9 @@ export function PolicyTypeSettingsPanel() {
 
       {/* Edit/Create Modal */}
       {showForm && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
           <div className="absolute inset-0 bg-black/30" onClick={closeForm} />
-          <div className="relative bg-white rounded-[24px] shadow-[0_8px_32px_rgba(0,0,0,0.12)] p-8 w-full max-w-[480px] max-h-[85vh] overflow-y-auto">
+          <div className="relative max-h-[90vh] w-full max-w-[920px] overflow-y-auto rounded-[24px] bg-white p-8 shadow-[0_8px_32px_rgba(0,0,0,0.12)]">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-bold text-[#243333]">
                 {editItem ? "แก้ไขประเภทผลิตภัณฑ์" : "เพิ่มประเภทผลิตภัณฑ์"}
@@ -233,22 +362,24 @@ export function PolicyTypeSettingsPanel() {
             </div>
 
             <div className="space-y-5">
-              <Input
-                size="lg"
-                className="w-full"
-                label="ชื่อประเภท *"
-                placeholder="กรอกชื่อประเภท"
-                value={formName}
-                onChange={(e) => setFormName(e.target.value)}
-              />
-              <Input
-                size="lg"
-                className="w-full"
-                label="คำอธิบาย"
-                placeholder="กรอกคำอธิบาย"
-                value={formDesc}
-                onChange={(e) => setFormDesc(e.target.value)}
-              />
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <Input
+                  size="lg"
+                  className="w-full"
+                  label="ชื่อประเภท *"
+                  placeholder="กรอกชื่อประเภท"
+                  value={formName}
+                  onChange={(e) => setFormName(e.target.value)}
+                />
+                <Input
+                  size="lg"
+                  className="w-full"
+                  label="คำอธิบาย"
+                  placeholder="กรอกคำอธิบาย"
+                  value={formDesc}
+                  onChange={(e) => setFormDesc(e.target.value)}
+                />
+              </div>
               <div>
                 <label className="block text-[14px] font-bold text-dark mb-2">สี Tag</label>
                 <div className="flex items-center gap-3">
@@ -267,13 +398,15 @@ export function PolicyTypeSettingsPanel() {
                   />
                 </div>
               </div>
-              <div>
-                <p className="text-[14px] font-bold text-dark mb-2">ภาพไอคอน</p>
-                <ImageUpload value={formIcon} onChange={setFormIcon} />
-              </div>
-              <div>
-                <p className="text-[14px] font-bold text-dark mb-2">ภาพแบนเนอร์</p>
-                <ImageUpload value={formBanner} onChange={setFormBanner} />
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                <div>
+                  <p className="mb-2 text-[14px] font-bold text-dark">ภาพไอคอน</p>
+                  <ImageUpload value={formIcon} onChange={setFormIcon} />
+                </div>
+                <div>
+                  <p className="mb-2 text-[14px] font-bold text-dark">ภาพแบนเนอร์</p>
+                  <ImageUpload value={formBanner} onChange={setFormBanner} />
+                </div>
               </div>
             </div>
 

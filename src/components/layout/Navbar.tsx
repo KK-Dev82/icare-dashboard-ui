@@ -26,7 +26,15 @@ const menuItems = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "สมาชิก", href: "/members", icon: Users },
   { label: "ข่าวสาร / โปรโมชั่น", href: "/news", icon: Newspaper },
-  { label: "จัดการผลิตภัณฑ์", href: "/policies", icon: Package },
+  {
+    label: "จัดการผลิตภัณฑ์",
+    href: "/policies",
+    icon: Package,
+    children: [
+      { label: "รายการผลิตภัณฑ์", href: "/policies" },
+      { label: "ประเภทผลิตภัณฑ์", href: "/product-types" },
+    ],
+  },
   {
     label: "คำร้อง / ติดต่อ",
     href: "/contact-case",
