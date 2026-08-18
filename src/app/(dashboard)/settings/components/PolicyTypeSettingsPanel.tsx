@@ -29,6 +29,7 @@ export function PolicyTypeSettingsPanel() {
   const [showForm, setShowForm] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [appliedSearch, setAppliedSearch] = useState("");
   const [filterType, setFilterType] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
   const [page, setPage] = useState(1);
@@ -60,7 +61,7 @@ export function PolicyTypeSettingsPanel() {
   }, []);
 
   const filteredItems = useMemo(() => {
-    const keyword = search.trim().toLowerCase();
+    const keyword = appliedSearch.toLowerCase();
     return items.filter((item) => {
       const status = item.isActive !== false ? "ACTIVE" : "INACTIVE";
       if (keyword && !item.name.toLowerCase().includes(keyword) && !(item.description || "").toLowerCase().includes(keyword)) return false;
@@ -68,11 +69,16 @@ export function PolicyTypeSettingsPanel() {
       if (filterStatus && status !== filterStatus) return false;
       return true;
     });
-  }, [filterStatus, filterType, items, search]);
+  }, [appliedSearch, filterStatus, filterType, items]);
 
   const totalPages = getTableTotalPages(filteredItems.length, PAGE_SIZE);
   const currentPage = Math.min(page, totalPages);
   const visibleItems = getTablePageItems(filteredItems, currentPage, PAGE_SIZE);
+
+  const handleSearch = () => {
+    setAppliedSearch(search.trim());
+    setPage(1);
+  };
 
   const openCreate = () => {
     setEditItem(null);
@@ -184,9 +190,9 @@ export function PolicyTypeSettingsPanel() {
           label="ค้นหา"
           placeholder="ค้นหาประเภทผลิตภัณฑ์"
           value={search}
-          onChange={(event) => {
-            setSearch(event.target.value);
-            setPage(1);
+          onChange={(event) => setSearch(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") handleSearch();
           }}
         />
         <Select
@@ -221,6 +227,13 @@ export function PolicyTypeSettingsPanel() {
             { label: "ปิดการใช้งาน", value: "INACTIVE" },
           ]}
         />
+        <button
+          type="button"
+          onClick={handleSearch}
+          className="h-[42px] rounded-[8px] bg-[#FF944D] px-8 text-sm font-medium text-white transition-colors hover:bg-[#f28338]"
+        >
+          ค้นหา
+        </button>
       </div>
 
       {loading ? (

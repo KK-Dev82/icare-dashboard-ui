@@ -25,7 +25,15 @@ import { apiClient } from "@/lib/apiClient";
 const menuItems = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "สมาชิก", href: "/members", icon: Users },
-  { label: "ข่าวสาร / โปรโมชั่น", href: "/news", icon: Newspaper },
+  {
+    label: "ข่าวสาร / โปรโมชั่น",
+    href: "/news",
+    icon: Newspaper,
+    children: [
+      { label: "รายการข่าวสาร / โปรโมชั่น", href: "/news" },
+      { label: "ประเภทข่าวสาร / โปรโมชั่น", href: "/news-types" },
+    ],
+  },
   {
     label: "จัดการผลิตภัณฑ์",
     href: "/policies",

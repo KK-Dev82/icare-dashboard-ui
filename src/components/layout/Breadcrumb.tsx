@@ -9,6 +9,7 @@ const labelMap: Record<string, string> = {
   dashboard: "Dashboard",
   members: "สมาชิก",
   news: "ข่าวสาร / โปรโมชั่น",
+  "news-types": "ประเภทข่าวสาร / โปรโมชั่น",
   policies: "จัดการผลิตภัณฑ์",
   "product-types": "ประเภทผลิตภัณฑ์",
   "contact-case": "คำร้อง / ติดต่อ",

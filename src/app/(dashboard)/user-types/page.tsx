@@ -25,6 +25,7 @@ const PAGE_SIZE = 10;
 export default function UserTypesPage() {
   const [items, setItems] = useState<UserType[]>(defaultUserTypes);
   const [search, setSearch] = useState("");
+  const [appliedSearch, setAppliedSearch] = useState("");
   const [filterType, setFilterType] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
   const [page, setPage] = useState(1);
@@ -41,20 +42,25 @@ export default function UserTypesPage() {
   }, []);
 
   const filteredItems = useMemo(() => {
-    const keyword = search.trim().toLowerCase();
+    const keyword = appliedSearch.toLowerCase();
     return items.filter((item) => {
       if (keyword && !item.name.toLowerCase().includes(keyword)) return false;
       if (filterType && item.id !== filterType) return false;
       if (filterStatus && item.status !== filterStatus) return false;
       return true;
     });
-  }, [filterStatus, filterType, items, search]);
+  }, [appliedSearch, filterStatus, filterType, items]);
 
   const totalPages = getTableTotalPages(filteredItems.length, PAGE_SIZE);
   const currentPage = Math.min(page, totalPages);
   const visibleItems = getTablePageItems(filteredItems, currentPage, PAGE_SIZE);
   const isFormOpen = formItem !== undefined;
   const isEditing = Boolean(formItem);
+
+  const handleSearch = () => {
+    setAppliedSearch(search.trim());
+    setPage(1);
+  };
 
   const persistItems = (nextItems: UserType[]) => {
     try {
@@ -170,9 +176,9 @@ export default function UserTypesPage() {
             label="ค้นหา"
             placeholder="ค้นหาประเภทผู้ใช้งาน"
             value={search}
-            onChange={(event) => {
-              setSearch(event.target.value);
-              setPage(1);
+            onChange={(event) => setSearch(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") handleSearch();
             }}
           />
           <Select
@@ -206,6 +212,13 @@ export default function UserTypesPage() {
               { label: "ปิดการใช้งาน", value: "INACTIVE" },
             ]}
           />
+          <button
+            type="button"
+            onClick={handleSearch}
+            className="h-[42px] rounded-[8px] bg-[#FF944D] px-8 text-sm font-medium text-white transition-colors hover:bg-[#f28338]"
+          >
+            ค้นหา
+          </button>
         </div>
 
         {pageError && (
