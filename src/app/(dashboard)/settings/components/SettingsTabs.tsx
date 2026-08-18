@@ -1,7 +1,6 @@
 export type SettingTab =
   | "system"
   | "contact"
-  | "consent"
   | "notification";
 
 interface SettingsTabsProps {
@@ -12,7 +11,6 @@ interface SettingsTabsProps {
 const tabs: Array<{ label: string; value: SettingTab }> = [
   { label: "การตั้งค่าระบบ", value: "system" },
   { label: "การตั้งค่าหัวข้อการติดต่อ", value: "contact" },
-  { label: "การตั้งค่าประเภท Consent", value: "consent" },
   { label: "ตั้งค่าการแจ้งเตือนกรมธรรม์", value: "notification" },
 ];
 

@@ -63,7 +63,15 @@ const menuItems = [
   },
   { label: "ประวัติการใช้งาน", href: "/activity-log", icon: History, superAdminOnly: true },
   { label: "การตั้งค่า", href: "/settings", icon: Settings },
-  { label: "การยินยอม", href: "/consents", icon: ShieldCheck },
+  {
+    label: "ความยินยอม / นโยบาย",
+    href: "/consents",
+    icon: ShieldCheck,
+    children: [
+      { label: "รายการความยินยอม / นโยบาย", href: "/consents" },
+      { label: "ประเภท Consent", href: "/consent-types" },
+    ],
+  },
 ];
 
 export default function Navbar() {

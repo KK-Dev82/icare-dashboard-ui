@@ -1,14 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { CirclePlus, Pencil, Power, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { CirclePlus, Power, SquarePen, X } from "lucide-react";
 import { consentApi } from "@/api/consent";
 import { ActionIconButton } from "@/components/ui/action-button";
 import { ErrorState } from "@/components/ui/error-state";
 import { Input } from "@/components/ui/input";
 import { ConfirmModal } from "@/components/ui/modal";
+import { Select } from "@/components/ui/select";
+import {
+  getTablePageItems,
+  getTableTotalPages,
+  TablePagination,
+} from "@/components/ui/table-pagination";
 import { useToast } from "@/components/ui/toast";
 import type { ConsentType } from "@/types/consent";
+
+const PAGE_SIZE = 10;
 
 export function ConsentTypeSettingsPanel() {
   const toast = useToast();
@@ -24,6 +32,11 @@ export function ConsentTypeSettingsPanel() {
   const [saving, setSaving] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [formError, setFormError] = useState("");
+  const [search, setSearch] = useState("");
+  const [appliedSearch, setAppliedSearch] = useState("");
+  const [filterType, setFilterType] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
+  const [page, setPage] = useState(1);
 
   const fetchData = async () => {
     setLoading(true);
@@ -45,6 +58,30 @@ export function ConsentTypeSettingsPanel() {
     const timer = window.setTimeout(fetchData, 0);
     return () => window.clearTimeout(timer);
   }, []);
+
+  const filteredItems = useMemo(() => {
+    const keyword = appliedSearch.toLowerCase();
+    return items.filter((item) => {
+      const status = item.isActive !== false ? "ACTIVE" : "INACTIVE";
+      if (
+        keyword &&
+        !item.name.toLowerCase().includes(keyword) &&
+        !item.slug.toLowerCase().includes(keyword)
+      ) return false;
+      if (filterType && item.id !== filterType) return false;
+      if (filterStatus && status !== filterStatus) return false;
+      return true;
+    });
+  }, [appliedSearch, filterStatus, filterType, items]);
+
+  const totalPages = getTableTotalPages(filteredItems.length, PAGE_SIZE);
+  const currentPage = Math.min(page, totalPages);
+  const visibleItems = getTablePageItems(filteredItems, currentPage, PAGE_SIZE);
+
+  const handleSearch = () => {
+    setAppliedSearch(search.trim());
+    setPage(1);
+  };
 
   const openCreate = () => {
     const nextSortOrder =
@@ -141,96 +178,169 @@ export function ConsentTypeSettingsPanel() {
   };
 
   return (
-    <section className="rounded-[18px] bg-white p-8 shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
-      <div className="mb-5 flex items-center justify-between border-b border-[#EAEAEA] pb-5">
+    <section className="flex min-h-[650px] w-full flex-col rounded-3xl border border-[#EAEAEA] bg-white p-8 shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
+      <div className="mb-6 flex items-center justify-between border-b border-[#EAEAEA] pb-6">
         <div>
-          <h2 className="text-lg font-bold text-[#243333]">
-            การตั้งค่าประเภท Consent
-          </h2>
-          <p className="mt-1 text-sm text-[#9CA3AF]">
-            จัดการประเภทสำหรับ dropdown ในหน้าความยินยอม / นโยบาย
-          </p>
+          <h1 className="text-2xl font-bold text-gray-900">รายการประเภท Consent</h1>
+          <p className="mt-1 text-sm text-[#9CA3AF]">จัดการประเภทสำหรับหน้าความยินยอม / นโยบาย</p>
         </div>
+        <button
+          type="button"
+          onClick={openCreate}
+          className="flex h-[42px] items-center gap-2 rounded-[10px] bg-[#24A148] px-5 text-sm font-medium text-white transition-all hover:bg-[#1e8e3e] hover:shadow-[0_4px_12px_rgba(36,161,72,0.25)]"
+        >
+          <CirclePlus size={17} />
+          เพิ่มประเภท Consent
+        </button>
+      </div>
+
+      <div className="mb-7 flex flex-wrap items-center gap-3">
+        <Input
+          size="md"
+          className="w-[260px]"
+          label="ค้นหา"
+          placeholder="ค้นหาชื่อประเภทหรือ Slug"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") handleSearch();
+          }}
+        />
+        <Select
+          size="md"
+          className="w-[230px]"
+          label="ประเภท Consent"
+          placeholder="เลือกประเภท"
+          value={filterType}
+          maxVisibleOptions={5}
+          onChange={(value) => {
+            setFilterType(value);
+            setPage(1);
+          }}
+          options={[
+            { label: "ทั้งหมด", value: "" },
+            ...items.map((item) => ({ label: item.name, value: item.id })),
+          ]}
+        />
+        <Select
+          size="md"
+          className="w-[230px]"
+          label="สถานะการใช้งาน"
+          placeholder="เลือกสถานะ"
+          value={filterStatus}
+          onChange={(value) => {
+            setFilterStatus(value);
+            setPage(1);
+          }}
+          options={[
+            { label: "ทั้งหมด", value: "" },
+            { label: "เปิดการใช้งาน", value: "ACTIVE" },
+            { label: "ปิดการใช้งาน", value: "INACTIVE" },
+          ]}
+        />
+        <button
+          type="button"
+          onClick={handleSearch}
+          className="h-[42px] rounded-[8px] bg-[#FF944D] px-8 text-sm font-medium text-white transition-colors hover:bg-[#f28338]"
+        >
+          ค้นหา
+        </button>
       </div>
 
       {loading ? (
-        <div className="animate-pulse space-y-3">
-          {Array.from({ length: 3 }).map((_, index) => (
-            <div key={index} className="h-[58px] rounded-lg bg-gray-100" />
-          ))}
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <tbody>
+              {Array.from({ length: 4 }).map((_, index) => (
+                <tr key={index} className="animate-pulse border-b border-[#F5F5F5]">
+                  {Array.from({ length: 6 }).map((__, cellIndex) => (
+                    <td key={cellIndex} className="px-4 py-4">
+                      <div className="mx-auto h-4 w-24 rounded bg-gray-100" />
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       ) : errorMessage && items.length === 0 ? (
         <ErrorState message={errorMessage} onRetry={fetchData} />
-      ) : items.length === 0 ? (
-        <p className="py-8 text-center text-sm text-[#9CA3AF]">
-          ยังไม่มีประเภท consent
-        </p>
       ) : (
-        <div className="space-y-3">
+        <>
           {errorMessage && (
-            <div className="rounded-[8px] border border-[#F44034]/20 bg-[#F44034]/5 px-4 py-3 text-sm text-[#F44034]">
+            <div className="mb-4 rounded-[8px] border border-[#F44034]/20 bg-[#F44034]/5 px-4 py-3 text-sm text-[#F44034]">
               {errorMessage}
             </div>
           )}
 
-          {items.map((item, index) => {
-            const isActive = item.isActive !== false;
-            const isUpdating = updatingId === item.id;
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[900px]">
+              <thead>
+                <tr>
+                  <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-400">ลำดับ</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-400">ชื่อประเภท Consent</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-400">Slug</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-400">ลำดับการแสดงผล</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-400">สถานะการใช้งาน</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-400">จัดการ</th>
+                </tr>
+              </thead>
+              <tbody>
+                {visibleItems.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-16 text-center text-sm text-[#9CA3AF]">ไม่พบข้อมูล</td>
+                  </tr>
+                ) : visibleItems.map((item, index) => {
+                  const isActive = item.isActive !== false;
+                  const isUpdating = updatingId === item.id;
 
-            return (
-              <div
-                key={item.id}
-                className="flex items-center gap-3 rounded-[10px] border border-[#EAEAEA] px-4 py-3 transition-colors hover:border-primary/30"
-              >
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[6px] border border-[#DCDCDC] text-xs text-[#707070]">
-                  {index + 1}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-[#243333]">
-                    {item.name}
-                  </p>
-                  <p className="text-xs text-[#9CA3AF]">
-                    {item.slug} · ลำดับ {item.sortOrder ?? 0}
-                  </p>
-                </div>
-                <span
-                  className={`shrink-0 text-xs font-medium ${
-                    isActive ? "text-[#24A148]" : "text-[#F44034]"
-                  }`}
-                >
-                  {isActive ? "เปิด" : "ปิด"}
-                </span>
-                <ActionIconButton
-                  icon={Pencil}
-                  variant="accent"
-                  aria-label={`แก้ไข ${item.name}`}
-                  onClick={() => openEdit(item)}
-                  disabled={isUpdating}
-                />
-                <ActionIconButton
-                  icon={Power}
-                  variant={isActive ? "danger" : "success"}
-                  iconStrokeWidth={3}
-                  aria-label={`${isActive ? "ปิด" : "เปิด"} ${item.name}`}
-                  onClick={() => setConfirmItem(item)}
-                  disabled={isUpdating}
-                />
-              </div>
-            );
-          })}
-        </div>
+                  return (
+                    <tr key={item.id} className="border-b border-[#F5F5F5] transition-colors hover:bg-primary/[0.02]">
+                      <td className="px-4 py-4 text-center text-sm text-gray-600">{(currentPage - 1) * PAGE_SIZE + index + 1}</td>
+                      <td className="px-4 py-4 text-center text-sm font-medium text-gray-800">{item.name}</td>
+                      <td className="px-4 py-4 text-center text-sm text-gray-600">{item.slug}</td>
+                      <td className="px-4 py-4 text-center text-sm text-gray-600">{item.sortOrder ?? 0}</td>
+                      <td className="px-4 py-4 text-center text-sm font-medium">
+                        <span className={isActive ? "text-[#24A148]" : "text-[#F44034]"}>
+                          {isActive ? "เปิดการใช้งาน" : "ปิดการใช้งาน"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="flex items-center justify-center gap-2">
+                          <ActionIconButton
+                            icon={SquarePen}
+                            variant="accent"
+                            aria-label={`แก้ไข ${item.name}`}
+                            onClick={() => openEdit(item)}
+                            disabled={isUpdating}
+                          />
+                          <ActionIconButton
+                            icon={Power}
+                            variant={isActive ? "danger" : "success"}
+                            iconStrokeWidth={3}
+                            aria-label={`${isActive ? "ปิด" : "เปิด"} ${item.name}`}
+                            onClick={() => setConfirmItem(item)}
+                            disabled={isUpdating}
+                          />
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          <TablePagination
+            current={visibleItems.length}
+            total={filteredItems.length}
+            page={currentPage}
+            totalPages={totalPages}
+            pageSize={PAGE_SIZE}
+            onPageChange={setPage}
+          />
+        </>
       )}
-
-      <div className="mt-5 flex justify-center">
-        <button
-          type="button"
-          onClick={openCreate}
-          className="flex h-[39px] items-center justify-center gap-2 rounded-[6px] bg-primary px-5 text-sm font-medium text-white transition-opacity hover:opacity-90"
-        >
-          <CirclePlus size={16} />
-          เพิ่มประเภท Consent
-        </button>
-      </div>
 
       <ConfirmModal
         open={Boolean(confirmItem)}
@@ -257,7 +367,7 @@ export function ConsentTypeSettingsPanel() {
             onClick={closeForm}
             aria-label="ปิด"
           />
-          <div className="relative w-full max-w-[480px] rounded-[24px] bg-white p-8 shadow-[0_8px_32px_rgba(0,0,0,0.12)]">
+          <div className="relative w-full max-w-[760px] rounded-[24px] bg-white p-8 shadow-[0_8px_32px_rgba(0,0,0,0.12)]">
             <div className="mb-6 flex items-center justify-between">
               <h2 className="text-lg font-bold text-[#243333]">
                 {editItem ? "แก้ไขประเภท Consent" : "เพิ่มประเภท Consent"}
@@ -273,7 +383,7 @@ export function ConsentTypeSettingsPanel() {
               </button>
             </div>
 
-            <div className="space-y-5">
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
               <Input
                 size="lg"
                 className="w-full"
@@ -296,19 +406,21 @@ export function ConsentTypeSettingsPanel() {
                 disabled={saving}
               />
               {editItem && (
-                <Input
-                  size="lg"
-                  className="w-full"
-                  label="ลำดับการแสดงผล"
-                  type="number"
-                  min={0}
-                  step={1}
-                  value={formSortOrder}
-                  onChange={(event) => setFormSortOrder(event.target.value)}
-                  disabled={saving}
-                />
+                <div className="md:col-span-2">
+                  <Input
+                    size="lg"
+                    className="w-full"
+                    label="ลำดับการแสดงผล"
+                    type="number"
+                    min={0}
+                    step={1}
+                    value={formSortOrder}
+                    onChange={(event) => setFormSortOrder(event.target.value)}
+                    disabled={saving}
+                  />
+                </div>
               )}
-              {formError && <p className="text-sm text-[#F44034]">{formError}</p>}
+              {formError && <p className="text-sm text-[#F44034] md:col-span-2">{formError}</p>}
             </div>
 
             <div className="mt-6 flex items-center justify-end gap-3">

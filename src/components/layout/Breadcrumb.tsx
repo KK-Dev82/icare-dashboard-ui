@@ -21,7 +21,8 @@ const labelMap: Record<string, string> = {
   settings: "การตั้งค่า",
   create: "เพิ่มใหม่",
   edit: "แก้ไข",
-  consents: "การยินยอม",
+  consents: "รายการความยินยอม / นโยบาย",
+  "consent-types": "ประเภท Consent",
 };
 
 export default function Breadcrumb() {

@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { ContactCategorySettingsPanel } from "./components/ContactCategorySettingsPanel";
-import { ConsentTypeSettingsPanel } from "./components/ConsentTypeSettingsPanel";
 import { NotificationSettingsPanel } from "./components/NotificationSettingsPanel";
 import { RenewalContactSettingsPanel } from "./components/RenewalContactSettingsPanel";
 import { SettingsTabs, type SettingTab } from "./components/SettingsTabs";
@@ -30,7 +29,6 @@ export default function SettingsPage() {
           </div>
         )}
         {activeTab === "contact" && <ContactCategorySettingsPanel />}
-        {activeTab === "consent" && <ConsentTypeSettingsPanel />}
         {activeTab === "notification" && <NotificationSettingsPanel />}
       </div>
     </div>
