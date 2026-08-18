@@ -36,7 +36,15 @@ const menuItems = [
       { label: "ความสนใจผลิตภัณฑ์/คอนเทนต์", href: "/product-interest" },
     ],
   },
-  { label: "ผู้ใช้งาน", href: "/accounts", icon: UserCog },
+  {
+    label: "ผู้ใช้งาน",
+    href: "/accounts",
+    icon: UserCog,
+    children: [
+      { label: "รายการผู้ใช้งาน", href: "/accounts" },
+      { label: "ประเภทผู้ใช้งาน / กำหนดสิทธิ์การใช้งาน", href: "/user-types" },
+    ],
+  },
   { label: "ประวัติการใช้งาน", href: "/activity-log", icon: History, superAdminOnly: true },
   { label: "การตั้งค่า", href: "/settings", icon: Settings },
   { label: "การยินยอม", href: "/consents", icon: ShieldCheck },

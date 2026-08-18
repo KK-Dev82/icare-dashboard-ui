@@ -1,4 +1,4 @@
-export type AdminRole = "SUPER_ADMIN" | "ADMIN" | "CONTENT_EDITOR";
+export type AdminRole = string;
 export type AdminStatus = "ACTIVE" | "INACTIVE";
 
 export interface AdminUser {
@@ -16,7 +16,7 @@ export interface CreateAdminPayload {
   username: string;
   password: string;
   fullName: string;
-  email?: string;
+  email: string;
   role: AdminRole;
 }
 

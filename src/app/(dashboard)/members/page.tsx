@@ -189,9 +189,10 @@ export default function MembersPage() {
               ) : items.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="py-16 text-center text-sm text-[#9CA3AF]">ไม่พบข้อมูล</td>
-                </tr>
+t                </tr>
               ) : items.map((item, idx) => {
                 const fullName = [item.firstName, item.lastName].filter(Boolean).join(" ") || "-";
+                const latestLoginAt = item.lastLoginAt ?? item.createdAt;
                 return (
                   <tr key={item.id} className="border-b border-[#F5F5F5] hover:bg-primary/[0.02] transition-colors">
                     <td className="py-4 px-4 text-center text-sm text-gray-600">{(meta.page - 1) * meta.limit + idx + 1}</td>
@@ -209,9 +210,7 @@ export default function MembersPage() {
                       </span>
                     </td>
                     <td className="py-4 px-4 text-center text-sm text-gray-600">
-                      {item.lastLoginAt
-                        ? new Date(item.lastLoginAt).toLocaleString("th-TH", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })
-                        : "-"}
+                      {new Date(latestLoginAt).toLocaleString("th-TH", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
                     </td>
                     <td className="py-4 px-4">
                       <div className="flex items-center justify-center">

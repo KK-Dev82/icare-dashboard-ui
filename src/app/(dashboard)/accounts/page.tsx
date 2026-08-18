@@ -8,7 +8,9 @@ import { ConfirmModal } from "@/components/ui/modal";
 import { adminUserApi } from "@/api/admin-user";
 import { ErrorState } from "@/components/ui/error-state";
 import { useAsyncData } from "@/hooks/useAsyncData";
+import { defaultUserTypes, getStoredUserTypes } from "@/lib/userTypeStorage";
 import type { AdminUser, AdminRole, AdminStatus } from "@/types/admin-user";
+import type { UserType } from "@/types/user-type";
 
 const roleLabel: Record<AdminRole, string> = {
   SUPER_ADMIN: "Super Admin",
@@ -27,7 +29,7 @@ const statusLabel: Record<AdminStatus, string> = {
   INACTIVE: "ปิดการใช้งาน",
 };
 
-type AccountFormErrors = Partial<Record<"username" | "fullName" | "email" | "password", string>>;
+type AccountFormErrors = Partial<Record<"username" | "fullName" | "email" | "role" | "password", string>>;
 
 export default function AccountsPage() {
   const [search, setSearch] = useState("");
@@ -40,6 +42,7 @@ export default function AccountsPage() {
   const [toggleItem, setToggleItem] = useState<AdminUser | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [editItem, setEditItem] = useState<AdminUser | null>(null);
+  const [userTypes, setUserTypes] = useState<UserType[]>(defaultUserTypes);
 
   // Form state
   const [formUsername, setFormUsername] = useState("");
@@ -59,6 +62,8 @@ export default function AccountsPage() {
 
   useEffect(() => {
     refetch();
+    const handle = window.setTimeout(() => setUserTypes(getStoredUserTypes()), 0);
+    return () => window.clearTimeout(handle);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -71,6 +76,7 @@ export default function AccountsPage() {
 
   const handleSave = async () => {
     const password = formPassword.trim();
+    const email = formEmail.trim();
     const errors: AccountFormErrors = {};
 
     if (!formFullName.trim()) {
@@ -79,7 +85,12 @@ export default function AccountsPage() {
     if (!editItem && !formUsername.trim()) {
       errors.username = "กรุณากรอกชื่อผู้ใช้";
     }
-    if (formEmail.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formEmail.trim())) {
+    if (!formRole) {
+      errors.role = "กรุณาเลือกประเภทผู้ใช้งาน";
+    }
+    if (!email) {
+      errors.email = "กรุณากรอกอีเมล";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       errors.email = "รูปแบบอีเมลไม่ถูกต้อง เช่น name@example.com";
     }
     if (!editItem && password.length < 6) {
@@ -103,7 +114,7 @@ export default function AccountsPage() {
       if (editItem) {
         const res = await adminUserApi.update(editItem.id, {
           fullName: formFullName.trim(),
-          email: formEmail.trim() || undefined,
+          email,
           role: formRole,
           password: password || undefined,
         });
@@ -113,7 +124,7 @@ export default function AccountsPage() {
           username: formUsername.trim(),
           password,
           fullName: formFullName.trim(),
-          email: formEmail.trim() || undefined,
+          email,
           role: formRole,
         });
         if (!res.success) throw new Error(res.message || "สร้างผู้ใช้งานไม่สำเร็จ");
@@ -133,7 +144,8 @@ export default function AccountsPage() {
     setFormPassword("");
     setFormFullName("");
     setFormEmail("");
-    setFormRole("ADMIN");
+    const activeUserTypes = userTypes.filter((userType) => userType.status === "ACTIVE");
+    setFormRole(activeUserTypes.find((userType) => userType.code === "ADMIN")?.code || activeUserTypes[0]?.code || "");
     setFormError("");
     setFormErrors({});
     setShowForm(true);
@@ -174,6 +186,13 @@ export default function AccountsPage() {
     if (appliedStatus && item.status !== appliedStatus) return false;
     return true;
   });
+
+  const getRoleName = (role: AdminRole) =>
+    userTypes.find((userType) => userType.code === role)?.name || roleLabel[role] || role;
+
+  const formRoleOptions = userTypes
+    .filter((userType) => userType.status === "ACTIVE" || userType.code === formRole)
+    .map((userType) => ({ label: userType.name, value: userType.code }));
 
   return (
     <div>
@@ -218,9 +237,7 @@ export default function AccountsPage() {
             }}
             options={[
               { label: "ทั้งหมด", value: "" },
-              { label: "Super Admin", value: "SUPER_ADMIN" },
-              { label: "Admin", value: "ADMIN" },
-              { label: "Content Editor", value: "CONTENT_EDITOR" },
+              ...userTypes.map((userType) => ({ label: userType.name, value: userType.code })),
             ]}
           />
           <Select
@@ -297,8 +314,8 @@ export default function AccountsPage() {
                   <td className="py-4 px-4 text-center text-sm font-medium text-gray-800">{item.fullName}</td>
                   <td className="py-4 px-4 text-center text-sm text-gray-600">{item.email || "-"}</td>
                   <td className="py-4 px-4 text-center">
-                    <span className="text-sm font-medium" style={{ color: roleColor[item.role] }}>
-                      {roleLabel[item.role]}
+                    <span className="text-sm font-medium" style={{ color: roleColor[item.role] || "#565656" }}>
+                      {getRoleName(item.role)}
                     </span>
                   </td>
                   <td className="py-4 px-4 text-center">
@@ -340,7 +357,11 @@ export default function AccountsPage() {
         </div>
       </div>
 
-      <AccountDetailModal item={detailItem} onClose={() => setDetailItem(null)} />
+      <AccountDetailModal
+        item={detailItem}
+        roleName={detailItem ? getRoleName(detailItem.role) : ""}
+        onClose={() => setDetailItem(null)}
+      />
 
       {/* Toggle Status Confirm */}
       <ConfirmModal
@@ -390,13 +411,15 @@ export default function AccountsPage() {
                     label="บทบาท *"
                     placeholder="เลือกบทบาท"
                     value={formRole}
-                    onChange={(v) => setFormRole(v as AdminRole)}
-                    options={[
-                      { label: "Super Admin", value: "SUPER_ADMIN" },
-                      { label: "Admin", value: "ADMIN" },
-                      { label: "Content Editor", value: "CONTENT_EDITOR" },
-                    ]}
+                    onChange={(v) => {
+                      setFormRole(v);
+                      setFormErrors((current) => ({ ...current, role: undefined }));
+                    }}
+                    options={formRoleOptions}
                   />
+                  {formErrors.role && (
+                    <p className="mt-1 text-xs text-[#F44034]">{formErrors.role}</p>
+                  )}
                 </div>
               </div>
               {!editItem && (
@@ -418,8 +441,9 @@ export default function AccountsPage() {
               <Input
                 size="lg"
                 className="w-full"
-                label="อีเมล"
+                label="อีเมล *"
                 type="email"
+                required
                 placeholder="กรอกอีเมล"
                 value={formEmail}
                 onChange={(e) => {
@@ -480,9 +504,11 @@ export default function AccountsPage() {
 
 function AccountDetailModal({
   item,
+  roleName,
   onClose,
 }: {
   item: AdminUser | null;
+  roleName: string;
   onClose: () => void;
 }) {
   if (!item) return null;
@@ -506,7 +532,7 @@ function AccountDetailModal({
 
         <div className="mt-5 grid grid-cols-2 gap-x-8 gap-y-4">
           <DetailItem label="ชื่อผู้ใช้งาน" value={item.username} />
-          <DetailItem label="ประเภทผู้ใช้งาน" value={roleLabel[item.role]} />
+          <DetailItem label="ประเภทผู้ใช้งาน" value={roleName} />
           <DetailItem label="ชื่อ" value={firstName} />
           <DetailItem label="นามสกุล" value={lastName} />
           <DetailItem label="อีเมล" value={item.email || "-"} />

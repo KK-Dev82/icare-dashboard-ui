@@ -14,6 +14,7 @@ const labelMap: Record<string, string> = {
   "product-interest": "ความสนใจผลิตภัณฑ์/คอนเทนต์",
   "policy-categories": "หมวดหมู่ผลิตภัณฑ์",
   accounts: "ผู้ใช้งาน",
+  "user-types": "ประเภทผู้ใช้งาน / กำหนดสิทธิ์การใช้งาน",
   "activity-log": "ประวัติการใช้งาน",
   settings: "การตั้งค่า",
   create: "เพิ่มใหม่",
