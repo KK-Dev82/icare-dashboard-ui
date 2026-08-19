@@ -1,5 +1,3 @@
-export type UserTypeStatus = "ACTIVE" | "INACTIVE";
-
 export type PermissionKey =
   | "DASHBOARD"
   | "MEMBERS"
@@ -8,18 +6,21 @@ export type PermissionKey =
   | "CONTACT_CASE"
   | "PRODUCT_INTEREST"
   | "ACCOUNTS"
-  | "USER_TYPES"
-  | "ACTIVITY_LOG"
   | "SETTINGS"
   | "CONSENTS";
 
 export interface UserType {
   id: string;
-  code: string;
   name: string;
   permissions: PermissionKey[];
-  status: UserTypeStatus;
+  isActive: boolean;
   createdAt: string;
   updatedAt: string;
 }
 
+export interface CreateUserTypePayload {
+  name: string;
+  permissions: PermissionKey[];
+}
+
+export type UpdateUserTypePayload = Partial<CreateUserTypePayload>;

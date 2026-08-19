@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { CirclePlus, Power, SquarePen, X } from "lucide-react";
 import { ActionIconButton } from "@/components/ui/action-button";
+import { ErrorState } from "@/components/ui/error-state";
 import { ConfirmModal } from "@/components/ui/modal";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -11,19 +12,14 @@ import {
   getTableTotalPages,
   TablePagination,
 } from "@/components/ui/table-pagination";
-import {
-  createUserTypeCode,
-  defaultUserTypes,
-  getStoredUserTypes,
-  permissionOptions,
-  saveStoredUserTypes,
-} from "@/lib/userTypeStorage";
+import { userTypeApi } from "@/api/user-type";
+import { permissionOptions } from "@/constants/permissions";
+import { useAsyncData } from "@/hooks/useAsyncData";
 import type { PermissionKey, UserType } from "@/types/user-type";
 
 const PAGE_SIZE = 10;
 
 export default function UserTypesPage() {
-  const [items, setItems] = useState<UserType[]>(defaultUserTypes);
   const [search, setSearch] = useState("");
   const [appliedSearch, setAppliedSearch] = useState("");
   const [filterType, setFilterType] = useState("");
@@ -35,10 +31,18 @@ export default function UserTypesPage() {
   const [formError, setFormError] = useState("");
   const [pageError, setPageError] = useState("");
   const [toggleItem, setToggleItem] = useState<UserType | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [toggling, setToggling] = useState(false);
+
+  const { data: items = [], loading, errorMessage, refetch } = useAsyncData(async () => {
+    const response = await userTypeApi.getAll();
+    if (!response.success) throw new Error(response.message || "โหลดข้อมูลประเภทผู้ใช้งานไม่สำเร็จ");
+    return response.data;
+  });
 
   useEffect(() => {
-    const handle = window.setTimeout(() => setItems(getStoredUserTypes()), 0);
-    return () => window.clearTimeout(handle);
+    refetch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const filteredItems = useMemo(() => {
@@ -46,7 +50,7 @@ export default function UserTypesPage() {
     return items.filter((item) => {
       if (keyword && !item.name.toLowerCase().includes(keyword)) return false;
       if (filterType && item.id !== filterType) return false;
-      if (filterStatus && item.status !== filterStatus) return false;
+      if (filterStatus && (item.isActive ? "ACTIVE" : "INACTIVE") !== filterStatus) return false;
       return true;
     });
   }, [appliedSearch, filterStatus, filterType, items]);
@@ -60,18 +64,6 @@ export default function UserTypesPage() {
   const handleSearch = () => {
     setAppliedSearch(search.trim());
     setPage(1);
-  };
-
-  const persistItems = (nextItems: UserType[]) => {
-    try {
-      saveStoredUserTypes(nextItems);
-      setItems(nextItems);
-      setPageError("");
-      return true;
-    } catch {
-      setPageError("ไม่สามารถบันทึกข้อมูลประเภทผู้ใช้งานได้");
-      return false;
-    }
   };
 
   const openCreate = () => {
@@ -102,7 +94,7 @@ export default function UserTypesPage() {
     setFormError("");
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const name = formName.trim();
     if (!name) {
       setFormError("กรุณากรอกชื่อประเภทผู้ใช้งาน");
@@ -117,38 +109,53 @@ export default function UserTypesPage() {
       return;
     }
 
-    const timestamp = new Date().toISOString();
-    const nextItems = formItem
-      ? items.map((item) =>
-          item.id === formItem.id
-            ? { ...item, name, permissions: formPermissions, updatedAt: timestamp }
-            : item
-        )
-      : [
-          ...items,
-          {
-            id: `user-type-${Date.now()}`,
-            code: createUserTypeCode(name, items.map((item) => item.code)),
-            name,
-            permissions: formPermissions,
-            status: "ACTIVE" as const,
-            createdAt: timestamp,
-            updatedAt: timestamp,
-          },
-        ];
-
-    if (persistItems(nextItems)) closeForm();
+    setSaving(true);
+    setFormError("");
+    try {
+      const response = formItem
+        ? await userTypeApi.update(formItem.id, { name, permissions: formPermissions })
+        : await userTypeApi.create({ name, permissions: formPermissions });
+      if (!response.success) throw new Error(response.message || "บันทึกข้อมูลไม่สำเร็จ");
+      closeForm();
+      setPageError("");
+      await refetch();
+    } catch (error) {
+      const { code, message } = getApiError(error);
+      if (code === "ROLE_ALREADY_EXISTS") {
+        setFormError("ชื่อประเภทผู้ใช้งานนี้มีอยู่แล้ว");
+      } else if (code === "ROLE_NOT_FOUND") {
+        closeForm();
+        setPageError("ไม่พบประเภทผู้ใช้งานที่ต้องการแก้ไข กรุณาโหลดข้อมูลใหม่");
+        await refetch();
+      } else {
+        setFormError(message || "ไม่สามารถบันทึกข้อมูลประเภทผู้ใช้งานได้");
+      }
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleToggleStatus = () => {
-    if (!toggleItem) return;
-    const nextStatus: UserType["status"] = toggleItem.status === "ACTIVE" ? "INACTIVE" : "ACTIVE";
-    const nextItems = items.map((item) =>
-      item.id === toggleItem.id
-        ? { ...item, status: nextStatus, updatedAt: new Date().toISOString() }
-        : item
-    );
-    if (persistItems(nextItems)) setToggleItem(null);
+  const handleToggleStatus = async () => {
+    if (!toggleItem || toggling) return;
+    setToggling(true);
+    setPageError("");
+    try {
+      const response = await userTypeApi.toggle(toggleItem.id);
+      if (!response.success) throw new Error(response.message || "เปลี่ยนสถานะไม่สำเร็จ");
+      setToggleItem(null);
+      await refetch();
+    } catch (error) {
+      const { code, message } = getApiError(error);
+      setToggleItem(null);
+      setPageError(
+        code === "ROLE_NOT_FOUND"
+          ? "ไม่พบประเภทผู้ใช้งานที่ต้องการเปลี่ยนสถานะ กรุณาโหลดข้อมูลใหม่"
+          : message || "ไม่สามารถเปลี่ยนสถานะประเภทผู้ใช้งานได้"
+      );
+      if (code === "ROLE_NOT_FOUND") await refetch();
+    } finally {
+      setToggling(false);
+    }
   };
 
   return (
@@ -227,6 +234,19 @@ export default function UserTypesPage() {
           </div>
         )}
 
+        {!loading && errorMessage && items.length > 0 && (
+          <div className="mb-4 flex items-center justify-between rounded-[8px] border border-[#FF944D]/30 bg-[#FF944D]/5 px-4 py-3 text-sm text-[#FF944D]">
+            <span>ไม่สามารถโหลดข้อมูลล่าสุดได้ กำลังแสดงข้อมูลเดิม</span>
+            <button
+              type="button"
+              onClick={() => refetch()}
+              className="ml-4 shrink-0 rounded-[6px] border border-[#FF944D]/30 px-3 py-1 text-xs font-medium transition-colors hover:bg-[#FF944D]/10"
+            >
+              ลองใหม่
+            </button>
+          </div>
+        )}
+
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
@@ -239,7 +259,23 @@ export default function UserTypesPage() {
               </tr>
             </thead>
             <tbody>
-              {visibleItems.length === 0 ? (
+              {loading ? (
+                Array.from({ length: 4 }).map((_, index) => (
+                  <tr key={index} className="animate-pulse border-b border-[#F5F5F5]">
+                    {Array.from({ length: 5 }).map((__, cellIndex) => (
+                      <td key={cellIndex} className="px-4 py-4">
+                        <div className="mx-auto h-4 w-20 rounded bg-gray-100" />
+                      </td>
+                    ))}
+                  </tr>
+                ))
+              ) : errorMessage && items.length === 0 ? (
+                <tr>
+                  <td colSpan={5}>
+                    <ErrorState message={errorMessage} onRetry={() => refetch()} />
+                  </td>
+                </tr>
+              ) : visibleItems.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="py-16 text-center text-sm text-[#9CA3AF]">ไม่พบข้อมูล</td>
                 </tr>
@@ -249,8 +285,8 @@ export default function UserTypesPage() {
                   <td className="px-4 py-4 text-center text-sm font-medium text-gray-800">{item.name}</td>
                   <td className="px-4 py-4 text-center text-sm text-gray-600">{item.permissions.length} รายการ</td>
                   <td className="px-4 py-4 text-center text-sm font-medium">
-                    <span className={item.status === "ACTIVE" ? "text-[#24A148]" : "text-[#F44034]"}>
-                      {item.status === "ACTIVE" ? "เปิดการใช้งาน" : "ปิดการใช้งาน"}
+                    <span className={item.isActive ? "text-[#24A148]" : "text-[#F44034]"}>
+                      {item.isActive ? "เปิดการใช้งาน" : "ปิดการใช้งาน"}
                     </span>
                   </td>
                   <td className="px-4 py-4">
@@ -263,8 +299,8 @@ export default function UserTypesPage() {
                       />
                       <ActionIconButton
                         icon={Power}
-                        variant={item.status === "ACTIVE" ? "danger" : "success"}
-                        aria-label={`${item.status === "ACTIVE" ? "ปิด" : "เปิด"}การใช้งาน ${item.name}`}
+                        variant={item.isActive ? "danger" : "success"}
+                        aria-label={`${item.isActive ? "ปิด" : "เปิด"}การใช้งาน ${item.name}`}
                         onClick={() => setToggleItem(item)}
                       />
                     </div>
@@ -352,9 +388,10 @@ export default function UserTypesPage() {
               <button
                 type="button"
                 onClick={handleSave}
-                className="h-[40px] min-w-[112px] rounded-[10px] bg-primary px-5 text-sm font-medium text-white transition-colors hover:bg-primary/90"
+                disabled={saving}
+                className="h-[40px] min-w-[112px] rounded-[10px] bg-primary px-5 text-sm font-medium text-white transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {isEditing ? "บันทึกการแก้ไข" : "บันทึก"}
+                {saving ? "กำลังบันทึก..." : isEditing ? "บันทึกการแก้ไข" : "บันทึก"}
               </button>
             </div>
           </div>
@@ -363,17 +400,32 @@ export default function UserTypesPage() {
 
       <ConfirmModal
         open={Boolean(toggleItem)}
-        title={toggleItem?.status === "ACTIVE" ? "ปิดการใช้งานประเภทผู้ใช้งาน" : "เปิดการใช้งานประเภทผู้ใช้งาน"}
+        title={toggleItem?.isActive ? "ปิดการใช้งานประเภทผู้ใช้งาน" : "เปิดการใช้งานประเภทผู้ใช้งาน"}
         message={
-          toggleItem?.status === "ACTIVE"
+          toggleItem?.isActive
             ? `ประเภทผู้ใช้งาน “${toggleItem?.name}” จะไม่ปรากฏเป็นตัวเลือกสำหรับผู้ใช้งานใหม่`
             : `ต้องการเปิดการใช้งานประเภทผู้ใช้งาน “${toggleItem?.name}” ใช่หรือไม่?`
         }
-        confirmLabel={toggleItem?.status === "ACTIVE" ? "ปิดการใช้งาน" : "เปิดการใช้งาน"}
-        confirmColor={toggleItem?.status === "ACTIVE" ? "danger" : "success"}
+        confirmLabel={toggleItem?.isActive ? "ปิดการใช้งาน" : "เปิดการใช้งาน"}
+        confirmColor={toggleItem?.isActive ? "danger" : "success"}
         onConfirm={handleToggleStatus}
-        onCancel={() => setToggleItem(null)}
+        onCancel={() => {
+          if (!toggling) setToggleItem(null);
+        }}
       />
     </div>
   );
+}
+
+function getApiError(error: unknown) {
+  const responseData = (
+    error as { response?: { data?: { message?: string | string[]; errorCode?: string } } }
+  )?.response?.data;
+  const rawMessage = responseData?.message;
+  const message = Array.isArray(rawMessage) ? rawMessage.join(", ") : rawMessage;
+
+  return {
+    code: responseData?.errorCode || "",
+    message: message || (error instanceof Error ? error.message : ""),
+  };
 }

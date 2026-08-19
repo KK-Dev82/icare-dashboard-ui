@@ -1,3 +1,5 @@
+import type { UserType } from "@/types/user-type";
+
 export type AdminRole = string;
 export type AdminStatus = "ACTIVE" | "INACTIVE";
 
@@ -5,11 +7,13 @@ export interface AdminUser {
   id: string;
   username: string;
   fullName: string;
-  email: string;
+  email: string | null;
   role: AdminRole;
+  roleId: string | null;
+  roleRef: UserType | null;
   status: AdminStatus;
   createdAt: string;
-  updatedAt: string;
+  updatedAt?: string;
 }
 
 export interface CreateAdminPayload {
@@ -17,13 +21,13 @@ export interface CreateAdminPayload {
   password: string;
   fullName: string;
   email: string;
-  role: AdminRole;
+  roleId: string;
 }
 
 export interface UpdateAdminPayload {
   fullName?: string;
   email?: string;
-  role?: AdminRole;
+  roleId?: string;
   status?: AdminStatus;
   password?: string;
 }

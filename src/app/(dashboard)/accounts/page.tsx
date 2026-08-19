@@ -6,11 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { ConfirmModal } from "@/components/ui/modal";
 import { adminUserApi } from "@/api/admin-user";
+import { userTypeApi } from "@/api/user-type";
 import { ErrorState } from "@/components/ui/error-state";
 import { useAsyncData } from "@/hooks/useAsyncData";
-import { defaultUserTypes, getStoredUserTypes } from "@/lib/userTypeStorage";
 import type { AdminUser, AdminRole, AdminStatus } from "@/types/admin-user";
-import type { UserType } from "@/types/user-type";
 
 const roleLabel: Record<AdminRole, string> = {
   SUPER_ADMIN: "Super Admin",
@@ -42,14 +41,13 @@ export default function AccountsPage() {
   const [toggleItem, setToggleItem] = useState<AdminUser | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [editItem, setEditItem] = useState<AdminUser | null>(null);
-  const [userTypes, setUserTypes] = useState<UserType[]>(defaultUserTypes);
 
   // Form state
   const [formUsername, setFormUsername] = useState("");
   const [formPassword, setFormPassword] = useState("");
   const [formFullName, setFormFullName] = useState("");
   const [formEmail, setFormEmail] = useState("");
-  const [formRole, setFormRole] = useState<AdminRole>("ADMIN");
+  const [formRoleId, setFormRoleId] = useState("");
   const [formError, setFormError] = useState("");
   const [formErrors, setFormErrors] = useState<AccountFormErrors>({});
   const [saving, setSaving] = useState(false);
@@ -60,10 +58,20 @@ export default function AccountsPage() {
     return res.data;
   });
 
+  const {
+    data: userTypes = [],
+    loading: rolesLoading,
+    errorMessage: rolesErrorMessage,
+    refetch: refetchRoles,
+  } = useAsyncData(async () => {
+    const res = await userTypeApi.getAll();
+    if (!res.success) throw new Error(res.message || "โหลดข้อมูลประเภทผู้ใช้งานไม่สำเร็จ");
+    return res.data;
+  });
+
   useEffect(() => {
     refetch();
-    const handle = window.setTimeout(() => setUserTypes(getStoredUserTypes()), 0);
-    return () => window.clearTimeout(handle);
+    refetchRoles();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -85,7 +93,7 @@ export default function AccountsPage() {
     if (!editItem && !formUsername.trim()) {
       errors.username = "กรุณากรอกชื่อผู้ใช้";
     }
-    if (!formRole) {
+    if (!formRoleId) {
       errors.role = "กรุณาเลือกประเภทผู้ใช้งาน";
     }
     if (!email) {
@@ -115,7 +123,7 @@ export default function AccountsPage() {
         const res = await adminUserApi.update(editItem.id, {
           fullName: formFullName.trim(),
           email,
-          role: formRole,
+          roleId: formRoleId,
           password: password || undefined,
         });
         if (!res.success) throw new Error(res.message || "บันทึกข้อมูลไม่สำเร็จ");
@@ -125,7 +133,7 @@ export default function AccountsPage() {
           password,
           fullName: formFullName.trim(),
           email,
-          role: formRole,
+          roleId: formRoleId,
         });
         if (!res.success) throw new Error(res.message || "สร้างผู้ใช้งานไม่สำเร็จ");
       }
@@ -144,8 +152,8 @@ export default function AccountsPage() {
     setFormPassword("");
     setFormFullName("");
     setFormEmail("");
-    const activeUserTypes = userTypes.filter((userType) => userType.status === "ACTIVE");
-    setFormRole(activeUserTypes.find((userType) => userType.code === "ADMIN")?.code || activeUserTypes[0]?.code || "");
+    const activeUserTypes = userTypes.filter((userType) => userType.isActive);
+    setFormRoleId(activeUserTypes[0]?.id || "");
     setFormError("");
     setFormErrors({});
     setShowForm(true);
@@ -157,7 +165,7 @@ export default function AccountsPage() {
     setFormPassword("");
     setFormFullName(item.fullName);
     setFormEmail(item.email || "");
-    setFormRole(item.role);
+    setFormRoleId(item.roleId || "");
     setFormError("");
     setFormErrors({});
     setShowForm(true);
@@ -182,17 +190,17 @@ export default function AccountsPage() {
       !item.username.toLowerCase().includes(keyword) &&
       !(item.email || "").toLowerCase().includes(keyword)
     ) return false;
-    if (appliedRole && item.role !== appliedRole) return false;
+    if (appliedRole && item.roleId !== appliedRole) return false;
     if (appliedStatus && item.status !== appliedStatus) return false;
     return true;
   });
 
-  const getRoleName = (role: AdminRole) =>
-    userTypes.find((userType) => userType.code === role)?.name || roleLabel[role] || role;
+  const getRoleName = (item: AdminUser) =>
+    item.roleRef?.name || roleLabel[item.role] || item.role;
 
   const formRoleOptions = userTypes
-    .filter((userType) => userType.status === "ACTIVE" || userType.code === formRole)
-    .map((userType) => ({ label: userType.name, value: userType.code }));
+    .filter((userType) => userType.isActive || userType.id === formRoleId)
+    .map((userType) => ({ label: userType.name, value: userType.id }));
 
   return (
     <div>
@@ -237,7 +245,7 @@ export default function AccountsPage() {
             }}
             options={[
               { label: "ทั้งหมด", value: "" },
-              ...userTypes.map((userType) => ({ label: userType.name, value: userType.code })),
+              ...userTypes.map((userType) => ({ label: userType.name, value: userType.id })),
             ]}
           />
           <Select
@@ -266,6 +274,19 @@ export default function AccountsPage() {
               type="button"
               onClick={() => refetch()}
               className="ml-4 shrink-0 rounded-[6px] border border-[#FF944D]/30 px-3 py-1 text-xs font-medium hover:bg-[#FF944D]/10 transition-colors"
+            >
+              ลองใหม่
+            </button>
+          </div>
+        )}
+
+        {!rolesLoading && rolesErrorMessage && (
+          <div className="mb-4 flex items-center justify-between rounded-[8px] border border-[#F44034]/25 bg-[#F44034]/5 px-4 py-3 text-sm text-[#F44034]">
+            <span>ไม่สามารถโหลดข้อมูลประเภทผู้ใช้งานได้</span>
+            <button
+              type="button"
+              onClick={() => refetchRoles()}
+              className="ml-4 shrink-0 rounded-[6px] border border-[#F44034]/25 px-3 py-1 text-xs font-medium transition-colors hover:bg-[#F44034]/10"
             >
               ลองใหม่
             </button>
@@ -315,7 +336,7 @@ export default function AccountsPage() {
                   <td className="py-4 px-4 text-center text-sm text-gray-600">{item.email || "-"}</td>
                   <td className="py-4 px-4 text-center">
                     <span className="text-sm font-medium" style={{ color: roleColor[item.role] || "#565656" }}>
-                      {getRoleName(item.role)}
+                      {getRoleName(item)}
                     </span>
                   </td>
                   <td className="py-4 px-4 text-center">
@@ -359,7 +380,7 @@ export default function AccountsPage() {
 
       <AccountDetailModal
         item={detailItem}
-        roleName={detailItem ? getRoleName(detailItem.role) : ""}
+        roleName={detailItem ? getRoleName(detailItem) : ""}
         onClose={() => setDetailItem(null)}
       />
 
@@ -410,9 +431,10 @@ export default function AccountsPage() {
                     className="w-full"
                     label="บทบาท *"
                     placeholder="เลือกบทบาท"
-                    value={formRole}
+                    value={formRoleId}
+                    disabled={rolesLoading || Boolean(rolesErrorMessage)}
                     onChange={(v) => {
-                      setFormRole(v);
+                      setFormRoleId(v);
                       setFormErrors((current) => ({ ...current, role: undefined }));
                     }}
                     options={formRoleOptions}
