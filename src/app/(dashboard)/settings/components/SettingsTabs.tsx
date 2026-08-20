@@ -6,6 +6,7 @@ export type SettingTab =
 interface SettingsTabsProps {
   activeTab: SettingTab;
   onChange: (tab: SettingTab) => void;
+  showContactTab?: boolean;
 }
 
 const tabs: Array<{ label: string; value: SettingTab }> = [
@@ -14,10 +15,14 @@ const tabs: Array<{ label: string; value: SettingTab }> = [
   { label: "ตั้งค่าการแจ้งเตือนกรมธรรม์", value: "notification" },
 ];
 
-export function SettingsTabs({ activeTab, onChange }: SettingsTabsProps) {
+export function SettingsTabs({
+  activeTab,
+  onChange,
+  showContactTab = true,
+}: SettingsTabsProps) {
   return (
     <div className="mt-4 flex flex-col gap-3">
-      {tabs.map((tab) => {
+      {tabs.filter((tab) => showContactTab || tab.value !== "contact").map((tab) => {
         const isActive = activeTab === tab.value;
 
         return (

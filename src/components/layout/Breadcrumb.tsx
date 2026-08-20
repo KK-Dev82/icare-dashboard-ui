@@ -4,8 +4,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronRight, Home } from "lucide-react";
 import { useBreadcrumbLabels } from "@/components/layout/BreadcrumbContext";
+import { usePermissions } from "@/contexts/PermissionContext";
 
 const labelMap: Record<string, string> = {
+  "403": "ไม่มีสิทธิ์เข้าถึง",
   dashboard: "Dashboard",
   members: "สมาชิก",
   news: "ข่าวสาร / โปรโมชั่น",
@@ -28,6 +30,7 @@ const labelMap: Record<string, string> = {
 export default function Breadcrumb() {
   const pathname = usePathname();
   const dynamicLabels = useBreadcrumbLabels();
+  const { defaultRoute } = usePermissions();
   const segments = pathname.split("/").filter(Boolean);
 
   if (segments.length === 0 || (segments.length === 1 && segments[0] === "dashboard")) return null;
@@ -47,7 +50,7 @@ export default function Breadcrumb() {
 
   return (
     <nav className="flex items-center gap-1.5 text-sm mb-4">
-      <Link href="/dashboard" className="text-[#9CA3AF] hover:text-primary transition-colors">
+      <Link href={defaultRoute} className="text-[#9CA3AF] hover:text-primary transition-colors">
         <Home size={15} />
       </Link>
       {crumbs.map((crumb) => (

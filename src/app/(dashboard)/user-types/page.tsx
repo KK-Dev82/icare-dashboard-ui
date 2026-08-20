@@ -7,6 +7,7 @@ import { ErrorState } from "@/components/ui/error-state";
 import { ConfirmModal } from "@/components/ui/modal";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
+import { useToast } from "@/components/ui/toast";
 import {
   getTablePageItems,
   getTableTotalPages,
@@ -14,12 +15,17 @@ import {
 } from "@/components/ui/table-pagination";
 import { userTypeApi } from "@/api/user-type";
 import { permissionOptions } from "@/constants/permissions";
+import { usePermissions } from "@/contexts/PermissionContext";
 import { useAsyncData } from "@/hooks/useAsyncData";
 import type { PermissionKey, UserType } from "@/types/user-type";
 
 const PAGE_SIZE = 10;
+const REQUIRED_PERMISSION_WARNING =
+  "กรุณาเลือกสิทธิ์การใช้งานอย่างน้อย 1 รายการก่อนบันทึก";
 
 export default function UserTypesPage() {
+  const { profile, refreshProfile } = usePermissions();
+  const toast = useToast();
   const [search, setSearch] = useState("");
   const [appliedSearch, setAppliedSearch] = useState("");
   const [filterType, setFilterType] = useState("");
@@ -29,6 +35,8 @@ export default function UserTypesPage() {
   const [formName, setFormName] = useState("");
   const [formPermissions, setFormPermissions] = useState<PermissionKey[]>([]);
   const [formError, setFormError] = useState("");
+  const [formWarning, setFormWarning] = useState("");
+  const [isConfirmingEdit, setIsConfirmingEdit] = useState(false);
   const [pageError, setPageError] = useState("");
   const [toggleItem, setToggleItem] = useState<UserType | null>(null);
   const [saving, setSaving] = useState(false);
@@ -60,6 +68,7 @@ export default function UserTypesPage() {
   const visibleItems = getTablePageItems(filteredItems, currentPage, PAGE_SIZE);
   const isFormOpen = formItem !== undefined;
   const isEditing = Boolean(formItem);
+  const hasSelectedPermission = formPermissions.length > 0;
 
   const handleSearch = () => {
     setAppliedSearch(search.trim());
@@ -71,6 +80,8 @@ export default function UserTypesPage() {
     setFormName("");
     setFormPermissions([]);
     setFormError("");
+    setFormWarning(REQUIRED_PERMISSION_WARNING);
+    setIsConfirmingEdit(false);
   };
 
   const openEdit = (item: UserType) => {
@@ -78,34 +89,59 @@ export default function UserTypesPage() {
     setFormName(item.name);
     setFormPermissions([...item.permissions]);
     setFormError("");
+    setFormWarning(
+      item.permissions.length > 0 ? "" : REQUIRED_PERMISSION_WARNING
+    );
+    setIsConfirmingEdit(false);
   };
 
   const closeForm = () => {
     setFormItem(undefined);
     setFormError("");
+    setFormWarning("");
+    setIsConfirmingEdit(false);
   };
 
   const togglePermission = (permission: PermissionKey) => {
-    setFormPermissions((current) =>
-      current.includes(permission)
-        ? current.filter((item) => item !== permission)
-        : [...current, permission]
-    );
+    const nextPermissions = formPermissions.includes(permission)
+      ? formPermissions.filter((item) => item !== permission)
+      : [...formPermissions, permission];
+
+    setFormPermissions(nextPermissions);
     setFormError("");
+    setFormWarning(
+      nextPermissions.length > 0 ? "" : REQUIRED_PERMISSION_WARNING
+    );
+    setIsConfirmingEdit(false);
   };
 
   const handleSave = async () => {
     const name = formName.trim();
     if (!name) {
       setFormError("กรุณากรอกชื่อประเภทผู้ใช้งาน");
+      setFormWarning("");
+      setIsConfirmingEdit(false);
       return;
     }
     if (formPermissions.length === 0) {
-      setFormError("กรุณาเลือกสิทธิ์การใช้งานอย่างน้อย 1 รายการ");
+      setFormError("");
+      setFormWarning(REQUIRED_PERMISSION_WARNING);
+      setIsConfirmingEdit(false);
       return;
     }
     if (items.some((item) => item.id !== formItem?.id && item.name.toLowerCase() === name.toLowerCase())) {
       setFormError("ชื่อประเภทผู้ใช้งานนี้มีอยู่แล้ว");
+      setFormWarning("");
+      setIsConfirmingEdit(false);
+      return;
+    }
+
+    if (isEditing && !isConfirmingEdit) {
+      setFormError("");
+      setFormWarning(
+        "การเปลี่ยนแปลงนี้จะมีผลต่อสิทธิ์การใช้งานของผู้ใช้งานในประเภทนี้ ต้องการบันทึกใช่หรือไม่"
+      );
+      setIsConfirmingEdit(true);
       return;
     }
 
@@ -116,10 +152,20 @@ export default function UserTypesPage() {
         ? await userTypeApi.update(formItem.id, { name, permissions: formPermissions })
         : await userTypeApi.create({ name, permissions: formPermissions });
       if (!response.success) throw new Error(response.message || "บันทึกข้อมูลไม่สำเร็จ");
+      toast.success(
+        isEditing
+          ? "แก้ไขประเภทผู้ใช้งานและสิทธิ์การใช้งานสำเร็จ"
+          : "เพิ่มประเภทผู้ใช้งานและสิทธิ์การใช้งานสำเร็จ"
+      );
       closeForm();
       setPageError("");
-      await refetch();
+      await Promise.all([
+        refetch(),
+        formItem?.id === profile?.roleId ? refreshProfile() : Promise.resolve(),
+      ]);
     } catch (error) {
+      setFormWarning("");
+      setIsConfirmingEdit(false);
       const { code, message } = getApiError(error);
       if (code === "ROLE_ALREADY_EXISTS") {
         setFormError("ชื่อประเภทผู้ใช้งานนี้มีอยู่แล้ว");
@@ -140,10 +186,20 @@ export default function UserTypesPage() {
     setToggling(true);
     setPageError("");
     try {
+      const wasActive = toggleItem.isActive;
+      const isCurrentRole = toggleItem.id === profile?.roleId;
       const response = await userTypeApi.toggle(toggleItem.id);
       if (!response.success) throw new Error(response.message || "เปลี่ยนสถานะไม่สำเร็จ");
+      toast.success(
+        wasActive
+          ? "ปิดการใช้งานประเภทผู้ใช้งานสำเร็จ"
+          : "เปิดการใช้งานประเภทผู้ใช้งานสำเร็จ"
+      );
       setToggleItem(null);
-      await refetch();
+      await Promise.all([
+        refetch(),
+        isCurrentRole ? refreshProfile() : Promise.resolve(),
+      ]);
     } catch (error) {
       const { code, message } = getApiError(error);
       setToggleItem(null);
@@ -350,6 +406,10 @@ export default function UserTypesPage() {
                 onChange={(event) => {
                   setFormName(event.target.value);
                   setFormError("");
+                  setFormWarning(
+                    hasSelectedPermission ? "" : REQUIRED_PERMISSION_WARNING
+                  );
+                  setIsConfirmingEdit(false);
                 }}
               />
             </div>
@@ -377,6 +437,16 @@ export default function UserTypesPage() {
               </div>
             )}
 
+            {formWarning && (
+              <div
+                role="alert"
+                aria-live="polite"
+                className="mt-5 rounded-[8px] border border-[#F4C95D]/50 bg-[#FFF8DF] px-4 py-3 text-sm text-[#8A6515]"
+              >
+                {formWarning}
+              </div>
+            )}
+
             <div className="mt-8 flex items-center justify-end gap-3">
               <button
                 type="button"
@@ -388,10 +458,16 @@ export default function UserTypesPage() {
               <button
                 type="button"
                 onClick={handleSave}
-                disabled={saving}
-                className="h-[40px] min-w-[112px] rounded-[10px] bg-primary px-5 text-sm font-medium text-white transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={saving || !hasSelectedPermission}
+                className="h-[40px] min-w-[112px] rounded-[10px] bg-primary px-5 text-sm font-medium text-white transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:bg-[#9DD8D8] disabled:opacity-60"
               >
-                {saving ? "กำลังบันทึก..." : isEditing ? "บันทึกการแก้ไข" : "บันทึก"}
+                {saving
+                  ? "กำลังบันทึก..."
+                  : isEditing && isConfirmingEdit
+                    ? "ยืนยัน"
+                    : isEditing
+                      ? "บันทึกการแก้ไข"
+                      : "บันทึก"}
               </button>
             </div>
           </div>
