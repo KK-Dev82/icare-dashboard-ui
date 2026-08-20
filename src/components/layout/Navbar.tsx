@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import iciLogo from "@/../assets/ici.png";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   MapPin,
@@ -18,35 +18,83 @@ import {
   ChevronDown,
   KeyRound,
   LogOut,
+  type LucideIcon,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { usePermissions } from "@/contexts/PermissionContext";
 import { apiClient } from "@/lib/apiClient";
+import type { PermissionKey } from "@/types/user-type";
 
-const menuItems = [
-  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "สมาชิก", href: "/members", icon: Users },
-  { label: "ข่าวสาร / โปรโมชั่น", href: "/news", icon: Newspaper },
-  { label: "จัดการผลิตภัณฑ์", href: "/policies", icon: Package },
+interface MenuChild {
+  label: string;
+  href: string;
+  permission: PermissionKey;
+}
+
+interface MenuItem {
+  label: string;
+  href: string;
+  icon: LucideIcon;
+  permission?: PermissionKey;
+  superAdminOnly?: boolean;
+  children?: MenuChild[];
+}
+
+const menuItems: MenuItem[] = [
+  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, permission: "DASHBOARD" },
+  { label: "สมาชิก", href: "/members", icon: Users, permission: "MEMBERS" },
+  {
+    label: "ข่าวสาร / โปรโมชั่น",
+    href: "/news",
+    icon: Newspaper,
+    children: [
+      { label: "รายการข่าวสาร / โปรโมชั่น", href: "/news", permission: "NEWS" },
+      { label: "ประเภทข่าวสาร / โปรโมชั่น", href: "/news-types", permission: "NEWS" },
+    ],
+  },
+  {
+    label: "จัดการผลิตภัณฑ์",
+    href: "/policies",
+    icon: Package,
+    children: [
+      { label: "รายการผลิตภัณฑ์", href: "/policies", permission: "POLICIES" },
+      { label: "ประเภทผลิตภัณฑ์", href: "/product-types", permission: "POLICIES" },
+    ],
+  },
   {
     label: "คำร้อง / ติดต่อ",
     href: "/contact-case",
     icon: MapPin,
     children: [
-      { label: "คำร้องขอติดต่อ", href: "/contact-case" },
-      { label: "ความสนใจผลิตภัณฑ์/คอนเทนต์", href: "/product-interest" },
+      { label: "คำร้องขอติดต่อ", href: "/contact-case", permission: "CONTACT_CASE" },
+      { label: "ความสนใจผลิตภัณฑ์/คอนเทนต์", href: "/product-interest", permission: "PRODUCT_INTEREST" },
     ],
   },
-  { label: "ผู้ใช้งาน", href: "/accounts", icon: UserCog },
+  {
+    label: "ผู้ใช้งาน",
+    href: "/accounts",
+    icon: UserCog,
+    children: [
+      { label: "รายการผู้ใช้งาน", href: "/accounts", permission: "ACCOUNTS" },
+      { label: "ประเภทผู้ใช้งาน / กำหนดสิทธิ์การใช้งาน", href: "/user-types", permission: "ACCOUNTS" },
+    ],
+  },
   { label: "ประวัติการใช้งาน", href: "/activity-log", icon: History, superAdminOnly: true },
-  { label: "การตั้งค่า", href: "/settings", icon: Settings },
-  { label: "การยินยอม", href: "/consents", icon: ShieldCheck },
+  { label: "การตั้งค่า", href: "/settings", icon: Settings, permission: "SETTINGS" },
+  {
+    label: "ความยินยอม / นโยบาย",
+    href: "/consents",
+    icon: ShieldCheck,
+    children: [
+      { label: "รายการความยินยอม / นโยบาย", href: "/consents", permission: "CONSENTS" },
+      { label: "ประเภท Consent", href: "/consent-types", permission: "CONSENTS" },
+    ],
+  },
 ];
 
 export default function Navbar() {
   const pathname = usePathname();
-  const router = useRouter();
-  const [fullName, setFullName] = useState("Admin");
-  const [role, setRole] = useState("");
+  const { profile, isSuperAdmin, hasPermission, defaultRoute, logout } = usePermissions();
   const [navDropdownOpen, setNavDropdownOpen] = useState<string | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -59,15 +107,6 @@ export default function Navbar() {
   const navRef = useRef<HTMLElement>(null);
   const navDropdownRef = useRef<HTMLDivElement>(null);
   const headerContentRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handle = window.setTimeout(() => {
-      setFullName(localStorage.getItem("fullName") || "Admin");
-      setRole(localStorage.getItem("role") || "");
-    }, 0);
-
-    return () => window.clearTimeout(handle);
-  }, []);
 
   useEffect(() => {
     const handle = window.setTimeout(() => {
@@ -125,13 +164,19 @@ export default function Navbar() {
     setNavDropdownOpen(href);
   };
 
-  const openNavItem = menuItems.find((item) => item.href === navDropdownOpen);
+  const visibleMenuItems = menuItems.flatMap((item) => {
+    if (item.superAdminOnly) return isSuperAdmin ? [item] : [];
+    if (item.children) {
+      const children = item.children.filter((child) => hasPermission(child.permission));
+      return children.length > 0 ? [{ ...item, children }] : [];
+    }
+    return !item.permission || hasPermission(item.permission) ? [item] : [];
+  });
+
+  const openNavItem = visibleMenuItems.find((item) => item.href === navDropdownOpen);
 
   const handleLogout = () => {
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("fullName");
-    localStorage.removeItem("role");
-    router.push("/login");
+    logout();
   };
 
   const handleChangePassword = async () => {
@@ -161,7 +206,7 @@ export default function Navbar() {
       <header className="sticky top-0 z-50 border-t-[3px] border-t-primary bg-white shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
         <div ref={headerContentRef} className="relative h-[72px] flex items-center justify-between px-8">
           {/* Left - Logo */}
-          <Link href="/dashboard" className="flex items-center shrink-0">
+          <Link href={defaultRoute} className="flex items-center shrink-0">
             <Image src={iciLogo} alt="ICI Logo" height={40} className="w-auto" />
           </Link>
 
@@ -171,11 +216,11 @@ export default function Navbar() {
             className="flex h-full items-center gap-1 overflow-x-auto"
             onScroll={() => setNavDropdownOpen(null)}
           >
-            {menuItems
-              .filter((item) => !item.superAdminOnly || role === "SUPER_ADMIN")
-              .map((item) => {
-              const childActive = item.children?.some((child) => pathname.startsWith(child.href));
-              const isActive = childActive || pathname.startsWith(item.href);
+            {visibleMenuItems.map((item) => {
+              const childActive = item.children?.some((child) =>
+                isPathActive(pathname, child.href)
+              );
+              const isActive = childActive || isPathActive(pathname, item.href);
               const hasChildren = Boolean(item.children?.length);
 
               if (hasChildren) {
@@ -235,7 +280,7 @@ export default function Navbar() {
               style={{ left: navDropdownLeft }}
             >
               {openNavItem.children.map((child) => {
-                const isChildActive = pathname.startsWith(child.href);
+                const isChildActive = isPathActive(pathname, child.href);
                 return (
                   <Link
                     key={child.href}
@@ -269,12 +314,14 @@ export default function Navbar() {
               >
                 <div className="w-7 h-7 bg-primary/10 rounded-full flex items-center justify-center">
                   <span className="text-xs font-semibold text-primary">
-                    {fullName.charAt(0)}
+                    {profile?.fullName.charAt(0) || "A"}
                   </span>
                 </div>
                 <div className="text-left">
-                  <p className="text-sm font-medium text-gray-700 leading-tight">{fullName}</p>
-                  <p className="text-[10px] text-gray-400 leading-tight">{role}</p>
+                  <p className="text-sm font-medium text-gray-700 leading-tight">{profile?.fullName || "Admin"}</p>
+                  <p className="text-[10px] text-gray-400 leading-tight">
+                    {isSuperAdmin ? "Super Admin" : profile?.roleRef?.name || "-"}
+                  </p>
                 </div>
                 <ChevronDown
                   size={14}
@@ -367,4 +414,8 @@ export default function Navbar() {
       )}
     </>
   );
+}
+
+function isPathActive(pathname: string, href: string) {
+  return pathname === href || pathname.startsWith(`${href}/`);
 }

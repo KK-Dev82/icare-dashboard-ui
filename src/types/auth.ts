@@ -15,6 +15,7 @@ export interface LoginData {
   accessToken: string;
   fullName: string;
   role: string;
+  roleId: string | null;
 }
 
 export type LoginResponse = ApiResponse<LoginData>;

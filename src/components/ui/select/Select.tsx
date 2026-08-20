@@ -36,6 +36,7 @@ interface SelectProps {
   disabled?: boolean;
   size?: "md" | "lg";
   className?: string;
+  maxVisibleOptions?: number;
 }
 
 export function Select({
@@ -47,6 +48,7 @@ export function Select({
   disabled = false,
   size = "lg",
   className,
+  maxVisibleOptions,
 }: SelectProps) {
   const [open, setOpen] = useState(false);
   const [internalValue, setInternalValue] = useState(value || "");
@@ -97,7 +99,16 @@ export function Select({
       </button>
 
       {open && (
-        <div className="absolute z-50 top-full mt-2 w-full bg-white rounded-xl border border-[#EAEAEA] shadow-[0_8px_24px_rgba(0,0,0,0.08)] py-1.5">
+        <div
+          className={`absolute z-50 top-full mt-2 w-full bg-white rounded-xl border border-[#EAEAEA] shadow-[0_8px_24px_rgba(0,0,0,0.08)] py-1.5 ${
+            maxVisibleOptions ? "overflow-y-auto" : ""
+          }`}
+          style={
+            maxVisibleOptions
+              ? { maxHeight: maxVisibleOptions * (size === "md" ? 40 : 48) + 12 }
+              : undefined
+          }
+        >
           {options.map((option) => {
             const isSelected = option.value === currentValue;
             return (

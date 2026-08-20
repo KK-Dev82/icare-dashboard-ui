@@ -9,6 +9,7 @@ import { ErrorState } from "@/components/ui/error-state";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { TablePagination } from "@/components/ui/table-pagination";
+import { usePermissions } from "@/contexts/PermissionContext";
 import { useAsyncData } from "@/hooks/useAsyncData";
 import type { PaginationMeta } from "@/types/member";
 import type {
@@ -45,6 +46,8 @@ const defaultStats: ProductInterestStats = {
 };
 
 export default function ProductInterestPage() {
+  const { hasPermission } = usePermissions();
+  const canViewNews = hasPermission("NEWS");
   const [stats, setStats] = useState<ProductInterestStats>(defaultStats);
   const [contentTitleMap, setContentTitleMap] = useState<Record<string, string>>({});
   const [detailLoadingId, setDetailLoadingId] = useState<string | null>(null);
@@ -94,15 +97,17 @@ export default function ProductInterestPage() {
   useEffect(() => {
     const timer = window.setTimeout(() => {
       fetchStats().catch((err) => console.error("[product-interest] summary failed", err));
-      fetchContentTitleMap()
-        .then(setContentTitleMap)
-        .catch((err) => console.error("[product-interest] content titles failed", err));
+      if (canViewNews) {
+        fetchContentTitleMap()
+          .then(setContentTitleMap)
+          .catch((err) => console.error("[product-interest] content titles failed", err));
+      }
     }, 0);
 
     return () => {
       window.clearTimeout(timer);
     };
-  }, [fetchStats]);
+  }, [canViewNews, fetchStats]);
 
   useEffect(() => {
     const timer = window.setTimeout(fetchList, 0);

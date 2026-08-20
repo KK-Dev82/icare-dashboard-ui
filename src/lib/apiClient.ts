@@ -1,4 +1,5 @@
 import axios from "axios";
+import { clearAuthSession } from "@/lib/authStorage";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
@@ -26,11 +27,21 @@ apiClient.interceptors.request.use((config) => {
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401 && typeof window !== "undefined") {
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("fullName");
-      localStorage.removeItem("role");
-      window.location.href = "/login";
+    const status = error.response?.status;
+    const errorCode = error.response?.data?.errorCode;
+
+    if (typeof window !== "undefined") {
+      const shouldLogout =
+        status === 401 ||
+        errorCode === "ROLE_INACTIVE" ||
+        (status === 403 && errorCode === "ROLE_NOT_FOUND");
+
+      if (shouldLogout) {
+        clearAuthSession();
+        if (window.location.pathname !== "/login") {
+          window.location.href = "/login";
+        }
+      }
     }
     if (!error.response) {
       error.message = "ไม่สามารถเชื่อมต่อระบบได้ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต";
