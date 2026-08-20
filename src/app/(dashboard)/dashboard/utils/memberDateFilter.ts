@@ -1,39 +1,27 @@
-import type { Member } from "@/types/member";
-
 export type MemberQuickFilter = "7" | "30" | "90" | "CUSTOM" | "";
 
-export function filterMembersByQuickRange(
-  members: Member[],
+export function getMemberDateFilterParams(
   quickFilter: MemberQuickFilter,
   customFrom: string,
   customTo: string
 ) {
-  const range = getMemberDateRange(quickFilter, customFrom, customTo);
-
-  if (!range) return members;
-
-  return members.filter((member) => {
-    const createdAt = new Date(member.createdAt);
-    if (Number.isNaN(createdAt.getTime())) return false;
-    if (range.from && createdAt < range.from) return false;
-    if (range.to && createdAt > range.to) return false;
-    return true;
-  });
-}
-
-function getMemberDateRange(
-  quickFilter: MemberQuickFilter,
-  customFrom: string,
-  customTo: string
-) {
-  if (!quickFilter) return null;
-
   if (quickFilter === "CUSTOM") {
     return {
-      from: customFrom ? startOfDay(new Date(customFrom)) : null,
-      to: customTo ? endOfDay(new Date(customTo)) : null,
+      createdFrom: customFrom || undefined,
+      createdTo: customTo || undefined,
     };
   }
+
+  const range = getMemberDateRange(quickFilter);
+
+  return {
+    createdFrom: range?.from ? formatDate(range.from) : undefined,
+    createdTo: range?.to ? formatDate(range.to) : undefined,
+  };
+}
+
+function getMemberDateRange(quickFilter: MemberQuickFilter) {
+  if (!quickFilter) return null;
 
   const to = endOfDay(new Date());
   const from = startOfDay(new Date());
@@ -57,4 +45,11 @@ function endOfDay(value: Date) {
   const nextValue = new Date(value);
   nextValue.setHours(23, 59, 59, 999);
   return nextValue;
+}
+
+function formatDate(value: Date) {
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, "0");
+  const day = String(value.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
