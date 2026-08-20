@@ -30,6 +30,7 @@ export function NewMembersReport({
   canViewMemberDetail: boolean;
 }) {
   const router = useRouter();
+  const memberColumnCount = canViewMemberDetail ? 6 : 5;
   const [newMembers, setNewMembers] = useState<DashboardMember[]>([]);
   const [memberMeta, setMemberMeta] = useState<PaginationMeta>(defaultMemberMeta);
   const [memberLoading, setMemberLoading] = useState(true);
@@ -196,7 +197,9 @@ export function NewMembersReport({
       )}
 
       <div className="mt-5 overflow-x-auto">
-        <table className="w-full min-w-[720px]">
+        <table
+          className={`w-full ${canViewMemberDetail ? "min-w-[720px]" : "min-w-[640px]"}`}
+        >
           <thead>
             <tr>
               <TableHead>ลำดับ</TableHead>
@@ -204,14 +207,14 @@ export function NewMembersReport({
               <TableHead>เบอร์โทรศัพท์</TableHead>
               <TableHead>สถานะกรมธรรม์</TableHead>
               <TableHead>วันที่สมัคร</TableHead>
-              <TableHead>จัดการ</TableHead>
+              {canViewMemberDetail && <TableHead>จัดการ</TableHead>}
             </tr>
           </thead>
           <tbody>
             {memberLoading ? (
               Array.from({ length: 5 }).map((_, index) => (
                 <tr key={index} className="animate-pulse border-b border-[#F5F5F5]">
-                  {Array.from({ length: 6 }).map((__, cellIndex) => (
+                  {Array.from({ length: memberColumnCount }).map((__, cellIndex) => (
                     <td key={cellIndex} className="px-4 py-4">
                       <div className="mx-auto h-4 w-20 rounded bg-gray-100" />
                     </td>
@@ -220,7 +223,10 @@ export function NewMembersReport({
               ))
             ) : newMembers.length === 0 ? (
               <tr>
-                <td colSpan={6} className="py-12 text-center text-sm text-[#9CA3AF]">
+                <td
+                  colSpan={memberColumnCount}
+                  className="py-12 text-center text-sm text-[#9CA3AF]"
+                >
                   ไม่พบข้อมูลสมาชิก
                 </td>
               </tr>
@@ -247,8 +253,8 @@ export function NewMembersReport({
                     </span>
                   </TableCell>
                   <TableCell>{formatThaiDate(member.createdAt)}</TableCell>
-                  <TableCell>
-                    {canViewMemberDetail ? (
+                  {canViewMemberDetail && (
+                    <TableCell>
                       <ActionIconButton
                         icon={Search}
                         variant="primary"
@@ -257,10 +263,8 @@ export function NewMembersReport({
                         className="mx-auto"
                         onClick={() => router.push(`/members/${member.id}`)}
                       />
-                    ) : (
-                      <span className="text-[#B7B7B7]">-</span>
-                    )}
-                  </TableCell>
+                    </TableCell>
+                  )}
                 </tr>
               ))
             )}
