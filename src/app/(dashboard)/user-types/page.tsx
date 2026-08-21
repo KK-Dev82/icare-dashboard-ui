@@ -34,6 +34,8 @@ export default function UserTypesPage() {
   const [formItem, setFormItem] = useState<UserType | null | undefined>(undefined);
   const [formName, setFormName] = useState("");
   const [formPermissions, setFormPermissions] = useState<PermissionKey[]>([]);
+  const [formMailContactCase, setFormMailContactCase] = useState(false);
+  const [formMailLeads, setFormMailLeads] = useState(false);
   const [formError, setFormError] = useState("");
   const [formWarning, setFormWarning] = useState("");
   const [isConfirmingEdit, setIsConfirmingEdit] = useState(false);
@@ -79,6 +81,8 @@ export default function UserTypesPage() {
     setFormItem(null);
     setFormName("");
     setFormPermissions([]);
+    setFormMailContactCase(false);
+    setFormMailLeads(false);
     setFormError("");
     setFormWarning(REQUIRED_PERMISSION_WARNING);
     setIsConfirmingEdit(false);
@@ -88,6 +92,8 @@ export default function UserTypesPage() {
     setFormItem(item);
     setFormName(item.name);
     setFormPermissions([...item.permissions]);
+    setFormMailContactCase(item.mailContactCase ?? false);
+    setFormMailLeads(item.mailLeads ?? false);
     setFormError("");
     setFormWarning(
       item.permissions.length > 0 ? "" : REQUIRED_PERMISSION_WARNING
@@ -111,6 +117,23 @@ export default function UserTypesPage() {
     setFormError("");
     setFormWarning(
       nextPermissions.length > 0 ? "" : REQUIRED_PERMISSION_WARNING
+    );
+    setIsConfirmingEdit(false);
+  };
+
+  const updateEmailPreference = (
+    type: "contact-case" | "leads",
+    value: boolean,
+  ) => {
+    if (type === "contact-case") {
+      setFormMailContactCase(value);
+    } else {
+      setFormMailLeads(value);
+    }
+
+    setFormError("");
+    setFormWarning(
+      formPermissions.length > 0 ? "" : REQUIRED_PERMISSION_WARNING,
     );
     setIsConfirmingEdit(false);
   };
@@ -149,8 +172,18 @@ export default function UserTypesPage() {
     setFormError("");
     try {
       const response = formItem
-        ? await userTypeApi.update(formItem.id, { name, permissions: formPermissions })
-        : await userTypeApi.create({ name, permissions: formPermissions });
+        ? await userTypeApi.update(formItem.id, {
+            name,
+            permissions: formPermissions,
+            mailContactCase: formMailContactCase,
+            mailLeads: formMailLeads,
+          })
+        : await userTypeApi.create({
+            name,
+            permissions: formPermissions,
+            mailContactCase: formMailContactCase,
+            mailLeads: formMailLeads,
+          });
       if (!response.success) throw new Error(response.message || "บันทึกข้อมูลไม่สำเร็จ");
       toast.success(
         isEditing
@@ -380,7 +413,7 @@ export default function UserTypesPage() {
       {isFormOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
           <div className="absolute inset-0 bg-black/30" onClick={closeForm} />
-          <div className="relative w-full max-w-[720px] rounded-[24px] bg-white p-8 shadow-[0_8px_32px_rgba(0,0,0,0.12)]">
+          <div className="relative max-h-[calc(100vh-32px)] w-full max-w-[720px] overflow-y-auto rounded-[24px] bg-white p-8 shadow-[0_8px_32px_rgba(0,0,0,0.12)]">
             <button
               type="button"
               onClick={closeForm}
@@ -414,7 +447,7 @@ export default function UserTypesPage() {
               />
             </div>
 
-            <div className="mt-7 border-t border-[#EAEAEA] pt-5">
+            <div className="mt-7 border-y border-[#EAEAEA] py-5">
               <h3 className="text-sm font-bold text-[#243333]">กำหนดสิทธิ์การใช้งาน *</h3>
               <div className="mt-4 grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
                 {permissionOptions.map((permission) => (
@@ -428,6 +461,36 @@ export default function UserTypesPage() {
                     {permission.label}
                   </label>
                 ))}
+              </div>
+            </div>
+
+            <div className="mt-5">
+              <h3 className="text-sm font-bold text-[#243333]">
+                กำหนดสิทธิ์การรับ Email
+              </h3>
+              <div className="mt-4 grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
+                <label className="flex cursor-pointer items-center gap-2.5 text-sm text-[#565656]">
+                  <input
+                    type="checkbox"
+                    checked={formMailContactCase}
+                    onChange={(event) =>
+                      updateEmailPreference("contact-case", event.target.checked)
+                    }
+                    className="h-4 w-4 cursor-pointer accent-[#07A2A2]"
+                  />
+                  คำร้อง / ติดต่อ
+                </label>
+                <label className="flex cursor-pointer items-center gap-2.5 text-sm text-[#565656]">
+                  <input
+                    type="checkbox"
+                    checked={formMailLeads}
+                    onChange={(event) =>
+                      updateEmailPreference("leads", event.target.checked)
+                    }
+                    className="h-4 w-4 cursor-pointer accent-[#07A2A2]"
+                  />
+                  สนใจผลิตภัณฑ์
+                </label>
               </div>
             </div>
 
