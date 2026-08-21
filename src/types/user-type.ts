@@ -13,6 +13,8 @@ export interface UserType {
   id: string;
   name: string;
   permissions: PermissionKey[];
+  mailContactCase: boolean;
+  mailLeads: boolean;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -21,6 +23,8 @@ export interface UserType {
 export interface CreateUserTypePayload {
   name: string;
   permissions: PermissionKey[];
+  mailContactCase: boolean;
+  mailLeads: boolean;
 }
 
 export type UpdateUserTypePayload = Partial<CreateUserTypePayload>;
