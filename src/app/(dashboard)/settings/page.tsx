@@ -3,7 +3,10 @@
 import { useState } from "react";
 import { usePermissions } from "@/contexts/PermissionContext";
 import { ContactCategorySettingsPanel } from "./components/ContactCategorySettingsPanel";
+import { EmergencyMessagePanel } from "./components/EmergencyMessagePanel";
+import { FcmConfigPanel } from "./components/FcmConfigPanel";
 import { NotificationSettingsPanel } from "./components/NotificationSettingsPanel";
+import { NotificationTemplatePanel } from "./components/NotificationTemplatePanel";
 import { RenewalContactSettingsPanel } from "./components/RenewalContactSettingsPanel";
 import { SettingsTabs, type SettingTab } from "./components/SettingsTabs";
 import { SystemSettingsPanel } from "./components/SystemSettingsPanel";
@@ -18,7 +21,15 @@ export default function SettingsPage() {
       : activeTab;
 
   return (
-    <div className="mx-auto grid w-full max-w-[1180px] gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+    <div
+      className={`mx-auto grid w-full gap-6 lg:grid-cols-[280px_minmax(0,1fr)] ${
+        ["fcm-config", "notification-template", "emergency-message"].includes(
+          visibleActiveTab,
+        )
+          ? "max-w-[1458px]"
+          : "max-w-[1180px]"
+      }`}
+    >
       <section className="h-fit rounded-[18px] bg-white px-6 py-5 shadow-[0_2px_12px_rgba(0,0,0,0.04)] lg:sticky lg:top-[104px]">
         <div className="border-b border-[#EAEAEA] pb-4">
           <h1 className="text-lg font-bold text-[#243333]">การตั้งค่าระบบ</h1>
@@ -43,6 +54,11 @@ export default function SettingsPage() {
           <ContactCategorySettingsPanel />
         )}
         {visibleActiveTab === "notification" && <NotificationSettingsPanel />}
+        {visibleActiveTab === "fcm-config" && <FcmConfigPanel />}
+        {visibleActiveTab === "notification-template" && (
+          <NotificationTemplatePanel />
+        )}
+        {visibleActiveTab === "emergency-message" && <EmergencyMessagePanel />}
       </div>
     </div>
   );
