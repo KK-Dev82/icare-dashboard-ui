@@ -8,6 +8,8 @@ import {
 } from "@/components/notification/NotificationPreviewCard";
 import { Select } from "@/components/ui/select";
 import { useToast } from "@/components/ui/toast";
+import { notificationApi } from "@/api/notification";
+import type { NotificationAudience } from "@/api/notification";
 
 const initialTitle = "⚠️ แจ้งปิดปรับปรุงระบบชั่วคราว";
 const initialDescription = "15 ส.ค. 2569 เวลา 01:00–03:00 น.";
@@ -25,7 +27,8 @@ export function EmergencyMessagePanel() {
   const toast = useToast();
   const [title, setTitle] = useState(initialTitle);
   const [description, setDescription] = useState(initialDescription);
-  const [recipientGroup, setRecipientGroup] = useState("all");
+  const [recipientGroup, setRecipientGroup] = useState<NotificationAudience>("ALL");
+  const [sending, setSending] = useState(false);
 
   const previewContent: NotificationPreviewContent = {
     title: title.trim() || "⚠️ หัวข้อข้อความฉุกเฉิน",
@@ -35,16 +38,33 @@ export function EmergencyMessagePanel() {
   const resetForm = () => {
     setTitle("");
     setDescription("");
-    setRecipientGroup("all");
+    setRecipientGroup("ALL");
   };
 
-  const sendMessage = () => {
+  const sendMessage = async () => {
     if (!title.trim() || !description.trim()) {
       toast.warning("กรุณากรอกหัวข้อและคำอธิบายให้ครบถ้วน");
       return;
     }
-
-    toast.success("ส่งข้อความฉุกเฉินสำเร็จ");
+    setSending(true);
+    try {
+      const result = await notificationApi.broadcast({
+        title: title.trim(),
+        body: description.trim(),
+        type: "SYSTEM",
+        audience: recipientGroup,
+      });
+      if ("scheduled" in result) {
+        toast.success("ตั้งเวลาส่งสำเร็จ");
+      } else {
+        toast.success("ส่งข้อความฉุกเฉินสำเร็จ");
+      }
+      resetForm();
+    } catch (err) {
+      toast.fromError(err);
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -96,10 +116,11 @@ export function EmergencyMessagePanel() {
               className="w-full md:max-w-[315px]"
               label="กลุ่มผู้รับ"
               value={recipientGroup}
-              onChange={setRecipientGroup}
+              onChange={(v) => setRecipientGroup(v as NotificationAudience)}
               options={[
-                { label: "สมาชิกทั้งหมด", value: "all" },
-                { label: "สมาชิกที่เปิดการแจ้งเตือน", value: "notification-enabled" },
+                { label: "สมาชิกทั้งหมด", value: "ALL" },
+                { label: "สมาชิก (MEMBER)", value: "MEMBER" },
+                { label: "ลูกค้า (CUSTOMER)", value: "CUSTOMER" },
               ]}
             />
 
@@ -113,10 +134,11 @@ export function EmergencyMessagePanel() {
               </button>
               <button
                 type="button"
-                onClick={sendMessage}
-                className="h-[42px] min-w-[112px] rounded-[6px] bg-[#24A148] px-5 text-[14px] font-medium text-white transition-colors hover:bg-[#1E8E3E]"
+                onClick={() => void sendMessage()}
+                disabled={sending}
+                className="h-[42px] min-w-[112px] rounded-[6px] bg-[#24A148] px-5 text-[14px] font-medium text-white transition-colors hover:bg-[#1E8E3E] disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                ส่งข้อความ
+                {sending ? "กำลังส่ง..." : "ส่งข้อความ"}
               </button>
             </div>
           </div>

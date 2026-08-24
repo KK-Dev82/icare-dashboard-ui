@@ -8,6 +8,8 @@ import {
 } from "@/components/notification/NotificationPreviewCard";
 import { Select } from "@/components/ui/select";
 import { useToast } from "@/components/ui/toast";
+import { notificationApi } from "@/api/notification";
+import type { NotificationAudience, NotificationType } from "@/api/notification";
 
 export interface NotificationSendSource {
   id: string;
@@ -27,9 +29,10 @@ interface NotificationSendModalProps {
   onClose: () => void;
 }
 
-const recipientOptions = [
-  { label: "สมาชิกทั้งหมด", value: "all" },
-  { label: "สมาชิกที่เปิดการแจ้งเตือน", value: "notification-enabled" },
+const recipientOptions: Array<{ label: string; value: NotificationAudience }> = [
+  { label: "สมาชิกทั้งหมด", value: "ALL" },
+  { label: "สมาชิก (MEMBER)", value: "MEMBER" },
+  { label: "ลูกค้า (CUSTOMER)", value: "CUSTOMER" },
 ];
 
 const deliveryOptions = [
@@ -44,8 +47,9 @@ export function NotificationSendModal({
   onClose,
 }: NotificationSendModalProps) {
   const toast = useToast();
-  const [recipientGroup, setRecipientGroup] = useState("all");
+  const [recipientGroup, setRecipientGroup] = useState<NotificationAudience>("ALL");
   const [delivery, setDelivery] = useState("immediate");
+  const [sending, setSending] = useState(false);
 
   const previewContent = useMemo<NotificationPreviewContent | undefined>(() => {
     if (!source) return undefined;
@@ -112,7 +116,7 @@ export function NotificationSendModal({
   if (!open || !source || !previewContent) return null;
 
   const resetForm = () => {
-    setRecipientGroup("all");
+    setRecipientGroup("ALL");
     setDelivery("immediate");
   };
 
@@ -121,8 +125,40 @@ export function NotificationSendModal({
     onClose();
   };
 
-  const handleCreate = () => {
-    toast.info("ยังไม่ได้เชื่อมต่อ API สำหรับส่งการแจ้งเตือน");
+  const handleCreate = async () => {
+    if (!source || !previewContent) return;
+    setSending(true);
+    try {
+      const notifType: NotificationType = type === "product" ? "POLICY" : "NEWS";
+      let body: string;
+      if (type === "product") {
+        const details = source.summary;
+        body = details ? `${source.title}\n${details}` : source.title;
+      } else {
+        const summary = previewContent.message || previewContent.reference || source.summary || source.title;
+        const details = previewContent.details?.map((d) => d.text).join("\n");
+        body = details ? `${summary}\n─────────────────\n${details}` : summary;
+      }
+      const result = await notificationApi.broadcast({
+        title: previewContent.title,
+        body,
+        type: notifType,
+        audience: recipientGroup,
+        contentId: type === "news" ? source.id : undefined,
+        productId: type === "product" ? source.id : undefined,
+        imageUrl: typeof previewContent.image === "string" ? previewContent.image : undefined,
+      });
+      if ("scheduled" in result) {
+        toast.success("ตั้งเวลาส่งสำเร็จ");
+      } else {
+        toast.success("ส่ง notification สำเร็จ");
+      }
+      handleClose();
+    } catch (err) {
+      toast.fromError(err);
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -189,7 +225,7 @@ export function NotificationSendModal({
                 className="w-full"
                 label="กลุ่มผู้รับ"
                 value={recipientGroup}
-                onChange={setRecipientGroup}
+                onChange={(v) => setRecipientGroup(v as NotificationAudience)}
                 options={recipientOptions}
                 placement="top"
               />
@@ -208,9 +244,10 @@ export function NotificationSendModal({
               <button
                 type="button"
                 onClick={handleCreate}
-                className="h-[42px] min-w-[150px] rounded-[6px] bg-[#24A148] px-5 text-[14px] font-medium text-white transition-colors hover:bg-[#1E8E3E]"
+                disabled={sending}
+                className="h-[42px] min-w-[150px] rounded-[6px] bg-[#24A148] px-5 text-[14px] font-medium text-white transition-colors hover:bg-[#1E8E3E] disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                สร้างแจ้งเตือน
+                {sending ? "กำลังส่ง..." : "สร้างแจ้งเตือน"}
               </button>
               <button
                 type="button"
