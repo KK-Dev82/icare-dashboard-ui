@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { CalendarDays, Link2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
@@ -86,6 +86,7 @@ const configFields: Array<{
 
 export function FcmConfigPanel() {
   const toast = useToast();
+  const privateKeyMaskRef = useRef<HTMLPreElement>(null);
   const [values, setValues] = useState(initialValues);
   const [isEditing, setIsEditing] = useState(true);
   const [hasSavedConfig, setHasSavedConfig] = useState(false);
@@ -162,14 +163,30 @@ export function FcmConfigPanel() {
             <label className="absolute -top-2.5 left-4 z-10 bg-white px-2 text-[12px] font-bold text-[#243333]">
               Private Key
             </label>
-            <textarea
-              rows={4}
-              value={values.privateKey}
-              disabled={!isEditing}
-              placeholder={"-----BEGIN PRIVATE KEY-----\\n********************\\n-----END PRIVATE KEY-----"}
-              onChange={(event) => updateValue("privateKey", event.target.value)}
-              className="w-full resize-none rounded-[10px] border border-[#DCDCDC] bg-white px-4 py-4 text-[14px] leading-6 text-[#565656] outline-none transition-all placeholder:text-[#B7B7B7] hover:border-primary focus:border-primary disabled:cursor-not-allowed disabled:bg-white"
-            />
+            <div className="relative overflow-hidden rounded-[10px] border border-[#DCDCDC] bg-white transition-all hover:border-primary focus-within:border-primary">
+              {values.privateKey && (
+                <pre
+                  ref={privateKeyMaskRef}
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-0 m-0 overflow-hidden whitespace-pre-wrap break-all px-4 py-4 font-sans text-[14px] leading-6 text-[#565656]"
+                >
+                  {maskPrivateKey(values.privateKey)}
+                </pre>
+              )}
+              <textarea
+                rows={4}
+                value={values.privateKey}
+                disabled={!isEditing}
+                placeholder={"-----BEGIN PRIVATE KEY-----\\n********************\\n-----END PRIVATE KEY-----"}
+                onChange={(event) => updateValue("privateKey", event.target.value)}
+                onScroll={(event) => {
+                  if (!privateKeyMaskRef.current) return;
+                  privateKeyMaskRef.current.scrollTop = event.currentTarget.scrollTop;
+                  privateKeyMaskRef.current.scrollLeft = event.currentTarget.scrollLeft;
+                }}
+                className="relative w-full resize-none bg-transparent px-4 py-4 text-[14px] leading-6 text-transparent caret-[#565656] outline-none placeholder:text-[#B7B7B7] selection:bg-primary/20 disabled:cursor-not-allowed"
+              />
+            </div>
             <p className="mt-1 text-[12px] leading-5 text-[#B0B6B8]">
               คีย์ส่วนตัวสำหรับการยืนยันตัวตน (ระบบจะซ่อนค่าเพื่อความปลอดภัย)
             </p>
@@ -212,4 +229,11 @@ export function FcmConfigPanel() {
       </aside>
     </div>
   );
+}
+
+function maskPrivateKey(value: string) {
+  return value
+    .split("\n")
+    .map((line) => "*".repeat(line.length))
+    .join("\n");
 }

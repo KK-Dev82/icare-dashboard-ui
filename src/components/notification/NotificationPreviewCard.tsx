@@ -8,7 +8,7 @@ export interface NotificationPreviewContent {
   reference?: string;
   previousValue?: string;
   message?: string;
-  image?: StaticImageData;
+  image?: StaticImageData | string;
   imageAlt?: string;
   imageBadge?: string;
   details?: Array<{
@@ -21,12 +21,14 @@ interface NotificationPreviewCardProps {
   platform: NotificationPreviewPlatform;
   content?: NotificationPreviewContent;
   variant?: "compact" | "expanded";
+  expandToContent?: boolean;
 }
 
 export function NotificationPreviewCard({
   platform,
   content,
   variant = "compact",
+  expandToContent = false,
 }: NotificationPreviewCardProps) {
   if (!content) {
     return (
@@ -37,22 +39,42 @@ export function NotificationPreviewCard({
   }
 
   if (platform === "android") {
-    return <AndroidNotificationCard content={content} variant={variant} />;
+    return (
+      <AndroidNotificationCard
+        content={content}
+        variant={variant}
+        expandToContent={expandToContent}
+      />
+    );
   }
 
   if (platform === "ios") {
-    return <IOSNotificationCard content={content} variant={variant} />;
+    return (
+      <IOSNotificationCard
+        content={content}
+        variant={variant}
+        expandToContent={expandToContent}
+      />
+    );
   }
 
-  return <InAppNotificationCard content={content} variant={variant} />;
+  return (
+    <InAppNotificationCard
+      content={content}
+      variant={variant}
+      expandToContent={expandToContent}
+    />
+  );
 }
 
 function AndroidNotificationCard({
   content,
   variant,
+  expandToContent,
 }: {
   content: NotificationPreviewContent;
   variant: "compact" | "expanded";
+  expandToContent: boolean;
 }) {
   return (
     <div className="w-full overflow-hidden rounded-[14px] bg-[#2B3539] px-3 py-2 text-[#F1F4F5]">
@@ -75,23 +97,46 @@ function AndroidNotificationCard({
             content.image && variant === "compact" ? "pr-12" : undefined
           }
         >
-          <p className="truncate text-[13px] font-bold leading-[15px] text-white">
+          <p
+            className={`text-[13px] font-bold leading-[15px] text-white ${
+              expandToContent
+                ? "whitespace-pre-wrap break-words [overflow-wrap:anywhere]"
+                : "truncate"
+            }`}
+          >
             {content.title}
           </p>
           <ReferenceLine
             content={content}
-            className="truncate font-semibold text-[#D4DBDD]"
+            className={`font-semibold text-[#D4DBDD] ${
+              expandToContent
+                ? "whitespace-pre-wrap break-words [overflow-wrap:anywhere]"
+                : "truncate"
+            }`}
           />
           {content.message && (
-            <p className="line-clamp-2 text-[#D4DBDD]">{content.message}</p>
+            <p
+              className={`text-[#D4DBDD] ${
+                expandToContent
+                  ? "whitespace-pre-wrap break-words [overflow-wrap:anywhere]"
+                  : "line-clamp-2"
+              }`}
+            >
+              {content.message}
+            </p>
           )}
           <NotificationDetails
             content={content}
             dividerClassName="bg-[#A6B1B4]"
             textClassName="text-[#E0E5E6]"
+            expandToContent={expandToContent}
           />
         </div>
-        <NotificationContentImage content={content} variant={variant} />
+        <NotificationContentImage
+          content={content}
+          variant={variant}
+          expandToContent={expandToContent}
+        />
       </div>
     </div>
   );
@@ -100,9 +145,11 @@ function AndroidNotificationCard({
 function IOSNotificationCard({
   content,
   variant,
+  expandToContent,
 }: {
   content: NotificationPreviewContent;
   variant: "compact" | "expanded";
+  expandToContent: boolean;
 }) {
   return (
     <div className="w-full overflow-hidden rounded-[14px] border border-[#E2E5E7] bg-[#ECEFF0] px-3 py-2 text-[#243333]">
@@ -121,23 +168,46 @@ function IOSNotificationCard({
             content.image && variant === "compact" ? "pr-12" : undefined
           }
         >
-          <p className="truncate text-[13px] font-bold leading-[15px] text-[#243333]">
+          <p
+            className={`text-[13px] font-bold leading-[15px] text-[#243333] ${
+              expandToContent
+                ? "whitespace-pre-wrap break-words [overflow-wrap:anywhere]"
+                : "truncate"
+            }`}
+          >
             {content.title}
           </p>
           <ReferenceLine
             content={content}
-            className="truncate font-semibold text-[#536165]"
+            className={`font-semibold text-[#536165] ${
+              expandToContent
+                ? "whitespace-pre-wrap break-words [overflow-wrap:anywhere]"
+                : "truncate"
+            }`}
           />
           {content.message && (
-            <p className="line-clamp-2 text-[#536165]">{content.message}</p>
+            <p
+              className={`text-[#536165] ${
+                expandToContent
+                  ? "whitespace-pre-wrap break-words [overflow-wrap:anywhere]"
+                  : "line-clamp-2"
+              }`}
+            >
+              {content.message}
+            </p>
           )}
           <NotificationDetails
             content={content}
             dividerClassName="bg-[#748287]"
             textClassName="text-[#536165]"
+            expandToContent={expandToContent}
           />
         </div>
-        <NotificationContentImage content={content} variant={variant} />
+        <NotificationContentImage
+          content={content}
+          variant={variant}
+          expandToContent={expandToContent}
+        />
       </div>
     </div>
   );
@@ -146,9 +216,11 @@ function IOSNotificationCard({
 function InAppNotificationCard({
   content,
   variant,
+  expandToContent,
 }: {
   content: NotificationPreviewContent;
   variant: "compact" | "expanded";
+  expandToContent: boolean;
 }) {
   return (
     <div className="flex w-full items-start gap-3 overflow-hidden rounded-[14px] border border-[#BCC3C6] bg-white px-4 py-3 text-[#243333]">
@@ -170,24 +242,47 @@ function InAppNotificationCard({
             content.image && variant === "compact" ? "pr-12" : undefined
           }
         >
-          <p className="truncate text-[13px] font-bold leading-[15px] text-[#243333]">
+          <p
+            className={`text-[13px] font-bold leading-[15px] text-[#243333] ${
+              expandToContent
+                ? "whitespace-pre-wrap break-words [overflow-wrap:anywhere]"
+                : "truncate"
+            }`}
+          >
             {content.title}
           </p>
           <ReferenceLine
             content={content}
-            className="line-clamp-2 font-semibold text-[#536165]"
+            className={`font-semibold text-[#536165] ${
+              expandToContent
+                ? "whitespace-pre-wrap break-words [overflow-wrap:anywhere]"
+                : "line-clamp-2"
+            }`}
           />
           {content.message && (
-            <p className="line-clamp-2 text-[#536165]">{content.message}</p>
+            <p
+              className={`text-[#536165] ${
+                expandToContent
+                  ? "whitespace-pre-wrap break-words [overflow-wrap:anywhere]"
+                  : "line-clamp-2"
+              }`}
+            >
+              {content.message}
+            </p>
           )}
           <NotificationDetails
             content={content}
             dividerClassName="bg-[#748287]"
             textClassName="text-[#536165]"
             fullWidth
+            expandToContent={expandToContent}
           />
         </div>
-        <NotificationContentImage content={content} variant={variant} />
+        <NotificationContentImage
+          content={content}
+          variant={variant}
+          expandToContent={expandToContent}
+        />
       </div>
     </div>
   );
@@ -223,11 +318,13 @@ function NotificationDetails({
   dividerClassName,
   textClassName,
   fullWidth = false,
+  expandToContent = false,
 }: {
   content: NotificationPreviewContent;
   dividerClassName: string;
   textClassName: string;
   fullWidth?: boolean;
+  expandToContent?: boolean;
 }) {
   if (!content.details || content.details.length === 0) {
     return null;
@@ -241,7 +338,11 @@ function NotificationDetails({
       {content.details.slice(0, 2).map((detail) => (
         <p
           key={`${detail.icon ?? ""}-${detail.text}`}
-          className={`truncate ${textClassName}`}
+          className={`${
+            expandToContent
+              ? "whitespace-pre-wrap break-words [overflow-wrap:anywhere]"
+              : "truncate"
+          } ${textClassName}`}
         >
           {detail.icon && <span className="mr-1">{detail.icon}</span>}
           {detail.text}
@@ -254,15 +355,28 @@ function NotificationDetails({
 function NotificationContentImage({
   content,
   variant,
+  expandToContent,
 }: {
   content: NotificationPreviewContent;
   variant: "compact" | "expanded";
+  expandToContent: boolean;
 }) {
   if (!content.image) {
     return null;
   }
 
   if (variant === "compact") {
+    if (typeof content.image === "string") {
+      return (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={content.image}
+          alt={content.imageAlt ?? ""}
+          className="absolute right-0 top-0 h-10 w-10 rounded-[5px] object-cover"
+        />
+      );
+    }
+
     return (
       <Image
         src={content.image}
@@ -274,15 +388,30 @@ function NotificationContentImage({
 
   return (
     <div className="relative mt-2 aspect-[2/1] w-full overflow-hidden rounded-[7px]">
-      <Image
-        src={content.image}
-        alt={content.imageAlt ?? ""}
-        fill
-        sizes="300px"
-        className="object-cover"
-      />
+      {typeof content.image === "string" ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={content.image}
+          alt={content.imageAlt ?? ""}
+          className="h-full w-full object-cover"
+        />
+      ) : (
+        <Image
+          src={content.image}
+          alt={content.imageAlt ?? ""}
+          fill
+          sizes="300px"
+          className="object-cover"
+        />
+      )}
       {content.imageBadge && (
-        <span className="absolute bottom-1 left-1 max-w-[calc(100%-8px)] truncate rounded-[4px] bg-[#00A7A0] px-2 py-1 text-[8px] font-semibold leading-none text-white">
+        <span
+          className={`absolute bottom-1 left-1 max-w-[calc(100%-8px)] rounded-[4px] bg-[#00A7A0] px-2 py-1 text-[8px] font-semibold leading-tight text-white ${
+            expandToContent
+              ? "whitespace-normal break-words [overflow-wrap:anywhere]"
+              : "truncate"
+          }`}
+        >
           {content.imageBadge}
         </span>
       )}

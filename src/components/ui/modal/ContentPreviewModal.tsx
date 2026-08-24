@@ -107,10 +107,7 @@ export function ContentPreviewModal({ open, content, onClose }: ContentPreviewMo
 
           {/* Content HTML */}
           {content.content && (
-            <div
-              className="prose prose-sm max-w-none text-[#565656]"
-              dangerouslySetInnerHTML={{ __html: content.content }}
-            />
+            <PreviewContentBody value={content.content} />
           )}
 
           {/* Coverages */}
@@ -170,6 +167,25 @@ export function ContentPreviewModal({ open, content, onClose }: ContentPreviewMo
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function PreviewContentBody({ value }: { value: string }) {
+  const containsHtml = /<\/?[a-z][^>]*>/i.test(value);
+
+  if (containsHtml) {
+    return (
+      <div
+        className="prose prose-sm max-w-none break-words text-[#565656] [&_p]:whitespace-pre-wrap"
+        dangerouslySetInnerHTML={{ __html: value }}
+      />
+    );
+  }
+
+  return (
+    <div className="whitespace-pre-wrap break-words text-sm leading-6 text-[#565656]">
+      {value}
     </div>
   );
 }

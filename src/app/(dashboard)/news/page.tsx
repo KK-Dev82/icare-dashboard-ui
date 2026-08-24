@@ -2,12 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Eye, Pencil, Power, Plus } from "lucide-react";
+import { Eye, Megaphone, Pencil, Power, Plus } from "lucide-react";
 import { ActionIconButton } from "@/components/ui/action-button";
 import { TablePagination } from "@/components/ui/table-pagination";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
-import { ConfirmModal, ContentPreviewModal } from "@/components/ui/modal";
+import {
+  ConfirmModal,
+  ContentPreviewModal,
+  NotificationSendModal,
+} from "@/components/ui/modal";
 import { contentApi } from "@/api/content";
 import { ErrorState } from "@/components/ui/error-state";
 import { useAsyncData } from "@/hooks/useAsyncData";
@@ -37,6 +41,7 @@ export default function NewsPage() {
   const [filterStatus, setFilterStatus] = useState("");
   const [confirmItem, setConfirmItem] = useState<Content | null>(null);
   const [previewItem, setPreviewItem] = useState<Content | null>(null);
+  const [notificationItem, setNotificationItem] = useState<Content | null>(null);
   const [appliedParams, setAppliedParams] = useState<AppliedParams>({
     search: "",
     filterCategory: "",
@@ -267,6 +272,14 @@ export default function NewsPage() {
                     <td className="py-4 px-4">
                       <div className="flex items-center justify-end gap-2">
                         <ActionIconButton
+                          icon={Megaphone}
+                          variant="primary"
+                          aria-label={`ส่งการแจ้งเตือน ${item.title}`}
+                          title="ส่งการแจ้งเตือน"
+                          style={{ backgroundColor: "#2D7CA4", color: "#FFFFFF" }}
+                          onClick={() => setNotificationItem(item)}
+                        />
+                        <ActionIconButton
                           icon={Eye}
                           variant="primary"
                           onClick={() => setPreviewItem(item)}
@@ -319,6 +332,13 @@ export default function NewsPage() {
         open={!!previewItem}
         content={previewItem}
         onClose={() => setPreviewItem(null)}
+      />
+
+      <NotificationSendModal
+        open={!!notificationItem}
+        source={notificationItem}
+        type="news"
+        onClose={() => setNotificationItem(null)}
       />
     </div>
   );

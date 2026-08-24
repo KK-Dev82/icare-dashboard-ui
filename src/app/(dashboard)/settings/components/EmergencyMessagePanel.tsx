@@ -135,6 +135,7 @@ export function EmergencyMessagePanel() {
               <NotificationPreviewCard
                 platform={item.platform}
                 content={previewContent}
+                expandToContent
               />
             </div>
           ))}
