@@ -3,19 +3,19 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
-import { memberApi } from "@/api/member";
+import { dashboardApi } from "@/api/dashboard";
 import { ActionIconButton } from "@/components/ui/action-button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { TablePagination } from "@/components/ui/table-pagination";
-import type { Member, PaginationMeta } from "@/types/member";
+import type { DashboardMember } from "@/types/dashboard";
+import type { AccountLevel, PaginationMeta } from "@/types/member";
 import {
-  filterMembersByQuickRange,
+  getMemberDateFilterParams,
   type MemberQuickFilter,
 } from "../utils/memberDateFilter";
 
 const MEMBER_PAGE_SIZE = 10;
-const MEMBER_BULK_PAGE_SIZE = 100;
 
 const defaultMemberMeta: PaginationMeta = {
   page: 1,
@@ -24,9 +24,14 @@ const defaultMemberMeta: PaginationMeta = {
   totalPages: 1,
 };
 
-export function NewMembersReport() {
+export function NewMembersReport({
+  canViewMemberDetail,
+}: {
+  canViewMemberDetail: boolean;
+}) {
   const router = useRouter();
-  const [newMembers, setNewMembers] = useState<Member[]>([]);
+  const memberColumnCount = canViewMemberDetail ? 6 : 5;
+  const [newMembers, setNewMembers] = useState<DashboardMember[]>([]);
   const [memberMeta, setMemberMeta] = useState<PaginationMeta>(defaultMemberMeta);
   const [memberLoading, setMemberLoading] = useState(true);
   const [memberSearch, setMemberSearch] = useState("");
@@ -46,61 +51,24 @@ export function NewMembersReport() {
     setMemberLoading(true);
 
     try {
-      const baseParams = {
-        keyword: appliedMemberSearch || undefined,
-        accountLevel: appliedMemberAccountLevel || undefined,
-      };
-      const shouldFilterByDate = Boolean(appliedMemberQuickFilter);
-
-      if (!shouldFilterByDate) {
-        const res = await memberApi.getAll({
-          ...baseParams,
-          page: memberPage,
-          limit: MEMBER_PAGE_SIZE,
-        });
-
-        setNewMembers(res.data);
-        setMemberMeta({
-          ...res.meta,
-          totalPages: Math.max(1, res.meta.totalPages),
-        });
-        return;
-      }
-
-      const firstPage = await memberApi.getAll({
-        ...baseParams,
-        page: 1,
-        limit: MEMBER_BULK_PAGE_SIZE,
-      });
-      const otherPages =
-        firstPage.meta.totalPages > 1
-          ? await Promise.all(
-              Array.from({ length: firstPage.meta.totalPages - 1 }, (_, index) =>
-                memberApi.getAll({
-                  ...baseParams,
-                  page: index + 2,
-                  limit: MEMBER_BULK_PAGE_SIZE,
-                })
-              )
-            )
-          : [];
-      const allMembers = [firstPage, ...otherPages].flatMap((res) => res.data);
-      const filteredMembers = filterMembersByQuickRange(
-        allMembers,
+      const dateParams = getMemberDateFilterParams(
         appliedMemberQuickFilter,
         appliedMemberCustomFrom,
         appliedMemberCustomTo
       );
-      const totalPages = Math.max(1, Math.ceil(filteredMembers.length / MEMBER_PAGE_SIZE));
-      const safePage = Math.min(memberPage, totalPages);
-      const pageStart = (safePage - 1) * MEMBER_PAGE_SIZE;
-
-      setNewMembers(filteredMembers.slice(pageStart, pageStart + MEMBER_PAGE_SIZE));
-      setMemberMeta({
-        page: safePage,
+      const res = await dashboardApi.getMembers({
+        keyword: appliedMemberSearch || undefined,
+        accountLevel:
+          (appliedMemberAccountLevel as AccountLevel) || undefined,
+        ...dateParams,
+        page: memberPage,
         limit: MEMBER_PAGE_SIZE,
-        total: filteredMembers.length,
-        totalPages,
+      });
+
+      setNewMembers(res.data);
+      setMemberMeta({
+        ...res.meta,
+        totalPages: Math.max(1, res.meta.totalPages),
       });
     } catch (err) {
       console.error("[dashboard] members failed", err);
@@ -229,23 +197,24 @@ export function NewMembersReport() {
       )}
 
       <div className="mt-5 overflow-x-auto">
-        <table className="w-full min-w-[720px]">
+        <table
+          className={`w-full ${canViewMemberDetail ? "min-w-[720px]" : "min-w-[640px]"}`}
+        >
           <thead>
             <tr>
               <TableHead>ลำดับ</TableHead>
               <TableHead>ชื่อ - นามสกุล</TableHead>
-              <TableHead>อีเมล</TableHead>
               <TableHead>เบอร์โทรศัพท์</TableHead>
               <TableHead>สถานะกรมธรรม์</TableHead>
               <TableHead>วันที่สมัคร</TableHead>
-              <TableHead>จัดการ</TableHead>
+              {canViewMemberDetail && <TableHead>จัดการ</TableHead>}
             </tr>
           </thead>
           <tbody>
             {memberLoading ? (
               Array.from({ length: 5 }).map((_, index) => (
                 <tr key={index} className="animate-pulse border-b border-[#F5F5F5]">
-                  {Array.from({ length: 7 }).map((__, cellIndex) => (
+                  {Array.from({ length: memberColumnCount }).map((__, cellIndex) => (
                     <td key={cellIndex} className="px-4 py-4">
                       <div className="mx-auto h-4 w-20 rounded bg-gray-100" />
                     </td>
@@ -254,7 +223,10 @@ export function NewMembersReport() {
               ))
             ) : newMembers.length === 0 ? (
               <tr>
-                <td colSpan={7} className="py-12 text-center text-sm text-[#9CA3AF]">
+                <td
+                  colSpan={memberColumnCount}
+                  className="py-12 text-center text-sm text-[#9CA3AF]"
+                >
                   ไม่พบข้อมูลสมาชิก
                 </td>
               </tr>
@@ -268,7 +240,6 @@ export function NewMembersReport() {
                     {[member.firstName, member.lastName].filter(Boolean).join(" ") ||
                       member.phone}
                   </TableCell>
-                  <TableCell>{member.email ?? "-"}</TableCell>
                   <TableCell>{member.phone}</TableCell>
                   <TableCell>
                     <span
@@ -282,15 +253,18 @@ export function NewMembersReport() {
                     </span>
                   </TableCell>
                   <TableCell>{formatThaiDate(member.createdAt)}</TableCell>
-                  <TableCell>
-                    <ActionIconButton
-                      icon={Search}
-                      variant="primary"
-                      iconSize={16}
-                      iconStrokeWidth={3}
-                      onClick={() => router.push(`/members/${member.id}`)}
-                    />
-                  </TableCell>
+                  {canViewMemberDetail && (
+                    <TableCell>
+                      <ActionIconButton
+                        icon={Search}
+                        variant="primary"
+                        iconSize={16}
+                        iconStrokeWidth={3}
+                        className="mx-auto"
+                        onClick={() => router.push(`/members/${member.id}`)}
+                      />
+                    </TableCell>
+                  )}
                 </tr>
               ))
             )}

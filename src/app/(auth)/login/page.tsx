@@ -5,6 +5,8 @@ import Image from "next/image";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { authApi } from "@/api/auth";
+import { clearAuthSession, saveAuthSession } from "@/lib/authStorage";
+import { getDefaultRoute, getProfilePermissions } from "@/lib/permissions";
 import iciLogo from "@/../assets/ici.png";
 
 export default function LoginPage() {
@@ -23,10 +25,34 @@ export default function LoginPage() {
     try {
       const res = await authApi.login({ username, password });
       if (res.success) {
-        localStorage.setItem("accessToken", res.data.accessToken);
-        localStorage.setItem("fullName", res.data.fullName);
-        localStorage.setItem("role", res.data.role);
-        router.push("/dashboard");
+        saveAuthSession(res.data);
+
+        try {
+          const profileResponse = await authApi.getProfile();
+          if (!profileResponse.success) {
+            throw new Error(profileResponse.message || "โหลดข้อมูลสิทธิ์ไม่สำเร็จ");
+          }
+          const profile = profileResponse.data;
+          const isSuperAdmin = profile.role === "SUPER_ADMIN";
+          const hasUsableRole =
+            isSuperAdmin || Boolean(profile.roleRef?.isActive);
+
+          if (
+            profile.status !== "ACTIVE" ||
+            !hasUsableRole
+          ) {
+            clearAuthSession();
+            setError("บัญชีนี้ยังไม่มีประเภทผู้ใช้งานที่พร้อมใช้งาน");
+            return;
+          }
+
+          router.push(
+            getDefaultRoute(getProfilePermissions(profile), isSuperAdmin)
+          );
+        } catch {
+          clearAuthSession();
+          setError("เข้าสู่ระบบสำเร็จ แต่ไม่สามารถโหลดข้อมูลสิทธิ์ได้ กรุณาลองใหม่");
+        }
       } else {
         setError(res.message || "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง");
       }

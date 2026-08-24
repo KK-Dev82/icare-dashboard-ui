@@ -4,26 +4,33 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronRight, Home } from "lucide-react";
 import { useBreadcrumbLabels } from "@/components/layout/BreadcrumbContext";
+import { usePermissions } from "@/contexts/PermissionContext";
 
 const labelMap: Record<string, string> = {
+  "403": "ไม่มีสิทธิ์เข้าถึง",
   dashboard: "Dashboard",
   members: "สมาชิก",
   news: "ข่าวสาร / โปรโมชั่น",
+  "news-types": "ประเภทข่าวสาร / โปรโมชั่น",
   policies: "จัดการผลิตภัณฑ์",
+  "product-types": "ประเภทผลิตภัณฑ์",
   "contact-case": "คำร้อง / ติดต่อ",
   "product-interest": "ความสนใจผลิตภัณฑ์/คอนเทนต์",
   "policy-categories": "หมวดหมู่ผลิตภัณฑ์",
   accounts: "ผู้ใช้งาน",
+  "user-types": "ประเภทผู้ใช้งาน / กำหนดสิทธิ์การใช้งาน",
   "activity-log": "ประวัติการใช้งาน",
   settings: "การตั้งค่า",
   create: "เพิ่มใหม่",
   edit: "แก้ไข",
-  consents: "การยินยอม",
+  consents: "รายการความยินยอม / นโยบาย",
+  "consent-types": "ประเภท Consent",
 };
 
 export default function Breadcrumb() {
   const pathname = usePathname();
   const dynamicLabels = useBreadcrumbLabels();
+  const { defaultRoute } = usePermissions();
   const segments = pathname.split("/").filter(Boolean);
 
   if (segments.length === 0 || (segments.length === 1 && segments[0] === "dashboard")) return null;
@@ -43,7 +50,7 @@ export default function Breadcrumb() {
 
   return (
     <nav className="flex items-center gap-1.5 text-sm mb-4">
-      <Link href="/dashboard" className="text-[#9CA3AF] hover:text-primary transition-colors">
+      <Link href={defaultRoute} className="text-[#9CA3AF] hover:text-primary transition-colors">
         <Home size={15} />
       </Link>
       {crumbs.map((crumb) => (
