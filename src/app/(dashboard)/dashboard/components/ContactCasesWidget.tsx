@@ -2,12 +2,13 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Search } from "lucide-react";
-import { contactCaseApi } from "@/api/contact-case";
+import { dashboardApi } from "@/api/dashboard";
 import { ActionIconButton } from "@/components/ui/action-button";
 import { Input } from "@/components/ui/input";
 import { ContactCaseDetailModal } from "@/components/ui/modal";
 import { TablePagination } from "@/components/ui/table-pagination";
 import type { ContactCase } from "@/types/contact-case";
+import type { DashboardContactCase } from "@/types/dashboard";
 import type { PaginationMeta } from "@/types/member";
 
 const CONTACT_PAGE_SIZE = 5;
@@ -20,7 +21,7 @@ const defaultContactMeta: PaginationMeta = {
 };
 
 export function ContactCasesWidget() {
-  const [contactCases, setContactCases] = useState<ContactCase[]>([]);
+  const [contactCases, setContactCases] = useState<DashboardContactCase[]>([]);
   const [contactMeta, setContactMeta] = useState<PaginationMeta>(defaultContactMeta);
   const [contactLoading, setContactLoading] = useState(true);
   const [contactSearch, setContactSearch] = useState("");
@@ -34,7 +35,7 @@ export function ContactCasesWidget() {
     setContactLoading(true);
 
     try {
-      const res = await contactCaseApi.getAll({
+      const res = await dashboardApi.getContactCases({
         page: contactPage,
         limit: CONTACT_PAGE_SIZE,
         keyword: appliedContactSearch || undefined,
@@ -78,7 +79,7 @@ export function ContactCasesWidget() {
 
       readTimerRef.current = window.setTimeout(async () => {
         try {
-          const nextContactCase = await contactCaseApi.markRead(contactCase.id);
+          const nextContactCase = await dashboardApi.markContactCaseRead(contactCase.id);
           setSelectedContactCase((current) =>
             current?.id === contactCase.id
               ? { ...current, ...nextContactCase, category: current.category ?? nextContactCase.category }
@@ -97,11 +98,11 @@ export function ContactCasesWidget() {
 
   useEffect(() => clearReadTimer, [clearReadTimer]);
 
-  const handleOpenContactDetail = async (item: ContactCase) => {
+  const handleOpenContactDetail = async (item: DashboardContactCase) => {
     setDetailLoadingId(item.id);
 
     try {
-      const detail = await contactCaseApi.getById(item.id);
+      const detail = await dashboardApi.getContactCaseById(item.id);
       setSelectedContactCase(detail);
       scheduleMarkRead(detail);
     } catch (err) {

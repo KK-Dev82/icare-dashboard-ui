@@ -1,29 +1,34 @@
 export type SettingTab =
   | "system"
-  | "policy"
-  | "content"
   | "contact"
-  | "consent"
-  | "notification";
+  | "notification"
+  | "fcm-config"
+  | "emergency-message"
+  | "notification-template";
 
 interface SettingsTabsProps {
   activeTab: SettingTab;
   onChange: (tab: SettingTab) => void;
+  showContactTab?: boolean;
 }
 
 const tabs: Array<{ label: string; value: SettingTab }> = [
   { label: "การตั้งค่าระบบ", value: "system" },
-  { label: "การตั้งค่าผลิตภัณฑ์", value: "policy" },
-  { label: "การตั้งค่าข่าวสาร / โปรโมชั่น", value: "content" },
   { label: "การตั้งค่าหัวข้อการติดต่อ", value: "contact" },
-  { label: "การตั้งค่าประเภท Consent", value: "consent" },
   { label: "ตั้งค่าการแจ้งเตือนกรมธรรม์", value: "notification" },
+  { label: "Config FCM", value: "fcm-config" },
+  { label: "Template Notification", value: "notification-template" },
+  { label: "ส่งข้อความฉุกเฉิน", value: "emergency-message" },
 ];
 
-export function SettingsTabs({ activeTab, onChange }: SettingsTabsProps) {
+export function SettingsTabs({
+  activeTab,
+  onChange,
+  showContactTab = true,
+}: SettingsTabsProps) {
   return (
     <div className="mt-4 flex flex-col gap-3">
-      {tabs.map((tab) => {
+      {tabs.filter((tab) => showContactTab || tab.value !== "contact").map((tab) => {
         const isActive = activeTab === tab.value;
 
         return (
