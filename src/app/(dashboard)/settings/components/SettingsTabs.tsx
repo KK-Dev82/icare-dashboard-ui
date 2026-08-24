@@ -1,7 +1,10 @@
 export type SettingTab =
   | "system"
   | "contact"
-  | "notification";
+  | "notification"
+  | "fcm-config"
+  | "emergency-message"
+  | "notification-template";
 
 interface SettingsTabsProps {
   activeTab: SettingTab;
@@ -13,6 +16,9 @@ const tabs: Array<{ label: string; value: SettingTab }> = [
   { label: "การตั้งค่าระบบ", value: "system" },
   { label: "การตั้งค่าหัวข้อการติดต่อ", value: "contact" },
   { label: "ตั้งค่าการแจ้งเตือนกรมธรรม์", value: "notification" },
+  { label: "Config FCM", value: "fcm-config" },
+  { label: "Template Notification", value: "notification-template" },
+  { label: "ส่งข้อความฉุกเฉิน", value: "emergency-message" },
 ];
 
 export function SettingsTabs({
