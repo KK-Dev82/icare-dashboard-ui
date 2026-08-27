@@ -66,6 +66,10 @@ export function NotificationSendModal({
       ? source.bannerImage || source.mainImage || undefined
       : source.mainImage || source.bannerImage || undefined;
     const contentDetails = extractContentLines(source.content);
+    const compactBody = combineCardText(
+      source.title,
+      source.summary || contentDetails.join(" "),
+    );
 
     if (isPromotion) {
       const promotionDetails: Array<{ text: string }> = [];
@@ -82,6 +86,7 @@ export function NotificationSendModal({
 
       return {
         title: "🎁 โปรโมชั่นใหม่สำหรับคุณ",
+        compactBody,
         reference: source.summary || source.title,
         image,
         imageAlt: source.title,
@@ -92,8 +97,12 @@ export function NotificationSendModal({
     if (!isProduct) {
       return {
         title: "📰 ข่าวสารจาก ICI Insurance",
-        message:
-          source.summary || contentDetails.join(" ") || source.title,
+        compactBody,
+        reference: combineCardText(source.title, source.summary),
+        details:
+          contentDetails.length > 0
+            ? contentDetails.map((text) => ({ text }))
+            : undefined,
         image,
         imageAlt: source.title,
       };
@@ -101,6 +110,7 @@ export function NotificationSendModal({
 
     return {
       title: "📦 ผลิตภัณฑ์แนะนำสำหรับคุณ",
+      compactBody,
       reference: source.title,
       message: source.summary || undefined,
       image,
@@ -291,8 +301,18 @@ function extractContentLines(content?: string | null) {
     .replace(/&#39;|&apos;/gi, "'")
     .split(/\r?\n/)
     .map((line) => line.trim())
-    .filter(Boolean)
-    .slice(0, 2);
+    .filter(Boolean);
+}
+
+function combineCardText(title: string, body?: string | null) {
+  const normalizedTitle = title.trim();
+  const normalizedBody = body?.replace(/\s+/g, " ").trim();
+
+  if (!normalizedBody || normalizedBody === normalizedTitle) {
+    return normalizedTitle;
+  }
+
+  return `${normalizedTitle} ${normalizedBody}`;
 }
 
 function PreviewColumn({

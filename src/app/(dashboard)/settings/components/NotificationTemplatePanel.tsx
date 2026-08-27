@@ -76,7 +76,6 @@ const notificationTemplates: NotificationTemplateConfig[] = [
       reference: "แผนประกันอุบัติเหตุ คุ้มครองครบ จ่ายเบี้ยสบาย",
       details: [
         { icon: "▸", text: "แผนประกันอุบัติเหตุ" },
-        { icon: "▸", text: "ดูรายละเอียด" },
       ],
       image: productPersonalAccidentImage,
       imageAlt: "ผู้หญิงกำลังโทรศัพท์อยู่ข้างรถยนต์",
@@ -107,7 +106,14 @@ const notificationTemplates: NotificationTemplateConfig[] = [
     previewTitle: "ข่าวสาร",
     content: {
       title: "📰 ข่าวสารจาก ICI Insurance",
-      message: "อัปเดตบริการและข้อมูลสำคัญสำหรับผู้เอาประกัน",
+      compactBody:
+        "อัปเดตบริการและข้อมูลสำคัญสำหรับผู้เอาประกัน ติดตามข่าวสาร สิทธิประโยชน์ และข้อมูลด้านประกันภัยที่เป็นประโยชน์สำหรับคุณ",
+      reference: "อัปเดตบริการและข้อมูลสำคัญสำหรับผู้เอาประกัน",
+      details: [
+        {
+          text: "ติดตามข่าวสาร สิทธิประโยชน์ และข้อมูลด้านประกันภัยที่เป็นประโยชน์สำหรับคุณ",
+        },
+      ],
       image: newsInsuranceUpdateImage,
       imageAlt: "โต๊ะประชุมพร้อมเอกสารและแก้วกาแฟ",
     },
@@ -215,6 +221,7 @@ export function NotificationTemplatePanel() {
                         : undefined
                     }
                     variant="expanded"
+                    expandToContent
                   />
                 </PreviewItem>
               </div>
@@ -279,7 +286,7 @@ const bannerParts = [
     color: "border-[#13B981] text-[#13B981]",
     title: "เนื้อความ",
     description:
-      "backend ส่งมา ขึ้นบรรทัดใหม่และใส่เส้นแบ่งได้ แต่ตอนย่อเห็น 1–2 บรรทัด ต่อจากกดขยายจะเห็นครบ",
+      "backend ส่งมา ขึ้นบรรทัดใหม่ได้ โดยแบบย่อแสดงเนื้อความสูงสุด 4 บรรทัด และแบบขยายจะแสดงครบ",
   },
   {
     marker: "ง",

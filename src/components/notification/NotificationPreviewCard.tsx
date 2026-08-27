@@ -5,6 +5,7 @@ export type NotificationPreviewPlatform = "android" | "ios" | "in-app";
 
 export interface NotificationPreviewContent {
   title: string;
+  compactBody?: string;
   reference?: string;
   previousValue?: string;
   message?: string;
@@ -99,38 +100,47 @@ function AndroidNotificationCard({
         >
           <p
             className={`text-[13px] font-bold leading-[15px] text-white ${
-              expandToContent
+              variant !== "compact" && expandToContent
                 ? "whitespace-pre-wrap break-words [overflow-wrap:anywhere]"
                 : "truncate"
             }`}
           >
             {content.title}
           </p>
-          <ReferenceLine
-            content={content}
-            className={`font-semibold text-[#D4DBDD] ${
-              expandToContent
-                ? "whitespace-pre-wrap break-words [overflow-wrap:anywhere]"
-                : "truncate"
-            }`}
-          />
-          {content.message && (
-            <p
-              className={`text-[#D4DBDD] ${
-                expandToContent
-                  ? "whitespace-pre-wrap break-words [overflow-wrap:anywhere]"
-                  : "line-clamp-2"
-              }`}
-            >
-              {content.message}
-            </p>
+          {variant === "compact" ? (
+            <CompactNotificationBody
+              content={content}
+              className="text-[#D4DBDD]"
+            />
+          ) : (
+            <>
+              <ReferenceLine
+                content={content}
+                className={`font-semibold text-[#D4DBDD] ${
+                  expandToContent
+                    ? "whitespace-pre-wrap break-words [overflow-wrap:anywhere]"
+                    : "truncate"
+                }`}
+              />
+              {content.message && (
+                <p
+                  className={`text-[#D4DBDD] ${
+                    expandToContent
+                      ? "whitespace-pre-wrap break-words [overflow-wrap:anywhere]"
+                      : "line-clamp-2"
+                  }`}
+                >
+                  {content.message}
+                </p>
+              )}
+              <NotificationDetails
+                content={content}
+                dividerClassName="bg-[#A6B1B4]"
+                textClassName="text-[#E0E5E6]"
+                expandToContent={expandToContent}
+              />
+            </>
           )}
-          <NotificationDetails
-            content={content}
-            dividerClassName="bg-[#A6B1B4]"
-            textClassName="text-[#E0E5E6]"
-            expandToContent={expandToContent}
-          />
         </div>
         <NotificationContentImage
           content={content}
@@ -170,38 +180,47 @@ function IOSNotificationCard({
         >
           <p
             className={`text-[13px] font-bold leading-[15px] text-[#243333] ${
-              expandToContent
+              variant !== "compact" && expandToContent
                 ? "whitespace-pre-wrap break-words [overflow-wrap:anywhere]"
                 : "truncate"
             }`}
           >
             {content.title}
           </p>
-          <ReferenceLine
-            content={content}
-            className={`font-semibold text-[#536165] ${
-              expandToContent
-                ? "whitespace-pre-wrap break-words [overflow-wrap:anywhere]"
-                : "truncate"
-            }`}
-          />
-          {content.message && (
-            <p
-              className={`text-[#536165] ${
-                expandToContent
-                  ? "whitespace-pre-wrap break-words [overflow-wrap:anywhere]"
-                  : "line-clamp-2"
-              }`}
-            >
-              {content.message}
-            </p>
+          {variant === "compact" ? (
+            <CompactNotificationBody
+              content={content}
+              className="text-[#536165]"
+            />
+          ) : (
+            <>
+              <ReferenceLine
+                content={content}
+                className={`font-semibold text-[#536165] ${
+                  expandToContent
+                    ? "whitespace-pre-wrap break-words [overflow-wrap:anywhere]"
+                    : "truncate"
+                }`}
+              />
+              {content.message && (
+                <p
+                  className={`text-[#536165] ${
+                    expandToContent
+                      ? "whitespace-pre-wrap break-words [overflow-wrap:anywhere]"
+                      : "line-clamp-2"
+                  }`}
+                >
+                  {content.message}
+                </p>
+              )}
+              <NotificationDetails
+                content={content}
+                dividerClassName="bg-[#748287]"
+                textClassName="text-[#536165]"
+                expandToContent={expandToContent}
+              />
+            </>
           )}
-          <NotificationDetails
-            content={content}
-            dividerClassName="bg-[#748287]"
-            textClassName="text-[#536165]"
-            expandToContent={expandToContent}
-          />
         </div>
         <NotificationContentImage
           content={content}
@@ -244,39 +263,48 @@ function InAppNotificationCard({
         >
           <p
             className={`text-[13px] font-bold leading-[15px] text-[#243333] ${
-              expandToContent
+              variant !== "compact" && expandToContent
                 ? "whitespace-pre-wrap break-words [overflow-wrap:anywhere]"
                 : "truncate"
             }`}
           >
             {content.title}
           </p>
-          <ReferenceLine
-            content={content}
-            className={`font-semibold text-[#536165] ${
-              expandToContent
-                ? "whitespace-pre-wrap break-words [overflow-wrap:anywhere]"
-                : "line-clamp-2"
-            }`}
-          />
-          {content.message && (
-            <p
-              className={`text-[#536165] ${
-                expandToContent
-                  ? "whitespace-pre-wrap break-words [overflow-wrap:anywhere]"
-                  : "line-clamp-2"
-              }`}
-            >
-              {content.message}
-            </p>
+          {variant === "compact" ? (
+            <CompactNotificationBody
+              content={content}
+              className="text-[#536165]"
+            />
+          ) : (
+            <>
+              <ReferenceLine
+                content={content}
+                className={`font-semibold text-[#536165] ${
+                  expandToContent
+                    ? "whitespace-pre-wrap break-words [overflow-wrap:anywhere]"
+                    : "line-clamp-2"
+                }`}
+              />
+              {content.message && (
+                <p
+                  className={`text-[#536165] ${
+                    expandToContent
+                      ? "whitespace-pre-wrap break-words [overflow-wrap:anywhere]"
+                      : "line-clamp-2"
+                  }`}
+                >
+                  {content.message}
+                </p>
+              )}
+              <NotificationDetails
+                content={content}
+                dividerClassName="bg-[#748287]"
+                textClassName="text-[#536165]"
+                fullWidth
+                expandToContent={expandToContent}
+              />
+            </>
           )}
-          <NotificationDetails
-            content={content}
-            dividerClassName="bg-[#748287]"
-            textClassName="text-[#536165]"
-            fullWidth
-            expandToContent={expandToContent}
-          />
         </div>
         <NotificationContentImage
           content={content}
@@ -286,6 +314,42 @@ function InAppNotificationCard({
       </div>
     </div>
   );
+}
+
+function CompactNotificationBody({
+  content,
+  className,
+}: {
+  content: NotificationPreviewContent;
+  className: string;
+}) {
+  const body = getCompactNotificationBody(content);
+
+  if (!body) return null;
+
+  return <p className={`line-clamp-4 ${className}`}>{body}</p>;
+}
+
+function getCompactNotificationBody(content: NotificationPreviewContent) {
+  if (content.compactBody?.trim()) {
+    return normalizeCompactText(content.compactBody);
+  }
+
+  const reference = [
+    content.reference,
+    content.previousValue ? `(${content.previousValue})` : undefined,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  return [reference, content.message]
+    .filter(Boolean)
+    .map((value) => normalizeCompactText(String(value)))
+    .join(" ");
+}
+
+function normalizeCompactText(value: string) {
+  return value.replace(/\s+/g, " ").trim();
 }
 
 function ReferenceLine({
@@ -330,12 +394,16 @@ function NotificationDetails({
     return null;
   }
 
+  const visibleDetails = expandToContent
+    ? content.details
+    : content.details.slice(0, 2);
+
   return (
     <div className="mt-1.5">
       <div
         className={`mb-1 h-px ${fullWidth ? "w-full" : "w-[82%]"} ${dividerClassName}`}
       />
-      {content.details.slice(0, 2).map((detail) => (
+      {visibleDetails.map((detail) => (
         <p
           key={`${detail.icon ?? ""}-${detail.text}`}
           className={`${
