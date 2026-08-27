@@ -126,7 +126,13 @@ export default function ActivityLogPage() {
   const [appliedFilter, setAppliedFilter] = useState<ActivityLogFilter>(initialFilter);
   const canViewActivityLog = currentRole === "SUPER_ADMIN";
 
-  const { data: listData, loading, errorMessage, refetch } = useAsyncData(async () => {
+  const {
+    data: listData,
+    loading,
+    errorMessage,
+    refetch,
+    hasLoadedOnce,
+  } = useAsyncData(async () => {
     const res = await activityLogApi.getAll(appliedFilter);
     if (res.success === false) throw new Error("โหลดประวัติการใช้งานไม่สำเร็จ");
     return { items: res.data, meta: res.meta ?? defaultMeta };
@@ -262,7 +268,7 @@ export default function ActivityLogPage() {
           </div>
         )}
 
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto" aria-busy={loading}>
           <table className="w-full">
             <thead>
               <tr>
@@ -275,7 +281,7 @@ export default function ActivityLogPage() {
               </tr>
             </thead>
             <tbody>
-              {loading ? (
+              {loading && !hasLoadedOnce ? (
                 Array.from({ length: 6 }).map((_, index) => (
                   <tr key={index} className="animate-pulse border-b border-[#F5F5F5]">
                     <td className="px-4 py-4"><div className="mx-auto h-4 w-6 rounded bg-gray-100" /></td>
