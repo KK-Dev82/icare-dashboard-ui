@@ -139,7 +139,7 @@ export function NotificationSendModal({
     if (!source || !previewContent) return;
     setSending(true);
     try {
-      const notifType: NotificationType = type === "product" ? "POLICY" : "NEWS";
+      const notifType: NotificationType = type === "product" ? "PRODUCT" : "NEWS";
       let body: string;
       if (type === "product") {
         const details = source.summary;

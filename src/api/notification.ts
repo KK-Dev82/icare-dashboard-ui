@@ -1,6 +1,6 @@
 import { apiClient } from "@/lib/apiClient";
 
-export type NotificationType = "NEWS" | "POLICY" | "SYSTEM";
+export type NotificationType = "NEWS" | "PRODUCT" | "SYSTEM";
 export type NotificationAudience = "ALL" | "MEMBER" | "CUSTOMER";
 
 export interface BroadcastPayload {
