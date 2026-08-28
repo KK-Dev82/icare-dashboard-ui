@@ -209,7 +209,7 @@ export default function ActivityLogPage() {
       <div className="flex w-full flex-col rounded-[18px] bg-white p-8 shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
         <div className="mb-6 flex items-center justify-between border-b border-[#EAEAEA] pb-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">ประวัติการใช้งาน</h1>
+            <h1 className="text-2xl font-bold text-gray-900">ประวัติการใช้งานระบบ</h1>
             <p className="mt-1 text-sm text-[#9CA3AF]">
               แสดงบันทึกกิจกรรมการใช้งานของผู้ใช้งานในระบบ
             </p>

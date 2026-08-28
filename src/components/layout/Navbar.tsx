@@ -28,7 +28,8 @@ import type { PermissionKey } from "@/types/user-type";
 interface MenuChild {
   label: string;
   href: string;
-  permission: PermissionKey;
+  permission?: PermissionKey;
+  superAdminOnly?: boolean;
 }
 
 interface MenuItem {
@@ -79,7 +80,23 @@ const menuItems: MenuItem[] = [
       { label: "ประเภทผู้ใช้งาน / กำหนดสิทธิ์การใช้งาน", href: "/user-types", permission: "ACCOUNTS" },
     ],
   },
-  { label: "ประวัติการใช้งาน", href: "/activity-log", icon: History, superAdminOnly: true },
+  {
+    label: "ประวัติระบบ",
+    href: "/activity-log",
+    icon: History,
+    children: [
+      {
+        label: "ประวัติการใช้งาน",
+        href: "/activity-log",
+        superAdminOnly: true,
+      },
+      {
+        label: "ประวัติการแจ้งเตือน",
+        href: "/notification-log",
+        permission: "NOTIFICATIONS",
+      },
+    ],
+  },
   { label: "การตั้งค่า", href: "/settings", icon: Settings, permission: "SETTINGS" },
   {
     label: "ความยินยอม / นโยบาย",
@@ -167,7 +184,12 @@ export default function Navbar() {
   const visibleMenuItems = menuItems.flatMap((item) => {
     if (item.superAdminOnly) return isSuperAdmin ? [item] : [];
     if (item.children) {
-      const children = item.children.filter((child) => hasPermission(child.permission));
+      const children = item.children.filter(
+        (child) =>
+          child.superAdminOnly
+            ? isSuperAdmin
+            : !child.permission || hasPermission(child.permission)
+      );
       return children.length > 0 ? [{ ...item, children }] : [];
     }
     return !item.permission || hasPermission(item.permission) ? [item] : [];
