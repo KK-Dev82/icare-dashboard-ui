@@ -146,6 +146,7 @@ export default function MemberDetailPage() {
                 <InfoWhite label="ยืนยันเบอร์:" value={member.isPhoneVerified ? "ยืนยันแล้ว" : "ยังไม่ยืนยัน"} />
                 <InfoWhite label="วันสมัคร:" value={new Date(member.createdAt).toLocaleDateString("th-TH")} />
                 <InfoWhite label="เลขบัตรประชาชน:" value={member.nationalId || "-"} />
+                <InfoWhite label="FCM Token:" value={formatFcmTokenStatus(member)} />
               </div>
             </div>
 
@@ -428,6 +429,28 @@ function InfoWhite({ label, value }: { label: string; value: string }) {
       <p className="text-xs font-bold text-white">{value}</p>
     </div>
   );
+}
+
+function formatFcmTokenStatus(member: Member) {
+  const activeDevice = member.devices?.find(
+    (device) => device.isActive && Boolean(device.fcmToken?.trim()),
+  );
+
+  if (!activeDevice) return "-";
+  if (!activeDevice.lastSeenAt) return "มี Token";
+
+  const date = new Date(activeDevice.lastSeenAt);
+  if (Number.isNaN(date.getTime())) return "มี Token";
+
+  return `มี Token ${new Intl.DateTimeFormat("th-TH", {
+    timeZone: "Asia/Bangkok",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(date)}`;
 }
 
 function SummaryRow({ label, value }: { label: string; value: string }) {
