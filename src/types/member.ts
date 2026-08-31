@@ -10,6 +10,15 @@ export interface MemberDevice {
   lastSeenAt: string | null;
 }
 
+export interface MemberNotificationPreference {
+  id: string;
+  userId: string;
+  news: boolean;
+  product: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Member {
   id: string;
   phone: string;
