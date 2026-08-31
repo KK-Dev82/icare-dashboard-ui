@@ -10,5 +10,5 @@ export const permissionOptions: { value: PermissionKey; label: string }[] = [
   { value: "ACCOUNTS", label: "ผู้ใช้งาน" },
   { value: "SETTINGS", label: "การตั้งค่า" },
   { value: "CONSENTS", label: "การยินยอม" },
-  { value: "NOTIFICATIONS", label: "การแจ้งเตือน" },
+  { value: "NOTIFICATIONS", label: "ประวัติการแจ้งเตือน" },
 ];
