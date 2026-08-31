@@ -126,7 +126,13 @@ export default function ActivityLogPage() {
   const [appliedFilter, setAppliedFilter] = useState<ActivityLogFilter>(initialFilter);
   const canViewActivityLog = currentRole === "SUPER_ADMIN";
 
-  const { data: listData, loading, errorMessage, refetch } = useAsyncData(async () => {
+  const {
+    data: listData,
+    loading,
+    errorMessage,
+    refetch,
+    hasLoadedOnce,
+  } = useAsyncData(async () => {
     const res = await activityLogApi.getAll(appliedFilter);
     if (res.success === false) throw new Error("โหลดประวัติการใช้งานไม่สำเร็จ");
     return { items: res.data, meta: res.meta ?? defaultMeta };
@@ -203,7 +209,7 @@ export default function ActivityLogPage() {
       <div className="flex w-full flex-col rounded-[18px] bg-white p-8 shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
         <div className="mb-6 flex items-center justify-between border-b border-[#EAEAEA] pb-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">ประวัติการใช้งาน</h1>
+            <h1 className="text-2xl font-bold text-gray-900">ประวัติการใช้งานระบบ</h1>
             <p className="mt-1 text-sm text-[#9CA3AF]">
               แสดงบันทึกกิจกรรมการใช้งานของผู้ใช้งานในระบบ
             </p>
@@ -262,7 +268,7 @@ export default function ActivityLogPage() {
           </div>
         )}
 
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto" aria-busy={loading}>
           <table className="w-full">
             <thead>
               <tr>
@@ -275,7 +281,7 @@ export default function ActivityLogPage() {
               </tr>
             </thead>
             <tbody>
-              {loading ? (
+              {loading && !hasLoadedOnce ? (
                 Array.from({ length: 6 }).map((_, index) => (
                   <tr key={index} className="animate-pulse border-b border-[#F5F5F5]">
                     <td className="px-4 py-4"><div className="mx-auto h-4 w-6 rounded bg-gray-100" /></td>

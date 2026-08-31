@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Eye, ChevronLeft, ChevronRight } from "lucide-react";
+import { Eye } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
+import { TablePagination } from "@/components/ui/table-pagination";
 import { memberApi } from "@/api/member";
 import { ErrorState } from "@/components/ui/error-state";
 import { useAsyncData } from "@/hooks/useAsyncData";
@@ -229,41 +230,14 @@ t                </tr>
           </table>
         </div>
 
-        {/* Pagination */}
-        <div className="flex items-center justify-between mt-6 pt-4">
-          <p className="text-sm text-gray-400">
-            แสดง {items.length} จาก {meta.total} รายการ
-          </p>
-          <div className="flex items-center gap-1">
-            <button
-              disabled={meta.page <= 1}
-              onClick={() => handlePageChange(meta.page - 1)}
-              className="w-8 h-8 flex items-center justify-center rounded-lg border border-[#EAEAEA] text-gray-400 hover:border-primary hover:text-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              <ChevronLeft size={16} />
-            </button>
-            {Array.from({ length: meta.totalPages }, (_, i) => i + 1).map((p) => (
-              <button
-                key={p}
-                onClick={() => handlePageChange(p)}
-                className={`w-8 h-8 flex items-center justify-center rounded-lg text-sm font-medium transition-colors ${
-                  p === meta.page
-                    ? "bg-primary text-white"
-                    : "border border-[#EAEAEA] text-gray-400 hover:border-primary hover:text-primary"
-                }`}
-              >
-                {p}
-              </button>
-            ))}
-            <button
-              disabled={meta.page >= meta.totalPages}
-              onClick={() => handlePageChange(meta.page + 1)}
-              className="w-8 h-8 flex items-center justify-center rounded-lg border border-[#EAEAEA] text-gray-400 hover:border-primary hover:text-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              <ChevronRight size={16} />
-            </button>
-          </div>
-        </div>
+        <TablePagination
+          current={items.length}
+          total={meta.total}
+          page={meta.page}
+          totalPages={meta.totalPages}
+          onPageChange={handlePageChange}
+          stickToBottom={false}
+        />
       </div>
     </div>
   );

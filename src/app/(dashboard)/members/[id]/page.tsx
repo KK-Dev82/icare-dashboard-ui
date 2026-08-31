@@ -2,13 +2,17 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { User, ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Select } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { memberApi } from "@/api/member";
 import { claimApi } from "@/api/claim";
 import { ErrorState } from "@/components/ui/error-state";
-import type { Member, MemberInsuranceItem } from "@/types/member";
+import type {
+  Member,
+  MemberInsuranceItem,
+  MemberNotificationPreference,
+} from "@/types/member";
 import type { Claim, ClaimStatus } from "@/types/claim";
 
 export default function MemberDetailPage() {
@@ -25,16 +29,20 @@ export default function MemberDetailPage() {
   const [statusFilter, setStatusFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [memberPhone, setMemberPhone] = useState("");
+  const [notificationPreference, setNotificationPreference] =
+    useState<MemberNotificationPreference | null>(null);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const fetchData = () => {
     setLoading(true);
     setErrorMessage(null);
+    setNotificationPreference(null);
     Promise.all([
       memberApi.getById(id),
       memberApi.getInsurance(id).catch(() => null),
-    ]).then(async ([memberRes, insuranceRes]) => {
+      memberApi.getNotificationPreferences(id).catch(() => null),
+    ]).then(async ([memberRes, insuranceRes, preferenceRes]) => {
       if (memberRes.success) {
         setMember(memberRes.data);
         if (memberRes.data.phone) {
@@ -52,6 +60,9 @@ export default function MemberDetailPage() {
       if (insuranceRes?.success) {
         setInsurance(insuranceRes.data.data || insuranceRes.data || []);
         setInsuranceTotal((insuranceRes.data.data || insuranceRes.data || []).length);
+      }
+      if (preferenceRes?.success && preferenceRes.data) {
+        setNotificationPreference(preferenceRes.data);
       }
     }).catch((err) => {
       setErrorMessage(err instanceof Error ? err.message : "โหลดข้อมูลไม่สำเร็จ");
@@ -91,7 +102,6 @@ export default function MemberDetailPage() {
   const fullName = [member.firstName, member.lastName].filter(Boolean).join(" ") || "-";
   const activeCount = (insurance || []).filter((i) => i.status === "ACTIVE").length;
   const expiredCount = (insurance || []).filter((i) => i.status !== "ACTIVE").length;
-
   const typeOptions = [
     { label: "ทั้งหมด", value: "" },
     ...[...new Set(insurance.map((i) => i.type))].map((t) => ({ label: t, value: t })),
@@ -131,11 +141,7 @@ export default function MemberDetailPage() {
           </div>
 
           {/* Member Summary */}
-          <div className="mt-6 grid grid-cols-[110px_1fr_190px] gap-4">
-            <div className="flex items-center justify-center self-stretch rounded-[14px] bg-[#EFEFEF]">
-              <User className="h-12 w-12 text-white" />
-            </div>
-
+          <div className="mt-6 grid grid-cols-1 gap-4 xl:grid-cols-[minmax(350px,1fr)_190px_190px]">
             <div className="relative overflow-hidden rounded-[20px] bg-[#07A2A2] p-6 text-white">
               <div className="absolute -right-8 -top-8 h-48 w-48 rounded-full bg-white/10" />
               <div className="relative grid grid-cols-2 gap-y-3 text-sm">
@@ -146,8 +152,11 @@ export default function MemberDetailPage() {
                 <InfoWhite label="ยืนยันเบอร์:" value={member.isPhoneVerified ? "ยืนยันแล้ว" : "ยังไม่ยืนยัน"} />
                 <InfoWhite label="วันสมัคร:" value={new Date(member.createdAt).toLocaleDateString("th-TH")} />
                 <InfoWhite label="เลขบัตรประชาชน:" value={member.nationalId || "-"} />
+                <InfoWhite label="FCM Token:" value={formatFcmTokenStatus(member)} />
               </div>
             </div>
+
+            <NotificationStatusCard preference={notificationPreference} />
 
             <div className="rounded-[14px] border border-[#EAEAEA] bg-white p-5">
               <h3 className="font-bold text-[#243333]">ภาพรวมกรมธรรม์</h3>
@@ -430,11 +439,73 @@ function InfoWhite({ label, value }: { label: string; value: string }) {
   );
 }
 
+function formatFcmTokenStatus(member: Member) {
+  const activeDevice = member.devices?.find(
+    (device) => device.isActive && Boolean(device.fcmToken?.trim()),
+  );
+
+  if (!activeDevice) return "-";
+  if (!activeDevice.lastSeenAt) return "มี Token";
+
+  const date = new Date(activeDevice.lastSeenAt);
+  if (Number.isNaN(date.getTime())) return "มี Token";
+
+  return `มี Token ${new Intl.DateTimeFormat("th-TH", {
+    timeZone: "Asia/Bangkok",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(date)}`;
+}
+
 function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between">
       <span className="text-[#9CA3AF]">{label}</span>
       <span className="font-bold text-[#111827]">{value}</span>
+    </div>
+  );
+}
+
+function NotificationStatusCard({
+  preference,
+}: {
+  preference: MemberNotificationPreference | null;
+}) {
+  return (
+    <div className="rounded-[14px] border border-[#EAEAEA] bg-white p-5">
+      <h3 className="whitespace-nowrap font-bold text-[#243333]">สถานะการแจ้งเตือน</h3>
+      <div className="mt-4 space-y-2 text-xs">
+        <NotificationStatusRow label="แจ้งเตือนกรมธรรม์" />
+        <NotificationStatusRow label="แจ้งเตือนข่าวสาร" enabled={preference?.news} />
+        <NotificationStatusRow label="แนะนำผลิตภัณฑ์" enabled={preference?.product} />
+      </div>
+    </div>
+  );
+}
+
+function NotificationStatusRow({
+  label,
+  enabled,
+}: {
+  label: string;
+  enabled?: boolean;
+}) {
+  const status = enabled === undefined ? "-" : enabled ? "เปิด" : "ปิด";
+  const statusColor =
+    enabled === undefined
+      ? "text-[#9CA3AF]"
+      : enabled
+        ? "text-[#24A148]"
+        : "text-[#F44034]";
+
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <span className="text-[#9CA3AF]">{label}</span>
+      <span className={`font-bold ${statusColor}`}>{status}</span>
     </div>
   );
 }

@@ -7,7 +7,8 @@ export type PermissionKey =
   | "PRODUCT_INTEREST"
   | "ACCOUNTS"
   | "SETTINGS"
-  | "CONSENTS";
+  | "CONSENTS"
+  | "NOTIFICATIONS";
 
 export interface UserType {
   id: string;
