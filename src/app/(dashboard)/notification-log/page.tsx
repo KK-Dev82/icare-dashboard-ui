@@ -27,16 +27,16 @@ import type {
 } from "@/types/notification-log";
 import type { Product } from "@/types/product";
 
-const defaultMeta = { page: 1, limit: 20, total: 0, totalPages: 1 };
+const defaultMeta = { page: 1, limit: 10, total: 0, totalPages: 1 };
 
 const typeOptions = [
   { label: "ทั้งหมด", value: "" },
   { label: "ระบบ", value: "SYSTEM" },
   { label: "ผลิตภัณฑ์", value: "PRODUCT" },
-  { label: "ข่าวสาร", value: "NEWS" },
+  { label: "ข่าวสาร / โปรโมชั่น", value: "NEWS" },
 ];
 
-const initialFilter: NotificationBroadcastFilter = { page: 1, limit: 20 };
+const initialFilter: NotificationBroadcastFilter = { page: 1, limit: 10 };
 
 export default function NotificationLogPage() {
   const [keyword, setKeyword] = useState("");
@@ -621,7 +621,7 @@ function getTypeLabel(type: NotificationBroadcastType) {
   const labels: Record<NotificationBroadcastType, string> = {
     SYSTEM: "ระบบ",
     PRODUCT: "ผลิตภัณฑ์",
-    NEWS: "ข่าวสาร",
+    NEWS: "ข่าวสาร / โปรโมชั่น",
   };
   return labels[type] ?? type;
 }

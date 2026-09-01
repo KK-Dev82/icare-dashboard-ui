@@ -46,7 +46,7 @@ export const notificationApi = {
   ): Promise<NotificationBroadcastListResponse> => {
     const params = new URLSearchParams({
       page: String(filter.page ?? 1),
-      limit: String(filter.limit ?? 20),
+      limit: String(filter.limit ?? 10),
     });
 
     if (filter.keyword) params.set("keyword", filter.keyword);
