@@ -20,13 +20,12 @@ import {
   buildContentNotificationPreview,
 } from "@/lib/notificationPreview";
 import type { Content } from "@/types/content";
-import type { Product } from "@/types/product";
 import type {
-  NotificationLog,
-  NotificationLogFilter,
-  NotificationLogStatus,
-  NotificationLogType,
+  NotificationBroadcast,
+  NotificationBroadcastFilter,
+  NotificationBroadcastType,
 } from "@/types/notification-log";
+import type { Product } from "@/types/product";
 
 const defaultMeta = { page: 1, limit: 10, total: 0, totalPages: 1 };
 
@@ -34,28 +33,24 @@ const typeOptions = [
   { label: "ทั้งหมด", value: "" },
   { label: "ระบบ", value: "SYSTEM" },
   { label: "ผลิตภัณฑ์", value: "PRODUCT" },
-  { label: "ข่าวสาร", value: "NEWS" },
+  { label: "ข่าวสาร / โปรโมชั่น", value: "NEWS" },
 ];
 
-const statusOptions = [
-  { label: "ทั้งหมด", value: "" },
-  { label: "ส่งสำเร็จ", value: "SENT" },
-  { label: "ล้มเหลว", value: "FAILED" },
-];
-
-const initialFilter: NotificationLogFilter = { page: 1, limit: 10 };
+const initialFilter: NotificationBroadcastFilter = { page: 1, limit: 10 };
 
 export default function NotificationLogPage() {
-  const [search, setSearch] = useState("");
+  const [keyword, setKeyword] = useState("");
   const [type, setType] = useState("");
-  const [status, setStatus] = useState("");
-  const [selectedLog, setSelectedLog] = useState<NotificationLog | null>(null);
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [selectedBroadcast, setSelectedBroadcast] =
+    useState<NotificationBroadcast | null>(null);
   const [selectedContent, setSelectedContent] = useState<Content | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const previewRequestRef = useRef(0);
   const [appliedFilter, setAppliedFilter] =
-    useState<NotificationLogFilter>(initialFilter);
+    useState<NotificationBroadcastFilter>(initialFilter);
 
   const {
     data: listData,
@@ -64,10 +59,11 @@ export default function NotificationLogPage() {
     refetch,
     hasLoadedOnce,
   } = useAsyncData(async () => {
-    const response = await notificationApi.getLogs(appliedFilter);
-    if (response.success === false) {
+    const response = await notificationApi.getBroadcasts(appliedFilter);
+    if (!response.success) {
       throw new Error("โหลดประวัติการแจ้งเตือนไม่สำเร็จ");
     }
+
     return {
       items: Array.isArray(response.data) ? response.data : [],
       meta: response.meta ?? defaultMeta,
@@ -83,85 +79,74 @@ export default function NotificationLogPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appliedFilter]);
 
-  const handleSearch = () => {
-    setAppliedFilter({
-      search: search.trim() || undefined,
-      type: (type || undefined) as NotificationLogType | undefined,
-      status: (status || undefined) as NotificationLogStatus | undefined,
+  const applyFilters = () => {
+    setAppliedFilter((current) => ({
+      keyword: keyword.trim() || undefined,
+      type: (type || undefined) as NotificationBroadcastType | undefined,
+      dateFrom: dateFrom || undefined,
+      dateTo: dateTo || undefined,
       page: 1,
-      limit: appliedFilter.limit,
-    });
+      limit: current.limit,
+    }));
   };
 
   const handleTypeChange = (value: string) => {
     setType(value);
     setAppliedFilter((current) => ({
       ...current,
-      type: (value || undefined) as NotificationLogType | undefined,
+      type: (value || undefined) as NotificationBroadcastType | undefined,
       page: 1,
     }));
   };
 
-  const handleStatusChange = (value: string) => {
-    setStatus(value);
+  const handleDateFromChange = (value: string) => {
+    setDateFrom(value);
     setAppliedFilter((current) => ({
       ...current,
-      status: (value || undefined) as NotificationLogStatus | undefined,
+      dateFrom: value || undefined,
       page: 1,
     }));
   };
 
-  const handleOpenDetail = (item: NotificationLog) => {
+  const handleDateToChange = (value: string) => {
+    setDateTo(value);
+    setAppliedFilter((current) => ({
+      ...current,
+      dateTo: value || undefined,
+      page: 1,
+    }));
+  };
+
+  const handleOpenDetail = (broadcast: NotificationBroadcast) => {
     const requestId = ++previewRequestRef.current;
-    const contentId = getContentId(item);
-    const productId = getProductId(item);
-    const isNews = item.type?.toUpperCase() === "NEWS";
-    const isProduct = ["POLICY", "PRODUCT"].includes(
-      item.type?.toUpperCase() ?? "",
-    );
+    const sourceId = getSourceIdFromDeepLink(broadcast);
 
-    setSelectedLog(item);
+    setSelectedBroadcast(broadcast);
     setSelectedContent(null);
-    setSelectedProduct(isProduct ? item.product ?? null : null);
+    setSelectedProduct(null);
 
-    if (isProduct && item.product) {
-      setPreviewLoading(false);
-      return;
-    }
-
-    if (isProduct) {
-      setPreviewLoading(true);
-      void loadProductSource(item, productId)
-        .then((product) => {
-          if (previewRequestRef.current === requestId && product) {
-            setSelectedProduct(product);
-          }
-        })
-        .catch(() => {
-          // Keep the stored notification detail when the product was removed.
-        })
-        .finally(() => {
-          if (previewRequestRef.current === requestId) {
-            setPreviewLoading(false);
-          }
-        });
-      return;
-    }
-
-    if (!isNews) {
+    if (broadcast.type === "SYSTEM") {
       setPreviewLoading(false);
       return;
     }
 
     setPreviewLoading(true);
-    void loadContentSource(item, contentId)
-      .then((content) => {
-        if (previewRequestRef.current === requestId && content) {
-          setSelectedContent(content);
+    const sourceRequest =
+      broadcast.type === "PRODUCT"
+        ? loadProductSource(broadcast, sourceId)
+        : loadContentSource(broadcast, sourceId);
+
+    void sourceRequest
+      .then((source) => {
+        if (previewRequestRef.current !== requestId || !source) return;
+        if (broadcast.type === "PRODUCT") {
+          setSelectedProduct(source as Product);
+        } else {
+          setSelectedContent(source as Content);
         }
       })
       .catch(() => {
-        // Keep the stored notification preview when the source no longer exists.
+        // Keep the stored broadcast content when the linked source is unavailable.
       })
       .finally(() => {
         if (previewRequestRef.current === requestId) {
@@ -172,7 +157,7 @@ export default function NotificationLogPage() {
 
   const handleCloseDetail = () => {
     previewRequestRef.current += 1;
-    setSelectedLog(null);
+    setSelectedBroadcast(null);
     setSelectedContent(null);
     setSelectedProduct(null);
     setPreviewLoading(false);
@@ -186,40 +171,57 @@ export default function NotificationLogPage() {
             ประวัติการแจ้งเตือนระบบ
           </h1>
           <p className="mt-1 text-sm text-[#9CA3AF]">
-            แสดงประวัติการส่งข้อความแจ้งเตือนของระบบ
+            แสดงประวัติการส่งข้อความแจ้งเตือนแบบ Broadcast
           </p>
         </div>
 
-        <div className="mb-8 flex items-center gap-3">
+        <div className="mb-8 flex flex-wrap items-center gap-3">
           <Input
             size="md"
             className="w-[280px]"
             label="ค้นหา"
-            placeholder="ค้นหาหัวข้อ"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
+            placeholder="ค้นหาหัวข้อหรือรายละเอียด"
+            value={keyword}
+            onChange={(event) => setKeyword(event.target.value)}
             onKeyDown={(event) => {
-              if (event.key === "Enter") handleSearch();
+              if (event.key === "Enter") applyFilters();
             }}
           />
           <Select
             size="md"
-            className="w-[200px]"
+            className="w-[180px]"
             label="ประเภทการแจ้งเตือน"
             placeholder="เลือกประเภท"
             value={type}
             onChange={handleTypeChange}
             options={typeOptions}
           />
-          <Select
+          <Input
+            type="date"
             size="md"
-            className="w-[200px]"
-            label="สถานะการส่ง"
-            placeholder="เลือกสถานะ"
-            value={status}
-            onChange={handleStatusChange}
-            options={statusOptions}
+            className="w-[180px]"
+            label="วันที่เริ่มต้น"
+            value={dateFrom}
+            max={dateTo || undefined}
+            onChange={(event) => handleDateFromChange(event.target.value)}
           />
+          <Input
+            type="date"
+            size="md"
+            className="w-[180px]"
+            label="วันที่สิ้นสุด"
+            value={dateTo}
+            min={dateFrom || undefined}
+            onChange={(event) => handleDateToChange(event.target.value)}
+          />
+          <button
+            type="button"
+            onClick={applyFilters}
+            className="flex h-[42px] items-center gap-2 rounded-[10px] bg-primary px-5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+          >
+            <Search size={16} />
+            ค้นหา
+          </button>
         </div>
 
         {!loading && errorMessage && items.length > 0 && (
@@ -236,7 +238,7 @@ export default function NotificationLogPage() {
         )}
 
         <div className="overflow-x-auto" aria-busy={loading}>
-          <table className="w-full min-w-[1100px]">
+          <table className="w-full min-w-[1240px]">
             <thead>
               <tr>
                 {[
@@ -244,10 +246,11 @@ export default function NotificationLogPage() {
                   "วันที่ส่ง",
                   "หัวข้อ",
                   "ประเภท",
+                  "ผู้รับทั้งหมด",
                   "ส่งสำเร็จ",
+                  "ส่งไม่สำเร็จ",
                   "เปิดอ่าน",
-                  "สถานะ",
-                  "ผู้ส่ง",
+                  "ยังไม่อ่าน",
                   "จัดการ",
                 ].map((heading) => (
                   <th
@@ -262,11 +265,11 @@ export default function NotificationLogPage() {
             <tbody>
               {loading && !hasLoadedOnce ? (
                 Array.from({ length: 7 }).map((_, index) => (
-                  <NotificationLogSkeleton key={index} />
+                  <NotificationBroadcastSkeleton key={index} />
                 ))
               ) : errorMessage && items.length === 0 ? (
                 <tr>
-                  <td colSpan={9}>
+                  <td colSpan={10}>
                     <ErrorState
                       message={errorMessage}
                       onRetry={() => void refetch()}
@@ -276,60 +279,57 @@ export default function NotificationLogPage() {
               ) : items.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={9}
+                    colSpan={10}
                     className="py-16 text-center text-sm text-[#9CA3AF]"
                   >
                     ไม่พบข้อมูล
                   </td>
                 </tr>
               ) : (
-                items.map((item, index) => {
-                  const successCount = getSuccessCount(item);
-                  const readCount = getReadCount(item);
-                  const totalCount = getTotalCount(item);
-
-                  return (
-                    <tr
-                      key={item.id}
-                      className="border-b border-[#F5F5F5] transition-colors hover:bg-primary/[0.02]"
-                    >
-                      <td className="px-4 py-4 text-center text-sm text-gray-600">
-                        {(meta.page - 1) * meta.limit + index + 1}
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-4 text-center text-sm text-gray-600">
-                        {formatDateTime(item.sentAt || item.createdAt)}
-                      </td>
-                      <td className="max-w-[280px] px-4 py-4 text-center text-sm text-gray-600">
-                        <span className="line-clamp-2">{item.title || "-"}</span>
-                      </td>
-                      <td className="px-4 py-4 text-center text-sm text-gray-600">
-                        {getTypeLabel(item.type)}
-                      </td>
-                      <td className="px-4 py-4 text-center text-sm text-gray-600">
-                        {formatNumber(successCount)}
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-4 text-center text-sm text-gray-600">
-                        {formatReadCount(readCount, totalCount)}
-                      </td>
-                      <td className="px-4 py-4 text-center text-sm font-semibold">
-                        <StatusLabel log={item} />
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-4 text-center text-sm text-gray-600">
-                        {getSenderName(item)}
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="flex justify-center">
-                          <ActionIconButton
-                            icon={Search}
-                            variant="primary"
-                            onClick={() => handleOpenDetail(item)}
-                            aria-label={`ดูรายละเอียด ${item.title}`}
-                          />
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
+                items.map((item, index) => (
+                  <tr
+                    key={item.broadcastId}
+                    className="border-b border-[#F5F5F5] transition-colors hover:bg-primary/[0.02]"
+                  >
+                    <td className="px-4 py-4 text-center text-sm text-gray-600">
+                      {(meta.page - 1) * meta.limit + index + 1}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-4 text-center text-sm text-gray-600">
+                      {formatDateTime(item.date)}
+                    </td>
+                    <td className="max-w-[280px] px-4 py-4 text-center text-sm text-gray-600">
+                      <span className="line-clamp-2">{item.title || "-"}</span>
+                    </td>
+                    <td className="px-4 py-4 text-center text-sm text-gray-600">
+                      {getTypeLabel(item.type)}
+                    </td>
+                    <td className="px-4 py-4 text-center text-sm text-gray-600">
+                      {formatNumber(getTotalRecipients(item))}
+                    </td>
+                    <td className="px-4 py-4 text-center text-sm text-[#38B66A]">
+                      {formatNumber(item.totalSent)}
+                    </td>
+                    <td className="px-4 py-4 text-center text-sm text-[#F44034]">
+                      {formatNumber(item.totalFailed)}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-4 text-center text-sm text-gray-600">
+                      {formatReadCount(item.totalRead, item.totalSent)}
+                    </td>
+                    <td className="px-4 py-4 text-center text-sm text-gray-600">
+                      {formatNumber(item.totalUnread)}
+                    </td>
+                    <td className="px-4 py-4">
+                      <div className="flex justify-center">
+                        <ActionIconButton
+                          icon={Search}
+                          variant="primary"
+                          onClick={() => handleOpenDetail(item)}
+                          aria-label={`ดูรายละเอียด ${item.title}`}
+                        />
+                      </div>
+                    </td>
+                  </tr>
+                ))
               )}
             </tbody>
           </table>
@@ -340,14 +340,15 @@ export default function NotificationLogPage() {
           total={meta.total}
           page={meta.page}
           totalPages={meta.totalPages}
+          pageSize={meta.limit}
           onPageChange={(page) =>
             setAppliedFilter((current) => ({ ...current, page }))
           }
         />
       </div>
 
-      <NotificationLogDetailModal
-        log={selectedLog}
+      <NotificationBroadcastDetailModal
+        broadcast={selectedBroadcast}
         source={selectedContent}
         product={selectedProduct}
         previewLoading={previewLoading}
@@ -357,70 +358,56 @@ export default function NotificationLogPage() {
   );
 }
 
-function NotificationLogSkeleton() {
+function NotificationBroadcastSkeleton() {
   return (
     <tr className="animate-pulse border-b border-[#F5F5F5]">
-      {["w-6", "w-28", "w-44", "w-16", "w-16", "w-24", "w-16", "w-24", "w-8"].map(
-        (width, index) => (
-          <td key={index} className="px-4 py-4">
-            <div className={`mx-auto h-4 rounded bg-gray-100 ${width}`} />
-          </td>
-        ),
-      )}
+      {[
+        "w-6",
+        "w-28",
+        "w-44",
+        "w-16",
+        "w-16",
+        "w-16",
+        "w-16",
+        "w-24",
+        "w-16",
+        "w-8",
+      ].map((width, index) => (
+        <td key={index} className="px-4 py-4">
+          <div className={`mx-auto h-4 rounded bg-gray-100 ${width}`} />
+        </td>
+      ))}
     </tr>
   );
 }
 
-function StatusLabel({ log }: { log: NotificationLog }) {
-  const status = getStatus(log);
-  const styles: Record<string, string> = {
-    SUCCESS: "text-[#38B66A]",
-    PARTIAL: "text-[#FF944D]",
-    PENDING: "text-[#FF944D]",
-    SCHEDULED: "text-[#3B82F6]",
-    FAILED: "text-[#F44034]",
-  };
-  const labels: Record<string, string> = {
-    SUCCESS: "ส่งสำเร็จ",
-    PARTIAL: "สำเร็จบางส่วน",
-    PENDING: "รอส่ง",
-    SCHEDULED: "ตั้งเวลาส่ง",
-    FAILED: "ล้มเหลว",
-  };
-
-  return (
-    <span className={styles[status] ?? "text-gray-500"}>
-      {labels[status] ?? status ?? "-"}
-    </span>
-  );
-}
-
-function NotificationLogDetailModal({
-  log,
+function NotificationBroadcastDetailModal({
+  broadcast,
   source,
   product,
   previewLoading,
   onClose,
 }: {
-  log: NotificationLog | null;
+  broadcast: NotificationBroadcast | null;
   source: Content | null;
   product: Product | null;
   previewLoading: boolean;
   onClose: () => void;
 }) {
-  if (!log) return null;
+  if (!broadcast) return null;
 
-  const totalCount = getTotalCount(log);
-  const successCount = getSuccessCount(log);
-  const readCount = getReadCount(log);
-  const previewContent = getNotificationPreviewContent(log, source, product);
+  const previewContent = getNotificationPreviewContent(
+    broadcast,
+    source,
+    product,
+  );
 
   return (
     <div
       className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/20 px-4 py-6"
       role="dialog"
       aria-modal="true"
-      aria-labelledby="notification-log-detail-title"
+      aria-labelledby="notification-broadcast-detail-title"
     >
       <button
         type="button"
@@ -428,7 +415,7 @@ function NotificationLogDetailModal({
         onClick={onClose}
         aria-label="ปิด"
       />
-      <div className="relative max-h-[calc(100vh-48px)] w-[520px] max-w-full overflow-y-auto rounded-[24px] bg-white px-8 py-7 shadow-[0_8px_32px_rgba(0,0,0,0.12)]">
+      <div className="relative max-h-[calc(100vh-48px)] w-[560px] max-w-full overflow-y-auto rounded-[24px] bg-white px-8 py-7 shadow-[0_8px_32px_rgba(0,0,0,0.12)]">
         <button
           type="button"
           onClick={onClose}
@@ -439,7 +426,7 @@ function NotificationLogDetailModal({
         </button>
 
         <h2
-          id="notification-log-detail-title"
+          id="notification-broadcast-detail-title"
           className="pr-6 text-[18px] font-bold leading-6 text-[#243333]"
         >
           รายละเอียดการแจ้งเตือน
@@ -447,26 +434,32 @@ function NotificationLogDetailModal({
 
         <div className="mt-6 space-y-5">
           <div className="grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-2">
+            <ModalInfo label="วันที่ส่ง" value={formatDateTime(broadcast.date)} />
+            <ModalInfo label="ประเภท" value={getTypeLabel(broadcast.type)} />
             <ModalInfo
-              label="วันที่ส่ง"
-              value={formatDateTime(log.sentAt || log.createdAt)}
+              label="ผู้รับทั้งหมด"
+              value={formatNumber(getTotalRecipients(broadcast))}
             />
-            <ModalInfo label="หัวข้อ" value={log.title || "-"} />
-            <ModalInfo label="ส่งสำเร็จ" value={formatNumber(successCount)} />
-            <ModalInfo label="เปิดอ่าน" value={formatReadCount(readCount, totalCount)} />
-            <div>
-              <p className="text-[12px] font-semibold leading-5 text-[#243333]">
-                สถานะ
-              </p>
-              <p className="text-[13px] font-semibold leading-5">
-                <StatusLabel log={log} />
-              </p>
-            </div>
-            <ModalInfo label="ผู้ส่ง" value={getSenderName(log)} />
+            <ModalInfo
+              label="ส่งสำเร็จ"
+              value={formatNumber(broadcast.totalSent)}
+            />
+            <ModalInfo
+              label="ส่งไม่สำเร็จ"
+              value={formatNumber(broadcast.totalFailed)}
+            />
+            <ModalInfo
+              label="เปิดอ่าน"
+              value={formatReadCount(broadcast.totalRead, broadcast.totalSent)}
+            />
+            <ModalInfo
+              label="ยังไม่อ่าน"
+              value={formatNumber(broadcast.totalUnread)}
+            />
           </div>
 
-          <NotificationDetail log={log} product={product} />
-
+          <ModalInfo label="หัวข้อ" value={broadcast.title || "-"} />
+          <ModalInfo label="รายละเอียด" value={broadcast.body || "-"} />
           {previewLoading ? (
             <div className="h-[108px] animate-pulse rounded-[14px] bg-[#E8ECEE]" />
           ) : (
@@ -484,7 +477,7 @@ function NotificationLogDetailModal({
 }
 
 function getNotificationPreviewContent(
-  log: NotificationLog,
+  broadcast: NotificationBroadcast,
   source?: Content | null,
   product?: Product | null,
 ): NotificationPreviewContent {
@@ -496,50 +489,54 @@ function getNotificationPreviewContent(
     return buildContentNotificationPreview(source, "news");
   }
 
-  const payload = getNotificationPayload(log);
-  const body = payload.body || payload.bodyRich || "";
-  const parsedBody = parseNotificationBody(body);
+  const parsedBody = parseNotificationBody(broadcast.body);
 
   return {
-    title: payload.title || "แจ้งเตือนระบบ",
-    compactBody: normalizeNotificationText(body) || undefined,
+    title: broadcast.title || "แจ้งเตือนระบบ",
+    compactBody: normalizeNotificationText(broadcast.body) || undefined,
     reference: parsedBody.reference,
     details:
       parsedBody.details.length > 0
         ? parsedBody.details.map((text) => ({ text }))
         : undefined,
-    image: payload.imageUrl || undefined,
-    imageAlt: log.title || "รูปภาพการแจ้งเตือน",
   };
 }
 
-function getNotificationDetail(log: NotificationLog) {
-  const payload = getNotificationPayload(log);
-  return payload.bodyRich || payload.body || "-";
+function parseNotificationBody(value: string) {
+  const parts = value.split(/\n?─{3,}\n?/);
+  const reference = parts.shift()?.trim() || undefined;
+  const details = parts
+    .join("\n")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  return { reference, details };
 }
 
-function getContentId(log: NotificationLog) {
-  return (
-    log.contentId ||
-    log.payload?.contentId ||
-    log.data?.contentId ||
-    log.metadata?.contentId ||
-    undefined
-  );
+function normalizeNotificationText(value: string) {
+  return value.replace(/─{3,}/g, " ").replace(/\s+/g, " ").trim();
 }
 
-function getProductId(log: NotificationLog) {
-  return (
-    log.productId ||
-    log.payload?.productId ||
-    log.data?.productId ||
-    log.metadata?.productId ||
-    undefined
-  );
+function getSourceIdFromDeepLink(broadcast: NotificationBroadcast) {
+  if (!broadcast.deepLink) return undefined;
+
+  const pattern =
+    broadcast.type === "PRODUCT"
+      ? /\/(?:products?|policies)\/([^/?#]+)/i
+      : /\/news\/([^/?#]+)/i;
+  const sourceId = broadcast.deepLink.match(pattern)?.[1];
+
+  if (!sourceId) return undefined;
+  try {
+    return decodeURIComponent(sourceId);
+  } catch {
+    return sourceId;
+  }
 }
 
 async function loadProductSource(
-  log: NotificationLog,
+  broadcast: NotificationBroadcast,
   productId?: string,
 ) {
   if (productId) {
@@ -547,8 +544,7 @@ async function loadProductSource(
     return response.success ? response.data : null;
   }
 
-  const payload = getNotificationPayload(log);
-  const title = payload.body?.split(/\r?\n/, 1)[0]?.trim();
+  const title = broadcast.body.split(/\r?\n/, 1)[0]?.trim();
   if (!title) return null;
 
   const response = await productApi.getAll({ keyword: title, page: 1, limit: 10 });
@@ -556,13 +552,14 @@ async function loadProductSource(
 
   return (
     response.data.find(
-      (product) => product.title.trim().toLocaleLowerCase() === title.toLocaleLowerCase(),
+      (product) =>
+        product.title.trim().toLocaleLowerCase() === title.toLocaleLowerCase(),
     ) ?? response.data[0] ?? null
   );
 }
 
 async function loadContentSource(
-  log: NotificationLog,
+  broadcast: NotificationBroadcast,
   contentId?: string,
 ) {
   if (contentId) {
@@ -573,10 +570,8 @@ async function loadContentSource(
   const response = await contentApi.getAll({ page: 1, limit: 100 });
   if (!response.success) return null;
 
-  const payload = getNotificationPayload(log);
-  const expectedBody = normalizeComparableText(payload.body || payload.bodyRich || "");
-  const expectedTitle = normalizeComparableText(payload.title || log.title);
-
+  const expectedBody = normalizeComparableText(broadcast.body);
+  const expectedTitle = normalizeComparableText(broadcast.title);
   const exactMatch = response.data.find((content) => {
     const preview = buildContentNotificationPreview(content, "news");
     const body = buildContentNotificationBody(content, "news", preview);
@@ -585,6 +580,7 @@ async function loadContentSource(
       normalizeComparableText(body) === expectedBody
     );
   });
+
   if (exactMatch) return exactMatch;
 
   const rankedMatches = response.data
@@ -606,185 +602,37 @@ function normalizeComparableText(value: string) {
   return value.replace(/\s+/g, " ").trim().toLocaleLowerCase();
 }
 
-function getNotificationPayload(log: NotificationLog) {
-  return {
-    title:
-      log.payload?.title ||
-      log.data?.title ||
-      log.metadata?.title ||
-      log.title,
-    body:
-      log.payload?.body ||
-      log.data?.body ||
-      log.metadata?.body ||
-      log.body,
-    bodyRich:
-      log.payload?.bodyRich ||
-      log.data?.bodyRich ||
-      log.metadata?.bodyRich ||
-      log.bodyRich,
-    imageUrl:
-      log.payload?.imageUrl ||
-      log.data?.imageUrl ||
-      log.metadata?.imageUrl ||
-      log.imageUrl,
-  };
-}
-
-function parseNotificationBody(value: string) {
-  const parts = value.split(/\n?─{3,}\n?/);
-  const reference = parts.shift()?.trim() || undefined;
-  const details = parts
-    .join("\n")
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean);
-
-  return { reference, details };
-}
-
-function normalizeNotificationText(value: string) {
-  return value.replace(/─{3,}/g, " ").replace(/\s+/g, " ").trim();
-}
-
-function NotificationDetail({
-  log,
-  product,
-}: {
-  log: NotificationLog;
-  product: Product | null;
-}) {
-  if (!product) {
-    return <ModalInfo label="รายละเอียด" value={getNotificationDetail(log)} />;
-  }
-
-  return (
-    <div>
-      <p className="text-[12px] font-semibold leading-5 text-[#243333]">
-        รายละเอียด
-      </p>
-      <div className="mt-1 space-y-3 break-words text-[13px] leading-6 text-[#9FA2A9]">
-        {product.summary && <p className="whitespace-pre-wrap">{product.summary}</p>}
-        {product.summary &&
-          (product.content || (product.coverages ?? []).length > 0) && (
-            <div className="w-[168px] border-t border-[#B8BEC1]" aria-hidden="true" />
-          )}
-        {product.content && <ProductDetailContent value={product.content} />}
-        {(product.coverages ?? []).length > 0 && (
-          <ul className="space-y-1.5">
-            {(product.coverages ?? []).map((coverage, index) => (
-              <li key={`${coverage}-${index}`} className="flex items-start gap-2">
-                <span className="mt-[10px] h-1 w-1 shrink-0 rounded-full bg-[#9FA2A9]" />
-                <span>{coverage}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function ProductDetailContent({ value }: { value: string }) {
-  if (/<\/?[a-z][^>]*>/i.test(value)) {
-    return (
-      <div
-        className="max-w-none whitespace-normal break-words [&_li]:ml-5 [&_li]:list-disc [&_ol]:space-y-1 [&_p]:whitespace-pre-wrap [&_ul]:space-y-1"
-        dangerouslySetInnerHTML={{ __html: value }}
-      />
-    );
-  }
-
-  return <p className="whitespace-pre-wrap break-words">{value}</p>;
-}
-
 function ModalInfo({ label, value }: { label: string; value: string }) {
   return (
     <div>
       <p className="text-[12px] font-semibold leading-5 text-[#243333]">{label}</p>
-      <p className="whitespace-pre-wrap text-[13px] leading-5 text-[#9FA2A9]">
+      <p className="whitespace-pre-wrap break-words text-[13px] leading-5 text-[#9FA2A9]">
         {value}
       </p>
     </div>
   );
 }
 
-function getTypeLabel(type?: string | null) {
-  const labels: Record<string, string> = {
+function getTotalRecipients(broadcast: NotificationBroadcast) {
+  return broadcast.totalSent + broadcast.totalFailed;
+}
+
+function getTypeLabel(type: NotificationBroadcastType) {
+  const labels: Record<NotificationBroadcastType, string> = {
     SYSTEM: "ระบบ",
-    POLICY: "ผลิตภัณฑ์",
     PRODUCT: "ผลิตภัณฑ์",
-    NEWS: "ข่าวสาร",
-    CONTENT: "ข่าวสาร",
+    NEWS: "ข่าวสาร / โปรโมชั่น",
   };
-  return type ? labels[type.toUpperCase()] ?? type : "-";
-}
-
-function getStatus(log: NotificationLog) {
-  const rawStatus = log.status?.toUpperCase();
-  if (rawStatus === "COMPLETED" || rawStatus === "SENT") return "SUCCESS";
-  if (rawStatus) return rawStatus;
-
-  const failedCount =
-    firstNumber(log.failedCount, log.failureCount, log.failed) ?? 0;
-  const successCount = getSuccessCount(log);
-  if (successCount > 0 && failedCount > 0) return "PARTIAL";
-  if (failedCount > 0 && successCount === 0) return "FAILED";
-  return "SUCCESS";
-}
-
-function getSuccessCount(log: NotificationLog) {
-  return firstNumber(log.successCount, log.sentCount, log.success) ?? 0;
-}
-
-function getReadCount(log: NotificationLog) {
-  return firstNumber(log.readCount, log.openedCount, log.read) ?? 0;
-}
-
-function getTotalCount(log: NotificationLog) {
-  const explicitTotal = firstNumber(
-    log.totalRecipients,
-    log.totalDevices,
-    log.targetCount,
-    log.recipientCount,
-    log.total,
-  );
-  if (explicitTotal !== undefined) return explicitTotal;
-  return (
-    getSuccessCount(log) +
-    (firstNumber(log.failedCount, log.failureCount, log.failed) ?? 0)
-  );
-}
-
-function getSenderName(log: NotificationLog) {
-  return (
-    log.senderName ||
-    log.createdByName ||
-    log.sender?.fullName ||
-    log.sender?.name ||
-    log.sender?.username ||
-    log.admin?.fullName ||
-    log.admin?.name ||
-    log.admin?.username ||
-    log.createdByAdmin?.fullName ||
-    log.createdByAdmin?.name ||
-    log.createdByAdmin?.username ||
-    log.createdBy ||
-    "-"
-  );
-}
-
-function firstNumber(...values: Array<number | null | undefined>) {
-  return values.find((value): value is number => typeof value === "number");
+  return labels[type] ?? type;
 }
 
 function formatNumber(value: number) {
   return new Intl.NumberFormat("th-TH").format(value);
 }
 
-function formatReadCount(readCount: number, totalCount: number) {
-  if (totalCount <= 0) return formatNumber(readCount);
-  const percent = (readCount / totalCount) * 100;
+function formatReadCount(readCount: number, totalSent: number) {
+  if (totalSent <= 0) return formatNumber(readCount);
+  const percent = (readCount / totalSent) * 100;
   const formattedPercent = new Intl.NumberFormat("th-TH", {
     maximumFractionDigits: 1,
   }).format(percent);
