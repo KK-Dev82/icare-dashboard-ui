@@ -1,6 +1,25 @@
 import type { PaginationMeta } from "@/types/member";
 
 export type NotificationBroadcastType = "NEWS" | "PRODUCT" | "SYSTEM";
+export type BroadcastLogStatus = "SENT" | "FAILED" | "PENDING";
+
+export interface BroadcastLog {
+  id: string;
+  userId: string;
+  phone: string | null;
+  deviceId: string;
+  status: BroadcastLogStatus;
+  errorMessage: string | null;
+  isRead: boolean;
+  sentAt: string | null;
+  createdAt: string;
+}
+
+export interface BroadcastLogListResponse {
+  success: boolean;
+  data: BroadcastLog[];
+  meta: PaginationMeta;
+}
 
 export interface NotificationBroadcast {
   broadcastId: string;

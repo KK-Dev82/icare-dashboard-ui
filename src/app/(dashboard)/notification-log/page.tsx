@@ -1,7 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Search, XCircle } from "lucide-react";
+import {
+  Check,
+  ClipboardList,
+  Search,
+  TriangleAlert,
+  Users,
+  X,
+  XCircle,
+} from "lucide-react";
 import { contentApi } from "@/api/content";
 import { notificationApi } from "@/api/notification";
 import { productApi } from "@/api/product";
@@ -21,6 +29,7 @@ import {
 } from "@/lib/notificationPreview";
 import type { Content } from "@/types/content";
 import type {
+  BroadcastLogStatus,
   NotificationBroadcast,
   NotificationBroadcastFilter,
   NotificationBroadcastType,
@@ -43,6 +52,7 @@ export default function NotificationLogPage() {
   const [type, setType] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [logBroadcast, setLogBroadcast] = useState<NotificationBroadcast | null>(null);
   const [selectedBroadcast, setSelectedBroadcast] =
     useState<NotificationBroadcast | null>(null);
   const [selectedContent, setSelectedContent] = useState<Content | null>(null);
@@ -251,6 +261,7 @@ export default function NotificationLogPage() {
                   "ส่งไม่สำเร็จ",
                   "เปิดอ่าน",
                   "ยังไม่อ่าน",
+                  "Log",
                   "จัดการ",
                 ].map((heading) => (
                   <th
@@ -269,7 +280,7 @@ export default function NotificationLogPage() {
                 ))
               ) : errorMessage && items.length === 0 ? (
                 <tr>
-                  <td colSpan={10}>
+                  <td colSpan={11}>
                     <ErrorState
                       message={errorMessage}
                       onRetry={() => void refetch()}
@@ -279,7 +290,7 @@ export default function NotificationLogPage() {
               ) : items.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={10}
+                    colSpan={11}
                     className="py-16 text-center text-sm text-[#9CA3AF]"
                   >
                     ไม่พบข้อมูล
@@ -321,6 +332,16 @@ export default function NotificationLogPage() {
                     <td className="px-4 py-4">
                       <div className="flex justify-center">
                         <ActionIconButton
+                          icon={ClipboardList}
+                          variant="accent"
+                          onClick={() => setLogBroadcast(item)}
+                          aria-label={`ดู log ${item.title}`}
+                        />
+                      </div>
+                    </td>
+                    <td className="px-4 py-4">
+                      <div className="flex justify-center">
+                        <ActionIconButton
                           icon={Search}
                           variant="primary"
                           onClick={() => handleOpenDetail(item)}
@@ -354,6 +375,11 @@ export default function NotificationLogPage() {
         previewLoading={previewLoading}
         onClose={handleCloseDetail}
       />
+
+      <BroadcastLogModal
+        broadcast={logBroadcast}
+        onClose={() => setLogBroadcast(null)}
+      />
     </div>
   );
 }
@@ -371,6 +397,7 @@ function NotificationBroadcastSkeleton() {
         "w-16",
         "w-24",
         "w-16",
+        "w-8",
         "w-8",
       ].map((width, index) => (
         <td key={index} className="px-4 py-4">
@@ -637,6 +664,317 @@ function formatReadCount(readCount: number, totalSent: number) {
     maximumFractionDigits: 1,
   }).format(percent);
   return `${formatNumber(readCount)} (${formattedPercent}%)`;
+}
+
+function BroadcastLogModal({
+  broadcast,
+  onClose,
+}: {
+  broadcast: NotificationBroadcast | null;
+  onClose: () => void;
+}) {
+  const [page, setPage] = useState(1);
+  const [phone, setPhone] = useState("");
+  const [status, setStatus] = useState("");
+  const [appliedPhone, setAppliedPhone] = useState("");
+  const [appliedStatus, setAppliedStatus] = useState("");
+
+  const { data, loading, errorMessage, refetch } = useAsyncData(async () => {
+    if (!broadcast) return null;
+    const res = await notificationApi.getBroadcastLogs(
+      broadcast.broadcastId,
+      page,
+      20,
+      appliedStatus || undefined,
+      appliedPhone.trim() || undefined,
+    );
+    if (!res.success) throw new Error("โหลด log ไม่สำเร็จ");
+    return res;
+  });
+
+  useEffect(() => {
+    if (broadcast) void refetch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [broadcast, page, appliedStatus, appliedPhone]);
+
+  if (!broadcast) return null;
+
+  const logs = data?.data ?? [];
+  const meta = data?.meta;
+
+  const applyFilters = () => {
+    setPage(1);
+    setAppliedPhone(phone);
+    setAppliedStatus(status);
+  };
+
+  const handleStatusChange = (value: string) => {
+    setStatus(value);
+    setPage(1);
+    setAppliedStatus(value);
+  };
+
+  const handleClose = () => {
+    setPage(1);
+    setPhone("");
+    setStatus("");
+    setAppliedPhone("");
+    setAppliedStatus("");
+    onClose();
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-[110] flex items-center justify-center overflow-y-auto bg-[#243333]/20 px-4 py-6"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="broadcast-log-modal-title"
+    >
+      <button
+        type="button"
+        className="absolute inset-0 cursor-default"
+        onClick={handleClose}
+        aria-label="ปิด"
+      />
+      <div className="relative max-h-[calc(100vh-48px)] w-full max-w-[980px] overflow-y-auto rounded-[24px] bg-white px-8 py-8 shadow-[0_12px_40px_rgba(36,51,51,0.14)] sm:px-10">
+        <button
+          type="button"
+          onClick={handleClose}
+          className="absolute right-7 top-7 flex h-8 w-8 items-center justify-center rounded-full text-[#607078] transition-colors hover:bg-[#F3F6F6] hover:text-[#243333]"
+          aria-label="ปิด"
+        >
+          <X size={20} strokeWidth={2} />
+        </button>
+
+        <h2
+          id="broadcast-log-modal-title"
+          className="pr-12 text-[22px] font-bold leading-7 text-[#243333]"
+        >
+          ประวัติ Log การส่ง
+        </h2>
+        <p className="mt-1 text-[13px] text-[#9CA3AF]">
+          แสดงประวัติการส่งข้อความแจ้งเตือนของหัวข้อที่เลือก
+        </p>
+
+        <div className="mt-6 flex items-center gap-4 rounded-[10px] bg-gradient-to-r from-[#F0FAFA] to-[#F7FCFC] px-4 py-4">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#FFF1DF] text-[#FF9D2E]">
+            <TriangleAlert size={22} fill="currentColor" className="text-[#FF9D2E]" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[12px] text-[#9CA3AF]">หัวข้อข้อความ</p>
+            <p className="truncate text-[14px] font-bold text-[#243333]">
+              {broadcast.title || "-"}
+            </p>
+            <p className="mt-0.5 text-[12px] text-[#8C9A9F]">
+              ประเภท: {getTypeLabel(broadcast.type)}
+              <span className="mx-2 text-[#D7DEDE]">|</span>
+              วันที่ส่ง: {formatDateTime(broadcast.date)}
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <LogSummaryCard
+            icon={Users}
+            label="ผู้รับทั้งหมด"
+            value={getTotalRecipients(broadcast)}
+            iconClassName="bg-[#EDF8FF] text-[#2D9CDB]"
+          />
+          <LogSummaryCard
+            icon={Check}
+            label="ส่งสำเร็จ"
+            value={broadcast.totalSent}
+            iconClassName="bg-[#EAF9F1] text-[#13AE70]"
+          />
+          <LogSummaryCard
+            icon={X}
+            label="ส่งไม่สำเร็จ"
+            value={broadcast.totalFailed}
+            iconClassName="bg-[#FFF0F0] text-[#F04444]"
+          />
+        </div>
+
+        <div className="mt-6 flex flex-wrap gap-3">
+          <Input
+            size="md"
+            className="w-full sm:w-[360px]"
+            label="เบอร์โทรศัพท์"
+            placeholder="ค้นหาจากเบอร์โทรศัพท์ผู้ใช้"
+            icon={<Search size={16} />}
+            value={phone}
+            onChange={(event) => setPhone(event.target.value)}
+            onKeyDown={(event) => { if (event.key === "Enter") applyFilters(); }}
+          />
+          <Select
+            size="md"
+            className="w-full sm:w-[240px]"
+            label="สถานะการส่ง"
+            placeholder="เลือกสถานะ"
+            value={status}
+            onChange={handleStatusChange}
+            options={[
+              { label: "ทั้งหมด", value: "" },
+              { label: "ส่งสำเร็จ", value: "SENT" },
+              { label: "ส่งไม่สำเร็จ", value: "FAILED" },
+            ]}
+          />
+          <button
+            type="button"
+            onClick={applyFilters}
+            className="flex h-[42px] items-center gap-2 self-end rounded-[10px] bg-primary px-5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+          >
+            <Search size={16} />
+            ค้นหา
+          </button>
+        </div>
+
+        <div className="mt-5 overflow-x-auto rounded-[10px] border border-[#F1F3F3]">
+          <table className="w-full min-w-[760px]">
+            <thead className="bg-[#FAFBFB]">
+              <tr>
+                {["ลำดับ", "วันที่ / เวลา", "ผู้รับ", "Device ID", "สถานะ", "รายละเอียด"].map((h) => (
+                  <th
+                    key={h}
+                    className="px-4 py-3 text-left text-[12px] font-semibold text-[#87959B]"
+                  >
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <tr key={i} className="animate-pulse border-b border-[#F5F5F5]">
+                    {["w-6", "w-24", "w-20", "w-16", "w-32", "w-28"].map((w, j) => (
+                      <td key={j} className="px-4 py-3">
+                        <div className={`h-3 rounded bg-gray-100 ${w}`} />
+                      </td>
+                    ))}
+                  </tr>
+                ))
+              ) : errorMessage ? (
+                <tr>
+                  <td colSpan={6} className="py-10 text-center text-sm text-[#F44034]">{errorMessage}</td>
+                </tr>
+              ) : logs.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-10 text-center text-sm text-[#9CA3AF]">
+                    ไม่พบข้อมูล
+                  </td>
+                </tr>
+              ) : (
+                logs.map((log, i) => (
+                  <tr
+                    key={log.id}
+                    className="border-b border-[#EEF1F1] last:border-b-0 hover:bg-primary/[0.02]"
+                  >
+                    <td className="px-4 py-3 text-center text-[12px] text-[#64757B]">
+                      {((page - 1) * 20) + i + 1}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 text-[12px] text-[#64757B]">
+                      {formatDateTime(log.sentAt ?? log.createdAt)}
+                    </td>
+                    <td className="px-4 py-3 text-[12px] text-[#64757B]">
+                      {log.phone ?? "-"}
+                    </td>
+                    <td className="max-w-[150px] px-4 py-3 text-[12px] text-[#64757B]">
+                      <span className="block truncate" title={log.deviceId}>
+                        {formatCompactId(log.deviceId)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <LogStatusBadge status={log.status} />
+                    </td>
+                    <td className="max-w-[240px] px-4 py-3 text-[12px] text-[#64757B]">
+                      <span className="line-clamp-2">
+                        {getLogDetail(log.status, log.errorMessage)}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {meta && meta.totalPages > 1 && (
+          <div className="mt-5 flex items-center justify-center gap-2">
+            <button
+              type="button"
+              disabled={page <= 1}
+              onClick={() => setPage((p) => p - 1)}
+              className="rounded-[6px] border border-[#EAEAEA] px-3 py-1 text-xs disabled:opacity-40"
+            >
+              ก่อนหน้า
+            </button>
+            <span className="text-xs text-gray-500">{page} / {meta.totalPages}</span>
+            <button
+              type="button"
+              disabled={page >= meta.totalPages}
+              onClick={() => setPage((p) => p + 1)}
+              className="rounded-[6px] border border-[#EAEAEA] px-3 py-1 text-xs disabled:opacity-40"
+            >
+              ถัดไป
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function LogStatusBadge({ status }: { status: BroadcastLogStatus }) {
+  const config: Record<BroadcastLogStatus, { label: string; className: string }> = {
+    SENT: { label: "ส่งสำเร็จ", className: "bg-[#ECFDF3] text-[#38B66A]" },
+    FAILED: { label: "ส่งไม่สำเร็จ", className: "bg-[#FEF2F2] text-[#F44034]" },
+    PENDING: { label: "รอส่ง", className: "bg-[#FFF7ED] text-[#FF944D]" },
+  };
+  const { label, className } = config[status] ?? { label: status, className: "bg-gray-100 text-gray-500" };
+  return (
+    <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-medium ${className}`}>
+      <span className="h-1.5 w-1.5 rounded-full bg-current" />
+      {label}
+    </span>
+  );
+}
+
+function LogSummaryCard({
+  icon: Icon,
+  label,
+  value,
+  iconClassName,
+}: {
+  icon: typeof Users;
+  label: string;
+  value: number;
+  iconClassName: string;
+}) {
+  return (
+    <div className="flex min-h-[82px] items-center gap-4 rounded-[10px] border border-[#E5E9E9] bg-white px-4 shadow-[0_2px_8px_rgba(36,51,51,0.03)]">
+      <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${iconClassName}`}>
+        <Icon size={22} strokeWidth={2.5} />
+      </div>
+      <div>
+        <p className="text-[12px] text-[#8C9A9F]">{label}</p>
+        <p className="text-[20px] font-bold leading-6 text-[#243333]">
+          {formatNumber(value)}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function formatCompactId(value: string) {
+  if (!value) return "-";
+  return value.length > 16 ? `${value.slice(0, 8)}…${value.slice(-4)}` : value;
+}
+
+function getLogDetail(status: BroadcastLogStatus, errorMessage: string | null) {
+  if (errorMessage) return errorMessage;
+  if (status === "SENT") return "ส่งข้อความสำเร็จ";
+  if (status === "PENDING") return "กำลังรอส่งข้อความ";
+  return "ไม่พบรายละเอียดข้อผิดพลาด";
 }
 
 function formatDateTime(value: string) {

@@ -1,5 +1,6 @@
 import { apiClient } from "@/lib/apiClient";
 import type {
+  BroadcastLogListResponse,
   NotificationBroadcastFilter,
   NotificationBroadcastListResponse,
 } from "@/types/notification-log";
@@ -40,6 +41,21 @@ export const notificationApi = {
       payload,
     );
     return data.data;
+  },
+  getBroadcastLogs: async (
+    broadcastId: string,
+    page = 1,
+    limit = 20,
+    status?: string,
+    phone?: string,
+  ): Promise<BroadcastLogListResponse> => {
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (status) params.set("status", status);
+    if (phone) params.set("phone", phone);
+    const { data } = await apiClient.get<BroadcastLogListResponse>(
+      `/api/v1/admin/notifications/broadcasts/${broadcastId}/logs?${params.toString()}`,
+    );
+    return data;
   },
   getBroadcasts: async (
     filter: NotificationBroadcastFilter,
