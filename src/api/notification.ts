@@ -1,7 +1,8 @@
 import { apiClient } from "@/lib/apiClient";
 import type {
-  NotificationLogFilter,
-  NotificationLogListResponse,
+  BroadcastLogListResponse,
+  NotificationBroadcastFilter,
+  NotificationBroadcastListResponse,
 } from "@/types/notification-log";
 
 export type NotificationType = "NEWS" | "PRODUCT" | "SYSTEM";
@@ -41,18 +42,36 @@ export const notificationApi = {
     );
     return data.data;
   },
-  getLogs: async (filter: NotificationLogFilter): Promise<NotificationLogListResponse> => {
+  getBroadcastLogs: async (
+    broadcastId: string,
+    page = 1,
+    limit = 20,
+    status?: string,
+    phone?: string,
+  ): Promise<BroadcastLogListResponse> => {
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (status) params.set("status", status);
+    if (phone) params.set("phone", phone);
+    const { data } = await apiClient.get<BroadcastLogListResponse>(
+      `/api/v1/admin/notifications/broadcasts/${broadcastId}/logs?${params.toString()}`,
+    );
+    return data;
+  },
+  getBroadcasts: async (
+    filter: NotificationBroadcastFilter,
+  ): Promise<NotificationBroadcastListResponse> => {
     const params = new URLSearchParams({
       page: String(filter.page ?? 1),
       limit: String(filter.limit ?? 10),
     });
 
-    if (filter.search) params.set("keyword", filter.search);
+    if (filter.keyword) params.set("keyword", filter.keyword);
     if (filter.type) params.set("type", filter.type);
-    if (filter.status) params.set("status", filter.status);
+    if (filter.dateFrom) params.set("dateFrom", filter.dateFrom);
+    if (filter.dateTo) params.set("dateTo", filter.dateTo);
 
-    const { data } = await apiClient.get<NotificationLogListResponse>(
-      `/api/v1/admin/notifications/logs?${params.toString()}`,
+    const { data } = await apiClient.get<NotificationBroadcastListResponse>(
+      `/api/v1/admin/notifications/broadcasts?${params.toString()}`,
     );
     return data;
   },
