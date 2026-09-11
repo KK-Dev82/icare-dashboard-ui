@@ -1,5 +1,10 @@
 import { apiClient } from "@/lib/apiClient";
-import type { Member, MemberInsuranceResponse, PaginationMeta } from "@/types/member";
+import type {
+  Member,
+  MemberInsuranceResponse,
+  MemberNotificationPreference,
+  PaginationMeta,
+} from "@/types/member";
 
 interface MemberListParams {
   keyword?: string;
@@ -25,6 +30,14 @@ interface MemberInsuranceApiResponse {
   data: MemberInsuranceResponse;
 }
 
+interface MemberNotificationPreferenceResponse {
+  success: boolean;
+  message?: string;
+  data: MemberNotificationPreference | null;
+  meta?: unknown;
+  requestId?: string;
+}
+
 export const memberApi = {
   getAll: async (params?: MemberListParams): Promise<MemberListResponse> => {
     const { data } = await apiClient.get<MemberListResponse>(
@@ -44,6 +57,15 @@ export const memberApi = {
   getInsurance: async (id: string): Promise<MemberInsuranceApiResponse> => {
     const { data } = await apiClient.get<MemberInsuranceApiResponse>(
       `/api/v1/admin/members/${id}/insurance`
+    );
+    return data;
+  },
+
+  getNotificationPreferences: async (
+    userId: string,
+  ): Promise<MemberNotificationPreferenceResponse> => {
+    const { data } = await apiClient.get<MemberNotificationPreferenceResponse>(
+      `/api/v1/admin/notifications/users/${userId}/preferences`
     );
     return data;
   },

@@ -43,7 +43,7 @@ export function TablePagination({
   className = "",
 }: TablePaginationProps) {
   const pageCount = totalPages ?? getTableTotalPages(total, pageSize);
-  const pages = Array.from({ length: pageCount }, (_, i) => i + 1);
+  const pages = getVisiblePages(page, pageCount);
   const canGoPrev = page > 1;
   const canGoNext = page < pageCount;
 
@@ -71,21 +71,31 @@ export function TablePagination({
         >
           <ChevronLeft size={16} />
         </button>
-        {pages.map((pageNumber) => (
-          <button
-            key={pageNumber}
-            type="button"
-            onClick={() => handlePageChange(pageNumber)}
-            className={`flex h-8 w-8 items-center justify-center rounded-lg text-sm font-medium transition-colors ${
-              pageNumber === page
-                ? "bg-primary text-white"
-                : "border border-[#EAEAEA] text-gray-400 hover:border-primary hover:text-primary"
-            }`}
-            aria-current={pageNumber === page ? "page" : undefined}
-          >
-            {pageNumber}
-          </button>
-        ))}
+        {pages.map((pageNumber, index) =>
+          pageNumber === "ellipsis" ? (
+            <span
+              key={`ellipsis-${index}`}
+              className="flex h-8 w-8 items-center justify-center text-sm text-gray-400"
+              aria-hidden="true"
+            >
+              …
+            </span>
+          ) : (
+            <button
+              key={pageNumber}
+              type="button"
+              onClick={() => handlePageChange(pageNumber)}
+              className={`flex h-8 w-8 items-center justify-center rounded-lg text-sm font-medium transition-colors ${
+                pageNumber === page
+                  ? "bg-primary text-white"
+                  : "border border-[#EAEAEA] text-gray-400 hover:border-primary hover:text-primary"
+              }`}
+              aria-current={pageNumber === page ? "page" : undefined}
+            >
+              {pageNumber}
+            </button>
+          ),
+        )}
         <button
           type="button"
           disabled={!canGoNext}
@@ -98,4 +108,21 @@ export function TablePagination({
       </div>
     </div>
   );
+}
+
+function getVisiblePages(page: number, pageCount: number): Array<number | "ellipsis"> {
+  if (pageCount <= 7) {
+    return Array.from({ length: pageCount }, (_, i) => i + 1);
+  }
+
+  const trailingPages = [pageCount - 2, pageCount - 1, pageCount];
+  const windowStart = Math.min(Math.max(page - 1, 1), pageCount - 2);
+  const leadingPages = [windowStart, windowStart + 1, windowStart + 2];
+  const uniquePages = [...new Set([...leadingPages, ...trailingPages])];
+
+  if (leadingPages[leadingPages.length - 1] + 1 < trailingPages[0]) {
+    return [...leadingPages, "ellipsis", ...trailingPages];
+  }
+
+  return uniquePages;
 }

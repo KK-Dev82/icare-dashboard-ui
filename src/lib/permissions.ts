@@ -11,6 +11,7 @@ export const ALL_PERMISSIONS: PermissionKey[] = [
   "ACCOUNTS",
   "SETTINGS",
   "CONSENTS",
+  "NOTIFICATIONS",
 ];
 
 const routePermissions: Array<{
@@ -28,6 +29,7 @@ const routePermissions: Array<{
   { prefix: "/dashboard", permission: "DASHBOARD" },
   { prefix: "/accounts", permission: "ACCOUNTS" },
   { prefix: "/settings", permission: "SETTINGS" },
+  { prefix: "/notification-log", permission: "NOTIFICATIONS" },
   { prefix: "/policies", permission: "POLICIES" },
   { prefix: "/consents", permission: "CONSENTS" },
   { prefix: "/members", permission: "MEMBERS" },
@@ -44,6 +46,7 @@ const defaultRoutes: Array<{ permission: PermissionKey; href: string }> = [
   { permission: "ACCOUNTS", href: "/accounts" },
   { permission: "SETTINGS", href: "/settings" },
   { permission: "CONSENTS", href: "/consents" },
+  { permission: "NOTIFICATIONS", href: "/notification-log" },
 ];
 
 export function getProfilePermissions(profile: AdminUser): PermissionKey[] {
@@ -63,7 +66,9 @@ export function canAccessPath(
   isSuperAdmin: boolean
 ) {
   if (pathname === "/403") return true;
-  if (pathname === "/activity-log") return isSuperAdmin;
+  if (matchesPath(pathname, "/activity-log")) {
+    return isSuperAdmin;
+  }
   if (isSuperAdmin) return true;
 
   const requiredPermission = getRequiredPermission(pathname);

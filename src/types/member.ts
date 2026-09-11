@@ -1,6 +1,24 @@
 export type AccountLevel = "MEMBER" | "CUSTOMER";
 export type MemberStatus = "ACTIVE" | "INACTIVE" | "SUSPENDED";
 
+export interface MemberDevice {
+  deviceId: string;
+  platform: string;
+  fcmToken: string | null;
+  appVersion: string | null;
+  isActive: boolean;
+  lastSeenAt: string | null;
+}
+
+export interface MemberNotificationPreference {
+  id: string;
+  userId: string;
+  news: boolean;
+  product: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Member {
   id: string;
   phone: string;
@@ -11,6 +29,7 @@ export interface Member {
   accountLevel: AccountLevel;
   status: MemberStatus;
   isPhoneVerified: boolean;
+  devices?: MemberDevice[];
   lastLoginAt: string | null;
   createdAt: string;
   updatedAt?: string;
