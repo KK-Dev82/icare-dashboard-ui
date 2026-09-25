@@ -95,6 +95,11 @@ const menuItems: MenuItem[] = [
         href: "/notification-log",
         permission: "NOTIFICATIONS",
       },
+      {
+        label: "API Activity",
+        href: "/api-activity",
+        permission: "DASHBOARD",
+      },
     ],
   },
   { label: "การตั้งค่า", href: "/settings", icon: Settings, permission: "SETTINGS" },

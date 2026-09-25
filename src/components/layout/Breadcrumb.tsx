@@ -21,6 +21,7 @@ const labelMap: Record<string, string> = {
   "user-types": "ประเภทผู้ใช้งาน / กำหนดสิทธิ์การใช้งาน",
   "activity-log": "ประวัติการใช้งานระบบ",
   "notification-log": "ประวัติการแจ้งเตือนระบบ",
+  "api-activity": "API Activity",
   settings: "การตั้งค่า",
   create: "เพิ่มใหม่",
   edit: "แก้ไข",
