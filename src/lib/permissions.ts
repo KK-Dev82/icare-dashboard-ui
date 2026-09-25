@@ -30,7 +30,6 @@ const routePermissions: Array<{
   { prefix: "/accounts", permission: "ACCOUNTS" },
   { prefix: "/settings", permission: "SETTINGS" },
   { prefix: "/notification-log", permission: "NOTIFICATIONS" },
-  { prefix: "/api-activity", permission: "DASHBOARD" },
   { prefix: "/policies", permission: "POLICIES" },
   { prefix: "/consents", permission: "CONSENTS" },
   { prefix: "/members", permission: "MEMBERS" },
@@ -67,7 +66,10 @@ export function canAccessPath(
   isSuperAdmin: boolean
 ) {
   if (pathname === "/403") return true;
-  if (matchesPath(pathname, "/activity-log")) {
+  if (
+    matchesPath(pathname, "/activity-log") ||
+    matchesPath(pathname, "/api-activity")
+  ) {
     return isSuperAdmin;
   }
   if (isSuperAdmin) return true;
