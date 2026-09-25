@@ -1,6 +1,8 @@
 import { apiClient } from "@/lib/apiClient";
 import type { ContactCase, ContactCaseListParams } from "@/types/contact-case";
 import type {
+  ApiActivityQuery,
+  ApiActivityResponse,
   DashboardContactCase,
   DashboardListResponse,
   DashboardMember,
@@ -34,6 +36,16 @@ interface ApiResponse<T> {
 }
 
 export const dashboardApi = {
+  getApiActivity: async (
+    params: ApiActivityQuery
+  ): Promise<ApiActivityResponse> => {
+    const { data } = await apiClient.get<ApiActivityResponse>(
+      "/api/v1/admin/dashboard/api-activity",
+      { params }
+    );
+    return data;
+  },
+
   getSummary: async (params?: DashboardSummaryParams): Promise<DashboardSummaryResponse> => {
     const { data } = await apiClient.get<DashboardSummaryResponse>(
       "/api/v1/admin/dashboard/summary",
