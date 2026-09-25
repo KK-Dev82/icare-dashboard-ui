@@ -118,11 +118,13 @@ function getVisiblePages(page: number, pageCount: number): Array<number | "ellip
   const trailingPages = [pageCount - 2, pageCount - 1, pageCount];
   const windowStart = Math.min(Math.max(page - 1, 1), pageCount - 2);
   const leadingPages = [windowStart, windowStart + 1, windowStart + 2];
-  const uniquePages = [...new Set([...leadingPages, ...trailingPages])];
 
   if (leadingPages[leadingPages.length - 1] + 1 < trailingPages[0]) {
     return [...leadingPages, "ellipsis", ...trailingPages];
   }
 
-  return uniquePages;
+  const finalWindowStart = Math.max(1, pageCount - 4);
+  return Array.from({ length: Math.min(5, pageCount) }, (_, index) =>
+    finalWindowStart + index
+  );
 }
