@@ -40,3 +40,40 @@ export interface DashboardListResponse<T> {
   data: T[];
   meta: PaginationMeta;
 }
+
+export type ApiActivityOutcome = "success" | "error";
+
+export interface ApiActivityItem {
+  id: string;
+  timestamp: string;
+  requestId: string | null;
+  outcome: ApiActivityOutcome;
+  method: string;
+  route: string;
+  statusCode: number;
+  message: string | null;
+  errorCode: string | null;
+  response: Record<string, unknown> | null;
+  logLine: string;
+}
+
+export interface ApiActivityQuery {
+  outcome?: ApiActivityOutcome;
+  page?: number;
+  limit?: number;
+  startDate?: string;
+  endDate?: string;
+}
+
+export interface ApiActivityMeta extends PaginationMeta {
+  startDate: string;
+  endDate: string;
+}
+
+export interface ApiActivityResponse {
+  success: true;
+  message: string;
+  data: ApiActivityItem[];
+  meta: ApiActivityMeta;
+  requestId: string | null;
+}

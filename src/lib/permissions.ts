@@ -30,6 +30,7 @@ const routePermissions: Array<{
   { prefix: "/accounts", permission: "ACCOUNTS" },
   { prefix: "/settings", permission: "SETTINGS" },
   { prefix: "/notification-log", permission: "NOTIFICATIONS" },
+  { prefix: "/api-activity", permission: "DASHBOARD" },
   { prefix: "/policies", permission: "POLICIES" },
   { prefix: "/consents", permission: "CONSENTS" },
   { prefix: "/members", permission: "MEMBERS" },
