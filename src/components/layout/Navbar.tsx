@@ -98,7 +98,7 @@ const menuItems: MenuItem[] = [
       {
         label: "API Activity",
         href: "/api-activity",
-        permission: "DASHBOARD",
+        superAdminOnly: true,
       },
     ],
   },
