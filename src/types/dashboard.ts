@@ -77,3 +77,23 @@ export interface ApiActivityResponse {
   meta: ApiActivityMeta;
   requestId: string | null;
 }
+
+export type ServiceHealthStatus = "UP" | "DOWN";
+
+export interface ServiceStatus {
+  name: string;
+  status: ServiceHealthStatus;
+  httpStatus: number;
+  latencyMs: number;
+  checkedAt: string;
+  requestsToday: {
+    date: string;
+    timezone: "Asia/Bangkok";
+    total: number | null;
+    available: boolean;
+  };
+}
+
+export interface ServiceStatusResponse {
+  services: ServiceStatus[];
+}

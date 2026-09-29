@@ -34,7 +34,22 @@ export interface BroadcastScheduledResult {
   scheduledAt: string;
 }
 
+export interface SendToPhonePayload {
+  phone: string;
+  title: string;
+  body: string;
+  type: NotificationType;
+}
+
 export const notificationApi = {
+  sendToPhone: async (payload: SendToPhonePayload): Promise<BroadcastResult> => {
+    const { data } = await apiClient.post<{ success: boolean; data: BroadcastResult }>(
+      "/api/v1/admin/notifications/send-to-phone",
+      payload,
+    );
+    return data.data;
+  },
+
   broadcast: async (payload: BroadcastPayload): Promise<BroadcastResult | BroadcastScheduledResult> => {
     const { data } = await apiClient.post<{ success: boolean; data: BroadcastResult | BroadcastScheduledResult }>(
       "/api/v1/admin/notifications/broadcast",
