@@ -38,7 +38,7 @@ export interface Member {
 export interface MemberInsurancePolicy {
   id: number;
   no: string;
-  documentUrl: string;
+  documentUrl: string | null;
 }
 
 export interface MemberInsuranceItem {
@@ -55,6 +55,8 @@ export interface MemberInsuranceItem {
   subModel: string;
   imei: string;
   serial: string;
+  certificateDocumentUrl?: string | null;
+  policies?: MemberInsurancePolicy[];
   renewal: unknown;
 }
 

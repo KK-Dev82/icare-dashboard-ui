@@ -7,6 +7,7 @@ import type {
   DashboardListResponse,
   DashboardMember,
   DashboardSummary,
+  ServiceStatusResponse,
 } from "@/types/dashboard";
 import type { AccountLevel, MemberStatus } from "@/types/member";
 
@@ -84,6 +85,13 @@ export const dashboardApi = {
   markContactCaseRead: async (id: string): Promise<ContactCase> => {
     const { data } = await apiClient.patch<ApiResponse<ContactCase>>(
       `/api/v1/admin/dashboard/contact-cases/${id}/read`
+    );
+    return data.data;
+  },
+
+  getServiceStatus: async (): Promise<ServiceStatusResponse> => {
+    const { data } = await apiClient.get<ApiResponse<ServiceStatusResponse>>(
+      "/api/v1/admin/dashboard/service-status"
     );
     return data.data;
   },

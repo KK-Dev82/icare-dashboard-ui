@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
 import { fcmApi } from "@/api/fcm";
 import type { FcmConfig } from "@/api/fcm";
+import { PushNotificationTestPanel } from "./PushNotificationTestPanel";
 
 type FcmConfigKey =
   | "projectId"
@@ -203,48 +204,52 @@ export function FcmConfigPanel() {
         </div>
       </section>
 
-      <aside className="rounded-[18px] bg-white p-6 shadow-[0_2px_12px_rgba(0,0,0,0.04)] xl:sticky xl:top-[104px]">
-        <div className="border-b border-[#EAEAEA] pb-4">
-          <h2 className="text-[20px] font-bold leading-7 text-[#243333]">ข้อมูลการตั้งค่า</h2>
-          <p className="mt-1 text-[14px] leading-6 text-[#9CA3AF]">
-            แสดงสถานะและข้อมูลการอัปเดตล่าสุด
-          </p>
-        </div>
-
-        <div className="mt-5 space-y-5">
-          <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[8px] bg-[#CFF6F5] text-primary">
-              <Link2 size={20} strokeWidth={2} />
-            </span>
-            <div>
-              <p className="text-[14px] font-semibold text-[#565656]">สถานะการเชื่อมต่อ</p>
-              {config ? (
-                <p className="mt-0.5 flex items-center gap-1.5 text-[13px] font-semibold text-[#24A148]">
-                  <span className="h-2 w-2 rounded-full bg-[#24A148]" />
-                  เชื่อมต่อแล้ว
-                </p>
-              ) : (
-                <p className="mt-0.5 flex items-center gap-1.5 text-[13px] font-semibold text-[#F44034]">
-                  <span className="h-2 w-2 rounded-full bg-[#F44034]" />
-                  ยังไม่ได้ตั้งค่า
-                </p>
-              )}
-            </div>
+      <div className="space-y-6 xl:sticky xl:top-[104px]">
+        <aside className="rounded-[18px] bg-white p-6 shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
+          <div className="border-b border-[#EAEAEA] pb-4">
+            <h2 className="text-[20px] font-bold leading-7 text-[#243333]">ข้อมูลการตั้งค่า</h2>
+            <p className="mt-1 text-[14px] leading-6 text-[#9CA3AF]">
+              แสดงสถานะและข้อมูลการอัปเดตล่าสุด
+            </p>
           </div>
 
-          <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[8px] bg-[#CFF6F5] text-primary">
-              <CalendarDays size={20} strokeWidth={2} />
-            </span>
-            <div>
-              <p className="text-[14px] font-semibold text-[#565656]">อัปเดตล่าสุด</p>
-              <p className="mt-0.5 text-[13px] text-[#9CA3AF]">
-                {config ? formatThaiDateTime(config.updatedAt) : "-"}
-              </p>
+          <div className="mt-5 space-y-5">
+            <div className="flex items-center gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[8px] bg-[#CFF6F5] text-primary">
+                <Link2 size={20} strokeWidth={2} />
+              </span>
+              <div>
+                <p className="text-[14px] font-semibold text-[#565656]">สถานะการเชื่อมต่อ</p>
+                {config ? (
+                  <p className="mt-0.5 flex items-center gap-1.5 text-[13px] font-semibold text-[#24A148]">
+                    <span className="h-2 w-2 rounded-full bg-[#24A148]" />
+                    เชื่อมต่อแล้ว
+                  </p>
+                ) : (
+                  <p className="mt-0.5 flex items-center gap-1.5 text-[13px] font-semibold text-[#F44034]">
+                    <span className="h-2 w-2 rounded-full bg-[#F44034]" />
+                    ยังไม่ได้ตั้งค่า
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[8px] bg-[#CFF6F5] text-primary">
+                <CalendarDays size={20} strokeWidth={2} />
+              </span>
+              <div>
+                <p className="text-[14px] font-semibold text-[#565656]">อัปเดตล่าสุด</p>
+                <p className="mt-0.5 text-[13px] text-[#9CA3AF]">
+                  {config ? formatThaiDateTime(config.updatedAt) : "-"}
+                </p>
+              </div>
             </div>
           </div>
-        </div>
-      </aside>
+        </aside>
+
+        <PushNotificationTestPanel />
+      </div>
     </div>
   );
 }
