@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download } from "lucide-react";
 import { Select } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { memberApi } from "@/api/member";
@@ -393,9 +393,14 @@ function ClaimCard({ claim }: { claim: Claim }) {
 
 function InsuranceCard({ item }: { item: MemberInsuranceItem }) {
   const isActive = item.status === "ACTIVE";
+  const policyDocumentUrl = item.policies
+    ?.find((policy) => policy.documentUrl?.trim())
+    ?.documentUrl?.trim();
+  const certificateDocumentUrl = item.certificateDocumentUrl?.trim();
+  const hasDocuments = Boolean(policyDocumentUrl || certificateDocumentUrl);
 
   return (
-    <div className="rounded-[20px] border border-[#EAEAEA] bg-white p-6 transition hover:border-[#07A2A2] hover:shadow-sm">
+    <div className="flex h-full flex-col rounded-[20px] border border-[#EAEAEA] bg-white p-6 transition hover:border-[#07A2A2] hover:shadow-sm">
       <div className="mb-7">
         <div className="flex items-start justify-between gap-3">
           <p className="text-xs text-[#9CA3AF]">ผลิตภัณฑ์</p>
@@ -408,7 +413,7 @@ function InsuranceCard({ item }: { item: MemberInsuranceItem }) {
         <h3 className="mt-1 text-[15px] font-bold text-[#111827]">{item.productName}</h3>
       </div>
 
-      <div className="space-y-5 text-sm">
+      <div className="flex-1 space-y-5 text-sm">
         <InfoRow label="ประเภท" value={item.type} />
         <InfoRow label="วันเริ่มคุ้มครอง" value={new Date(item.effectiveOn).toLocaleDateString("th-TH")} />
         <InfoRow label="วันสิ้นสุด" value={new Date(item.expireOn).toLocaleDateString("th-TH")} />
@@ -416,7 +421,35 @@ function InsuranceCard({ item }: { item: MemberInsuranceItem }) {
         {item.brand && <InfoRow label="ยี่ห้อ/รุ่น" value={`${item.brand} ${item.model}`} />}
         {item.imei && <InfoRow label="IMEI" value={item.imei} />}
       </div>
+
+      {hasDocuments && (
+        <div className="mt-6 space-y-2">
+          {policyDocumentUrl && (
+            <DocumentDownloadButton href={policyDocumentUrl} label="ดาวน์โหลดกรมธรรม์" />
+          )}
+          {certificateDocumentUrl && (
+            <DocumentDownloadButton
+              href={certificateDocumentUrl}
+              label="ดาวน์โหลดใบรับรองสิทธิ์"
+            />
+          )}
+        </div>
+      )}
     </div>
+  );
+}
+
+function DocumentDownloadButton({ href, label }: { href: string; label: string }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex h-[40px] w-full items-center justify-center gap-2 rounded-[6px] border border-[#FF944D] bg-[#FF944D] text-sm font-medium text-white transition-colors hover:border-[#F48338] hover:bg-[#F48338]"
+    >
+      <Download size={16} strokeWidth={1.8} aria-hidden="true" />
+      {label}
+    </a>
   );
 }
 
