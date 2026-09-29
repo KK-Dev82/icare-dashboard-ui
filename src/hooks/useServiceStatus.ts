@@ -11,12 +11,10 @@ const POLL_INTERVAL_MS = 5 * 60 * 1000;
  * When the tab becomes visible again, it fetches right away only if the
  * last fetch is older than the interval; otherwise it waits out the rest.
  */
-export function useServiceStatus(enabled: boolean) {
+export function useServiceStatus() {
   const [services, setServices] = useState<ServiceStatus[] | null>(null);
 
   useEffect(() => {
-    if (!enabled) return;
-
     let timer: number | undefined;
     let lastFetchedAt = 0;
     let inFlight = false;
@@ -62,7 +60,7 @@ export function useServiceStatus(enabled: boolean) {
       window.clearTimeout(timer);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [enabled]);
+  }, []);
 
   return services;
 }
