@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { LoaderCircle } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import Navbar from "@/components/layout/Navbar";
+import Footer from "@/components/layout/Footer";
 import Breadcrumb from "@/components/layout/Breadcrumb";
 import { BreadcrumbProvider } from "@/components/layout/BreadcrumbContext";
 import { ErrorState } from "@/components/ui/error-state";
@@ -71,9 +72,9 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
   if (!profile || !canAccess) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="flex min-h-screen flex-col bg-gray-50">
       <Navbar />
-      <main className="p-8">
+      <main className="flex-1 p-8">
         <div className="mx-auto w-full max-w-[1612px]">
           <BreadcrumbProvider>
             <Breadcrumb />
@@ -81,6 +82,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
           </BreadcrumbProvider>
         </div>
       </main>
+      <Footer />
     </div>
   );
 }

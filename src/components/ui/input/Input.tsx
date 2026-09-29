@@ -35,7 +35,10 @@ export function Input({
   return (
     <div className={`relative ${s.wrapper} ${className ?? ""}`}>
       {label && (
-        <label className={`absolute -top-2.5 left-4 z-10 bg-white px-2 font-bold text-dark ${s.label}`}>
+        <label
+          htmlFor={props.id}
+          className={`absolute -top-2.5 left-4 z-10 bg-white px-2 font-bold text-dark ${s.label}`}
+        >
           {label}
         </label>
       )}
