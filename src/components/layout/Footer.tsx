@@ -17,9 +17,6 @@ export default function Footer() {
           ) : (
             services.map((service, index) => {
               const isUp = service.status === "UP";
-              const { total, available } = service.requestsToday;
-              const requests =
-                available && total !== null ? total.toLocaleString("en-US") : "-";
               const checkedAt = new Date(service.checkedAt).toLocaleString("th-TH");
 
               return (
@@ -42,8 +39,6 @@ export default function Footer() {
                   />
                   <span className="sr-only">{service.status}</span>
                   <span>Lat. {service.latencyMs.toLocaleString("en-US")} ms</span>
-                  <span aria-hidden="true">·</span>
-                  <span>Req. {requests}/day</span>
                 </div>
               );
             })
