@@ -66,10 +66,7 @@ export function canAccessPath(
   isSuperAdmin: boolean
 ) {
   if (pathname === "/403") return true;
-  if (
-    matchesPath(pathname, "/activity-log") ||
-    matchesPath(pathname, "/api-activity")
-  ) {
+  if (matchesPath(pathname, "/activity-log")) {
     return isSuperAdmin;
   }
   if (isSuperAdmin) return true;
