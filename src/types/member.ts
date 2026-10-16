@@ -1,5 +1,6 @@
 export type AccountLevel = "MEMBER" | "CUSTOMER";
 export type MemberStatus = "ACTIVE" | "INACTIVE" | "SUSPENDED";
+export type EditableMemberStatus = Extract<MemberStatus, "ACTIVE" | "INACTIVE">;
 
 export interface MemberDevice {
   deviceId: string;

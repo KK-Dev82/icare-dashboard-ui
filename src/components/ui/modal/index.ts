@@ -3,4 +3,5 @@ export { ContactCaseDetailModal } from "./ContactCaseDetailModal";
 export { ContentPreviewModal } from "./ContentPreviewModal";
 export { UserDetailModal } from "./UserDetailModal";
 export { NotificationSendModal } from "./NotificationSendModal";
+export { MemberConsentHistoryModal } from "./MemberConsentHistoryModal";
 export type { NotificationSendSource } from "./NotificationSendModal";

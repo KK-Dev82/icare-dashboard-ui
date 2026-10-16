@@ -29,6 +29,7 @@ interface ConsentPolicyListParams {
 }
 
 interface UserConsentListParams {
+  userId?: string;
   consentPolicyId?: string;
   page?: number;
   limit?: number;
