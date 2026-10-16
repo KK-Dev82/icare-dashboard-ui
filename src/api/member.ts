@@ -3,6 +3,7 @@ import type {
   Member,
   MemberInsuranceResponse,
   MemberNotificationPreference,
+  EditableMemberStatus,
   PaginationMeta,
 } from "@/types/member";
 
@@ -23,6 +24,15 @@ interface MemberListResponse {
 interface MemberDetailResponse {
   success: boolean;
   data: Member;
+}
+
+interface MemberStatusResponse {
+  success: boolean;
+  message?: string;
+  data: {
+    id: string;
+    status: EditableMemberStatus;
+  };
 }
 
 interface MemberInsuranceApiResponse {
@@ -50,6 +60,17 @@ export const memberApi = {
   getById: async (id: string): Promise<MemberDetailResponse> => {
     const { data } = await apiClient.get<MemberDetailResponse>(
       `/api/v1/admin/members/${id}`
+    );
+    return data;
+  },
+
+  updateStatus: async (
+    id: string,
+    status: EditableMemberStatus,
+  ): Promise<MemberStatusResponse> => {
+    const { data } = await apiClient.patch<MemberStatusResponse>(
+      `/api/v1/admin/members/${id}/status`,
+      { status },
     );
     return data;
   },

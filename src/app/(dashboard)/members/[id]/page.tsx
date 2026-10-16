@@ -1,14 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
-import { ChevronLeft, ChevronRight, Download } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, Download, FileText, LoaderCircle, Power } from "lucide-react";
 import { Select } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { memberApi } from "@/api/member";
 import { claimApi } from "@/api/claim";
 import { ErrorState } from "@/components/ui/error-state";
+import { ConfirmModal, MemberConsentHistoryModal } from "@/components/ui/modal";
+import { useToast } from "@/components/ui/toast";
 import type {
+  EditableMemberStatus,
   Member,
   MemberInsuranceItem,
   MemberNotificationPreference,
@@ -18,6 +21,7 @@ import type { Claim, ClaimStatus } from "@/types/claim";
 export default function MemberDetailPage() {
   const params = useParams();
   const id = params.id as string;
+  const toast = useToast();
   const [member, setMember] = useState<Member | null>(null);
   const [insurance, setInsurance] = useState<MemberInsuranceItem[]>([]);
   const [insuranceTotal, setInsuranceTotal] = useState(0);
@@ -33,6 +37,56 @@ export default function MemberDetailPage() {
     useState<MemberNotificationPreference | null>(null);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [statusMenuOpen, setStatusMenuOpen] = useState(false);
+  const [closeConfirmOpen, setCloseConfirmOpen] = useState(false);
+  const [consentHistoryOpen, setConsentHistoryOpen] = useState(false);
+  const [statusUpdating, setStatusUpdating] = useState(false);
+  const statusMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!statusMenuOpen) return;
+    const closeOnOutsideClick = (event: MouseEvent) => {
+      if (!statusMenuRef.current?.contains(event.target as Node)) {
+        setStatusMenuOpen(false);
+      }
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setStatusMenuOpen(false);
+    };
+    document.addEventListener("mousedown", closeOnOutsideClick);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("mousedown", closeOnOutsideClick);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [statusMenuOpen]);
+
+  const handleStatusSelection = async (status: EditableMemberStatus) => {
+    if (!member || statusUpdating || member.status === status) return;
+
+    setStatusUpdating(true);
+    try {
+      const response = await memberApi.updateStatus(member.id, status);
+      if (!response.success) {
+        toast.error(response.message || "อัปเดตสถานะบัญชีไม่สำเร็จ");
+        return;
+      }
+
+      setMember((current) => current ? {
+        ...current,
+        status: response.data.status,
+        devices: status === "INACTIVE"
+          ? current.devices?.map((device) => ({ ...device, isActive: false }))
+          : current.devices,
+      } : current);
+      setCloseConfirmOpen(false);
+      toast.success(status === "ACTIVE" ? "เปิดการใช้งานบัญชีสำเร็จ" : "ปิดการใช้งานบัญชีสำเร็จ");
+    } catch (error) {
+      toast.fromError(error);
+    } finally {
+      setStatusUpdating(false);
+    }
+  };
 
   const fetchData = () => {
     setLoading(true);
@@ -122,21 +176,80 @@ export default function MemberDetailPage() {
 
   return (
     <div className="min-h-screen bg-[#F4FAFA] p-6">
-      <div className="grid grid-cols-[1fr_320px] gap-6">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
         {/* Left Content */}
         <section className="rounded-[24px] bg-white p-6">
           <div className="border-b border-[#EAEAEA] pb-5">
-            <div className="flex items-center gap-3">
-              <div>
-                <h1 className="text-lg font-bold text-[#243333]">ข้อมูลสมาชิก</h1>
-                <p className="text-sm text-[#9CA3AF]">ID: {member.id}</p>
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="min-w-0">
+                  <h1 className="text-lg font-bold text-[#243333]">ข้อมูลสมาชิก</h1>
+                  <p className="break-all text-sm text-[#9CA3AF]">ID: {member.id}</p>
+                </div>
+                <span
+                  className="shrink-0 rounded-full px-4 py-1 text-xs font-medium text-white"
+                  style={{ backgroundColor: member.accountLevel === "CUSTOMER" ? "#07A2A2" : "#FF944D" }}
+                >
+                  {member.accountLevel === "CUSTOMER" ? "ลูกค้า" : "สมาชิก"}
+                </span>
               </div>
-              <span
-                className="rounded-full px-4 py-1 text-xs font-medium text-white"
-                style={{ backgroundColor: member.accountLevel === "CUSTOMER" ? "#07A2A2" : "#FF944D" }}
-              >
-                {member.accountLevel === "CUSTOMER" ? "ลูกค้า" : "สมาชิก"}
-              </span>
+              <div className="flex w-full flex-wrap items-center gap-3 sm:w-auto">
+                <button
+                  type="button"
+                  onClick={() => setConsentHistoryOpen(true)}
+                  className="flex h-[48px] flex-1 items-center justify-center gap-2 rounded-[10px] border border-[#DCDCDC] bg-white px-4 text-sm font-medium text-[#565656] transition-colors hover:border-[#07A2A2] hover:text-[#07A2A2] sm:flex-none"
+                >
+                  <FileText size={16} />
+                  ประวัติการยินยอมนโยบาย
+                </button>
+                <div ref={statusMenuRef} className="relative min-w-[220px] flex-1 sm:flex-none">
+                <button
+                  type="button"
+                  aria-expanded={statusMenuOpen}
+                  disabled={statusUpdating}
+                  onClick={() => setStatusMenuOpen((open) => !open)}
+                  className="flex w-full items-center justify-between rounded-[10px] border border-[#DCDCDC] bg-white px-4 py-2 text-left transition-colors hover:border-[#07A2A2] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#07A2A2] disabled:cursor-wait disabled:opacity-70"
+                >
+                  <span>
+                    <span className="block text-[11px] font-medium text-[#707070]">สถานะการใช้งานบัญชี</span>
+                    <span className={`block text-sm font-semibold ${member.status === "ACTIVE" ? "text-[#24A148]" : "text-[#F44034]"}`}>
+                      {member.status === "ACTIVE" ? "เปิดการใช้งาน" : member.status === "SUSPENDED" ? "ระงับการใช้งาน" : "ปิดการใช้งาน"}
+                    </span>
+                  </span>
+                  {statusUpdating
+                    ? <LoaderCircle size={16} className="animate-spin text-[#07A2A2]" />
+                    : <ChevronDown size={16} className={`text-[#213F3F] transition-transform ${statusMenuOpen ? "rotate-180" : ""}`} />}
+                </button>
+                {statusMenuOpen && (
+                  <div className="absolute right-0 top-full z-50 mt-2 w-full min-w-[270px] rounded-[16px] border border-[#EAEAEA] bg-white p-2 shadow-[0_8px_24px_rgba(0,0,0,0.12)]">
+                    <button
+                      type="button"
+                      disabled={statusUpdating || member.status === "ACTIVE"}
+                      onClick={() => {
+                        setStatusMenuOpen(false);
+                        handleStatusSelection("ACTIVE");
+                      }}
+                      className="flex w-full items-center gap-3 rounded-[12px] px-3 py-3 text-left hover:bg-[#F1FAF5] disabled:cursor-default disabled:opacity-50"
+                    >
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-[#EAF8EF] text-[#24A148]"><Power size={20} /></span>
+                      <span><span className="block text-sm font-semibold text-[#243333]">เปิดการใช้งาน</span><span className="block text-xs text-[#9CA3AF]">อนุญาตให้เข้าถึงบัญชี</span></span>
+                    </button>
+                    <button
+                      type="button"
+                      disabled={statusUpdating || member.status === "INACTIVE"}
+                      onClick={() => {
+                        setStatusMenuOpen(false);
+                        setCloseConfirmOpen(true);
+                      }}
+                      className="flex w-full items-center gap-3 rounded-[12px] px-3 py-3 text-left hover:bg-[#FFF4F3] disabled:cursor-default disabled:opacity-50"
+                    >
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-[#FFF0EF] text-[#F44034]"><Power size={20} /></span>
+                      <span><span className="block text-sm font-semibold text-[#243333]">ปิดการใช้งาน</span><span className="block text-xs text-[#9CA3AF]">ระงับการเข้าถึงชั่วคราว</span></span>
+                    </button>
+                  </div>
+                )}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -148,7 +261,7 @@ export default function MemberDetailPage() {
                 <InfoWhite label="ชื่อ - นามสกุล:" value={fullName} />
                 <InfoWhite label="อีเมล:" value={member.email || "-"} />
                 <InfoWhite label="เบอร์โทรศัพท์:" value={member.phone} />
-                <InfoWhite label="สถานะ:" value={member.status === "ACTIVE" ? "ใช้งานอยู่" : "ปิดใช้งาน"} />
+                <InfoWhite label="สถานะ:" value={member.status === "ACTIVE" ? "ใช้งานอยู่" : member.status === "SUSPENDED" ? "ระงับการใช้งาน" : "ปิดใช้งาน"} />
                 <InfoWhite label="ยืนยันเบอร์:" value={member.isPhoneVerified ? "ยืนยันแล้ว" : "ยังไม่ยืนยัน"} />
                 <InfoWhite label="วันสมัคร:" value={new Date(member.createdAt).toLocaleDateString("th-TH")} />
                 <InfoWhite label="เลขบัตรประชาชน:" value={member.nationalId || "-"} />
@@ -274,6 +387,25 @@ export default function MemberDetailPage() {
           )}
         </aside>
       </div>
+      <ConfirmModal
+        open={closeConfirmOpen}
+        title="ปิดการใช้งาน"
+        message={`ต้องการปิดการใช้งานบัญชี “${fullName}” ใช่หรือไม่?`}
+        confirmLabel="ปิดการใช้งาน"
+        confirmColor="danger"
+        loading={statusUpdating}
+        onConfirm={() => handleStatusSelection("INACTIVE")}
+        onCancel={() => {
+          if (!statusUpdating) setCloseConfirmOpen(false);
+        }}
+      />
+      {consentHistoryOpen && (
+        <MemberConsentHistoryModal
+          open
+          userId={member.id}
+          onClose={() => setConsentHistoryOpen(false)}
+        />
+      )}
     </div>
   );
 }

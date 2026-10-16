@@ -7,6 +7,7 @@ interface ConfirmModalProps {
   confirmLabel?: string;
   cancelLabel?: string;
   confirmColor?: "danger" | "success";
+  loading?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -23,6 +24,7 @@ export function ConfirmModal({
   confirmLabel = "ยืนยัน",
   cancelLabel = "ยกเลิก",
   confirmColor = "danger",
+  loading = false,
   onConfirm,
   onCancel,
 }: ConfirmModalProps) {
@@ -37,15 +39,17 @@ export function ConfirmModal({
         <div className="mt-6 flex items-center justify-end gap-3">
           <button
             onClick={onCancel}
-            className="h-[40px] px-5 rounded-[10px] border border-[#DCDCDC] text-sm font-medium text-[#565656] hover:bg-gray-50 transition-colors"
+            disabled={loading}
+            className="h-[40px] px-5 rounded-[10px] border border-[#DCDCDC] text-sm font-medium text-[#565656] hover:bg-gray-50 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
           >
             {cancelLabel}
           </button>
           <button
             onClick={onConfirm}
-            className={`h-[40px] px-5 rounded-[10px] text-sm font-medium text-white transition-colors ${colorMap[confirmColor]}`}
+            disabled={loading}
+            className={`h-[40px] px-5 rounded-[10px] text-sm font-medium text-white transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${colorMap[confirmColor]}`}
           >
-            {confirmLabel}
+            {loading ? "กำลังบันทึก..." : confirmLabel}
           </button>
         </div>
       </div>
